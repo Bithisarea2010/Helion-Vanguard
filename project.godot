@@ -1,0 +1,68 @@
+; Engine configuration file.
+; Helion Vanguard — original space combat game
+; (c) 2026 Original Games. All game code and assets original or credited in LICENSES.md
+
+config_version=5
+
+[application]
+
+config/name="Helion Vanguard"
+config/version="1.0.0"
+config/description="Fast, colourful third-person space combat for macOS."
+run/main_scene="res://scenes/Boot.tscn"
+config/use_custom_user_dir=true
+config/custom_user_dir_name="HelionVanguard"
+config/features=PackedStringArray("4.7", "Forward Plus")
+boot_splash/bg_color=Color(0.02, 0.03, 0.06, 1)
+config/icon="res://assets/icons/icon.png"
+config/macos_native_icon="res://assets/icons/icon.icns"
+
+[audio]
+
+buses/default_bus_layout=""
+driver/output_latency=15
+
+[debug]
+
+gdscript/warnings/untyped_declaration=0
+gdscript/warnings/unused_parameter=0
+gdscript/warnings/integer_division=0
+
+[display]
+
+window/size/viewport_width=1920
+window/size/viewport_height=1080
+window/size/mode=3
+window/size/resizable=true
+window/stretch/mode="canvas_items"
+window/stretch/aspect="expand"
+window/vsync/vsync_mode=1
+window/subwindows/embed_subwindows=true
+window/dpi/allow_hidpi=true
+
+[input_devices]
+
+pointing/emulate_touch_from_mouse=false
+
+[physics]
+
+3d/default_gravity=0.0
+3d/default_gravity_vector=Vector3(0, 0, 0)
+common/physics_ticks_per_second=60
+
+[rendering]
+
+renderer/rendering_method="forward_plus"
+textures/vram_compression/import_etc2_astc=true
+lights_and_shadows/directional_shadow/size=2048
+lights_and_shadows/directional_shadow/soft_shadow_filter_quality=2
+anti_aliasing/quality/msaa_3d=1
+scaling_3d/mode=0
+environment/glow/upscale_mode=1
+occlusion_culling/use_occlusion_culling=false
+textures/default_filters/anisotropic_filtering_level=2
+
+[autoload]
+
+Game="*res://scripts/core/Game.gd"
+AudioMgr="*res://scripts/core/AudioMgr.gd"

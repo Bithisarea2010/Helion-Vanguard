@@ -1,0 +1,94 @@
+{
+  "project": "Helion Vanguard",
+  "version": "1.2.0",
+  "generated": "2026-07-11",
+  "assets": [
+    {
+      "name": "Aerial Rocks 02",
+      "type": "pbr_texture_set",
+      "author": "Rob Tuytel",
+      "source": "https://polyhaven.com/a/aerial_rocks_02",
+      "license": "CC0 1.0",
+      "modifications": "Albedo desaturated 80% and tinted grey-brown for asteroid look (assets/textures/asteroid_albedo.png); maps embedded in asteroid GLB files.",
+      "files": [
+        "assets/models/asteroid_0.glb",
+        "assets/models/asteroid_1.glb",
+        "assets/models/asteroid_2.glb",
+        "assets/models/asteroid_3.glb",
+        "assets/textures/asteroid_albedo.png"
+      ]
+    },
+    {
+      "name": "Orbitron",
+      "type": "font",
+      "author": "Matt McInerney",
+      "source": "https://fonts.google.com/specimen/Orbitron",
+      "license": "SIL OFL 1.1",
+      "modifications": "none",
+      "files": [
+        "assets/fonts/Orbitron.ttf",
+        "assets/fonts/OFL_Orbitron.txt"
+      ]
+    },
+    {
+      "name": "Exo 2",
+      "type": "font",
+      "author": "Natanael Gama",
+      "source": "https://fonts.google.com/specimen/Exo+2",
+      "license": "SIL OFL 1.1",
+      "modifications": "none",
+      "files": [
+        "assets/fonts/Exo2.ttf",
+        "assets/fonts/OFL_Exo2.txt"
+      ]
+    },
+    {
+      "name": "Ship, station, cockpit and turret models",
+      "type": "3d_models",
+      "author": "Original Games (procedural Blender generators, this project)",
+      "source": "blender_src/*.py, blender_src/blends/*.blend",
+      "license": "original work, part of this project",
+      "files": [
+        "assets/models/ship_*.glb",
+        "assets/models/enemy_*.glb",
+        "assets/models/capital_*.glb",
+        "assets/models/base_bastion.glb",
+        "assets/models/turret.glb",
+        "assets/models/cockpit.glb"
+      ]
+    },
+    {
+      "name": "Sound effects and music",
+      "type": "audio",
+      "author": "Original Games (procedural synthesis, this project)",
+      "source": "tools/gen_audio.py",
+      "license": "original work, part of this project",
+      "files": [
+        "assets/audio/sfx/*.wav",
+        "assets/audio/music/*.wav"
+      ]
+    },
+    {
+      "name": "Application icon",
+      "type": "icon",
+      "author": "Original Games (generated, this project)",
+      "source": "tools/gen_icon.py",
+      "license": "original work, part of this project",
+      "files": [
+        "assets/icons/icon.png",
+        "assets/icons/icon.icns"
+      ]
+    },
+    {
+      "name": "Metal Plate 02",
+      "type": "pbr_texture_set",
+      "author": "Rob Tuytel",
+      "source": "https://polyhaven.com/a/metal_plate_02",
+      "license": "CC0 1.0",
+      "modifications": "roughness + normal maps applied to cockpit interior materials",
+      "files": [
+        "assets/models/cockpit.glb"
+      ]
+    }
+  ]
+}
