@@ -3,9 +3,11 @@
 importer="texture"
 type="CompressedTexture2D"
 uid="uid://ch7hdkjmhy10r"
-path="res://.godot/imported/asteroid_2_asteroid_albedo.png-f6dac8d24bca107f8a19b4aff9056ef4.ctex"
+path.s3tc="res://.godot/imported/asteroid_2_asteroid_albedo.png-f6dac8d24bca107f8a19b4aff9056ef4.s3tc.ctex"
+path.etc2="res://.godot/imported/asteroid_2_asteroid_albedo.png-f6dac8d24bca107f8a19b4aff9056ef4.etc2.ctex"
 metadata={
-"vram_texture": false
+"imported_formats": ["s3tc_bptc", "etc2_astc"],
+"vram_texture": true
 }
 generator_parameters={
 "md5": "5a685c4ef06d0cc04e30f2efa20eccf3"
@@ -14,11 +16,11 @@ generator_parameters={
 [deps]
 
 source_file="res://assets/models/asteroid_2_asteroid_albedo.png"
-dest_files=["res://.godot/imported/asteroid_2_asteroid_albedo.png-f6dac8d24bca107f8a19b4aff9056ef4.ctex"]
+dest_files=["res://.godot/imported/asteroid_2_asteroid_albedo.png-f6dac8d24bca107f8a19b4aff9056ef4.s3tc.ctex", "res://.godot/imported/asteroid_2_asteroid_albedo.png-f6dac8d24bca107f8a19b4aff9056ef4.etc2.ctex"]
 
 [params]
 
-compress/mode=0
+compress/mode=2
 compress/high_quality=false
 compress/lossy_quality=0.7
 compress/uastc_level=0

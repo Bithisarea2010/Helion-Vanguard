@@ -3,9 +3,11 @@
 importer="texture"
 type="CompressedTexture2D"
 uid="uid://cyo60yux3pcwf"
-path="res://.godot/imported/asteroid_2_tmpqvanih9z.png-f39c95c79245d23a4172e85fd58b5d75.ctex"
+path.s3tc="res://.godot/imported/asteroid_2_tmpqvanih9z.png-f39c95c79245d23a4172e85fd58b5d75.s3tc.ctex"
+path.etc2="res://.godot/imported/asteroid_2_tmpqvanih9z.png-f39c95c79245d23a4172e85fd58b5d75.etc2.ctex"
 metadata={
-"vram_texture": false
+"imported_formats": ["s3tc_bptc", "etc2_astc"],
+"vram_texture": true
 }
 generator_parameters={
 "md5": "f09c7d5d717b02b7229db459dfb6e2ed"
@@ -14,11 +16,11 @@ generator_parameters={
 [deps]
 
 source_file="res://assets/models/asteroid_2_tmpqvanih9z.png"
-dest_files=["res://.godot/imported/asteroid_2_tmpqvanih9z.png-f39c95c79245d23a4172e85fd58b5d75.ctex"]
+dest_files=["res://.godot/imported/asteroid_2_tmpqvanih9z.png-f39c95c79245d23a4172e85fd58b5d75.s3tc.ctex", "res://.godot/imported/asteroid_2_tmpqvanih9z.png-f39c95c79245d23a4172e85fd58b5d75.etc2.ctex"]
 
 [params]
 
-compress/mode=0
+compress/mode=2
 compress/high_quality=false
 compress/lossy_quality=0.7
 compress/uastc_level=0

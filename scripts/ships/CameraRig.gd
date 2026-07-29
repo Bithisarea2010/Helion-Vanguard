@@ -39,39 +39,27 @@ func setup(s: PlayerShip) -> void:
 		cam.add_child(cockpit_model)
 		cockpit_model.position = Vector3(0, -0.03, 0.08)
 		cockpit_model.visible = false
-		var cl := OmniLight3D.new()
-		cl.light_energy = 0.22
-		cl.omni_range = 2.5
-		cl.light_color = Color(0.7, 0.85, 1.0)
-		cl.shadow_enabled = false
-		cockpit_model.add_child(cl)
-		cl.position = Vector3(0, 0.3, 0.2)
-		# interiors read too bright under space ambient — darken non-emissive mats
-		for mi in cockpit_model.find_children("*", "MeshInstance3D", true):
-			var m3 := mi as MeshInstance3D
-			for si in m3.mesh.get_surface_count():
-				var mat := m3.mesh.surface_get_material(si)
-				if mat is StandardMaterial3D:
-					var sm := mat as StandardMaterial3D
-					# windshield glass: keep truly transparent, kill mirror specular
-					if sm.transparency != BaseMaterial3D.TRANSPARENCY_DISABLED or sm.albedo_color.a < 0.99:
-						var g: StandardMaterial3D = sm.duplicate()
-						g.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
-						g.albedo_color = Color(0.55, 0.7, 0.85, 0.045)
-						g.metallic = 0.0
-						g.roughness = 0.35
-						g.metallic_specular = 0.04
-						g.cull_mode = BaseMaterial3D.CULL_DISABLED
-						m3.set_surface_override_material(si, g)
-						continue
-					if sm.emission_enabled and sm.emission_energy_multiplier > 0.5:
-						continue
-					var dup: StandardMaterial3D = sm.duplicate()
-					dup.albedo_color = Color(dup.albedo_color.r * 0.32,
-						dup.albedo_color.g * 0.32, dup.albedo_color.b * 0.35, 1.0)
-					dup.metallic = 0.2
-					dup.roughness = 0.75
-					m3.set_surface_override_material(si, dup)
+		# Practical lighting. The interior sits in the ship's own shadow with
+		# almost no ambient, so without local lights every surface crushed to
+		# black and the cockpit read as a flat slab regardless of its geometry.
+		_add_practical(Vector3(0.0, 0.42, 0.35), Color(0.72, 0.85, 1.0), 1.9, 3.2)
+		_add_practical(Vector3(0.0, -0.10, -0.55), Color(0.45, 0.80, 1.0), 1.1, 1.8)
+		_add_practical(Vector3(0.0, 0.10, 0.95), Color(1.0, 0.72, 0.42), 0.8, 2.2)
+		# same procedural hull treatment as the exterior, tuned for an interior:
+		# fine plating, heavy wear at the touch points, warm instrument bounce
+		HullMaterial.apply(cockpit_model, {
+			"paint": Color(0.17, 0.18, 0.21),
+			"plate_scale": 14.0,
+			"wear": 0.55,
+			"grime": 0.45,
+			"bolts": 0.9,
+			"stripe_amount": 0.0,
+			"rim": Color(0.35, 0.55, 0.85),
+			"rim_strength": 0.25,
+			"glass_tint": Color(0.03, 0.05, 0.07),
+			"detail_fade_start": 6.0,
+			"detail_fade_end": 24.0,
+		})
 		# flight-sim controls: yoke, throttle and gauge needles animate live
 		_yoke = cockpit_model.find_child("Yoke*", true, false)
 		if _yoke:
@@ -84,6 +72,16 @@ func setup(s: PlayerShip) -> void:
 			cockpit_model.find_child("Needle_pwr*", true, false),
 			cockpit_model.find_child("Needle_heat*", true, false)]
 	top_level = true
+
+func _add_practical(pos: Vector3, col: Color, energy: float, range_m: float) -> void:
+	var l := OmniLight3D.new()
+	l.light_energy = energy
+	l.omni_range = range_m
+	l.light_color = col
+	l.shadow_enabled = false
+	l.light_specular = 0.6
+	cockpit_model.add_child(l)
+	l.position = pos
 
 func cycle() -> void:
 	if mode == Mode.PHOTO:

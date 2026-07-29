@@ -110,7 +110,14 @@ func _ready() -> void:
 	apply_preset()
 	# automated testing hook:  godot -- --mission=instant_action
 	for arg in OS.get_cmdline_user_args():
-		if arg.begins_with("--mission="):
+		if arg == "--uncapped":
+			# profiling: remove the vsync ceiling so [BENCH] shows real headroom
+			DisplayServer.window_set_vsync_mode(DisplayServer.VSYNC_DISABLED)
+			Engine.max_fps = 0
+		elif arg.begins_with("--preset="):
+			settings.preset = clampi(int(arg.get_slice("=", 1)), 0, 3)
+			apply_preset()
+		elif arg.begins_with("--mission="):
 			var mid := arg.get_slice("=", 1)
 			if MissionDefs.MISSIONS.has(mid):
 				start_mission.call_deferred(mid)
@@ -120,6 +127,10 @@ func _notification(what: int) -> void:
 		save_settings()
 		save_game()
 	if what == NOTIFICATION_APPLICATION_FOCUS_OUT:
+		# during shutdown the autoload is already detached; get_tree() would
+		# assert ("Parameter data.tree is null") on every quit
+		if not is_inside_tree():
+			return
 		var tree := get_tree()
 		if tree and not tree.paused and is_instance_valid(tree.current_scene) \
 				and tree.current_scene.has_method("open_pause_menu"):

@@ -43,6 +43,18 @@ var _autotest := false
 var _at_msl_t := 0.0
 var _at_cam_t := 14.0
 
+# ------------------------------------------------------------- capture harness
+# `-- --autotest --shotdir=<abs> --quitafter=<s> [--nocamcycle]`
+var _shot_dir := ""
+var _quit_after := 0.0
+var _cam_cycle := true
+var _shot_idx := 0
+var _shot_t := 3.0
+var _bench_t := 0.0
+var _bench_frames := 0
+var _bench_worst := 0.0
+var _bench_samples: Array[float] = []
+
 func _ready() -> void:
 	mission_id = Game.current_mission
 	mdef = MissionDefs.get_mission(mission_id)
@@ -67,15 +79,19 @@ func _ready() -> void:
 	cam_rig = CameraRig.new()
 	add_child(cam_rig)
 	cam_rig.setup(player)
-	var dust := SpaceDust.new()
-	add_child(dust)
-	dust.player = player
+	if not "--nodust" in OS.get_cmdline_user_args():
+		var dust := SpaceDust.new()
+		add_child(dust)
+		dust.player = player
 	# UI
 	hud_layer = CanvasLayer.new()
 	add_child(hud_layer)
 	hud = HUD.new()
 	hud_layer.add_child(hud)
 	hud.setup(player, self)
+	if "--nohud" in OS.get_cmdline_user_args():
+		hud.visible = false
+		hud.process_mode = Node.PROCESS_MODE_DISABLED
 	overlay_layer = CanvasLayer.new()
 	overlay_layer.layer = 10
 	add_child(overlay_layer)
@@ -85,7 +101,7 @@ func _ready() -> void:
 	AudioMgr.play_music("combat")
 	capture_mouse()
 	Game.settings_changed.connect(_on_settings_changed)
-	_autotest = "--autotest" in OS.get_cmdline_user_args()
+	_parse_harness_args()
 
 func _on_settings_changed() -> void:
 	if env:
@@ -105,6 +121,8 @@ func _build_field() -> void:
 		_:
 			field.populate_belt(Vector3(0, 0, -1500), 2600.0, 650.0, 1400, 7)
 			field.populate_cluster(Vector3(1800, 300, -3400), 1200.0, 300, 8)
+	if "--noast" in OS.get_cmdline_user_args():
+		return
 	field.commit()
 
 # =================================================================== MOUSE CAPTURE
@@ -163,6 +181,62 @@ func _process(delta: float) -> void:
 	hud.score = score
 	if _autotest:
 		_autotest_tick(delta)
+	if _shot_dir != "" or _quit_after > 0.0:
+		_harness_tick(delta)
+
+# =================================================================== HARNESS
+func _parse_harness_args() -> void:
+	for arg in OS.get_cmdline_user_args():
+		if arg == "--autotest":
+			_autotest = true
+		elif arg == "--nocamcycle":
+			_cam_cycle = false
+		elif arg.begins_with("--shotdir="):
+			_shot_dir = arg.get_slice("=", 1)
+			DirAccess.make_dir_recursive_absolute(_shot_dir)
+		elif arg.begins_with("--quitafter="):
+			_quit_after = float(arg.get_slice("=", 1))
+
+## Screenshots on a fixed cadence + frame-time telemetry printed once a second.
+func _harness_tick(delta: float) -> void:
+	_bench_frames += 1
+	_bench_t += delta
+	_bench_samples.append(delta)
+	_bench_worst = maxf(_bench_worst, delta)
+	if _bench_t >= 1.0:
+		_bench_samples.sort()
+		var p95: float = _bench_samples[mini(int(_bench_samples.size() * 0.95), _bench_samples.size() - 1)]
+		print("[BENCH] t=%.1f fps=%.1f p95=%.2fms worst=%.2fms cpu=%.2fms phys=%.2fms objects=%d prims=%d drawcalls=%d vram=%.1fMB nodes=%d" % [
+			mission_time, float(_bench_frames) / _bench_t, p95 * 1000.0, _bench_worst * 1000.0,
+			Performance.get_monitor(Performance.TIME_PROCESS) * 1000.0,
+			Performance.get_monitor(Performance.TIME_PHYSICS_PROCESS) * 1000.0,
+			RenderingServer.get_rendering_info(RenderingServer.RENDERING_INFO_TOTAL_OBJECTS_IN_FRAME),
+			RenderingServer.get_rendering_info(RenderingServer.RENDERING_INFO_TOTAL_PRIMITIVES_IN_FRAME),
+			RenderingServer.get_rendering_info(RenderingServer.RENDERING_INFO_TOTAL_DRAW_CALLS_IN_FRAME),
+			float(RenderingServer.get_rendering_info(RenderingServer.RENDERING_INFO_VIDEO_MEM_USED)) / 1048576.0,
+			int(Performance.get_monitor(Performance.OBJECT_NODE_COUNT))])
+		_bench_t = 0.0
+		_bench_frames = 0
+		_bench_worst = 0.0
+		_bench_samples.clear()
+	if _shot_dir != "":
+		_shot_t -= delta
+		if _shot_t <= 0.0:
+			_shot_t = 4.0
+			_grab_shot()
+	if _quit_after > 0.0 and mission_time >= _quit_after:
+		_quit_after = 0.0
+		if _shot_dir != "":
+			_grab_shot()
+		print("[BENCH] harness complete, shots=%d" % _shot_idx)
+		get_tree().create_timer(0.4).timeout.connect(func(): get_tree().quit())
+
+func _grab_shot() -> void:
+	var img := get_viewport().get_texture().get_image()
+	if img == null:
+		return
+	_shot_idx += 1
+	img.save_png("%s/%s_%02d.png" % [_shot_dir, mission_id, _shot_idx])
 
 ## Demo/testing bot: chases the nearest hostile and fires. `-- --autotest`
 func _autotest_tick(delta: float) -> void:
@@ -171,9 +245,10 @@ func _autotest_tick(delta: float) -> void:
 	_at_cam_t -= delta
 	if _at_cam_t <= 0.0:
 		_at_cam_t = 14.0
-		cam_rig.cycle()
+		if _cam_cycle:
+			cam_rig.cycle()
 	# scripted photo-mode enter/exit self-test at ~26 s (real input events)
-	if mission_time > 26.0 and not has_meta("at_photo_done"):
+	if mission_time > 26.0 and _shot_dir == "" and not has_meta("at_photo_done"):
 		set_meta("at_photo_done", true)
 		var ev := InputEventAction.new()
 		ev.action = "photo_mode"

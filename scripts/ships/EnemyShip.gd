@@ -74,12 +74,19 @@ func _load_model() -> void:
 		var inst: Node3D = (load(edef.model) as PackedScene).instantiate()
 		_model_root.add_child(inst)
 		inst.scale = Vector3.ONE * edef.scale
-		var first := true
-		for mi in inst.find_children("*", "MeshInstance3D", true):
-			var ab: AABB = (mi as MeshInstance3D).get_aabb()
-			ab = (mi as MeshInstance3D).transform * ab
-			aabb = ab if first else aabb.merge(ab)
-			first = false
+		var hostile := team == TEAM_HOSTILE
+		aabb = HullMaterial.apply(inst, {
+			"glow": Color(1.0, 0.30, 0.14) if hostile else Color(0.35, 0.72, 1.0),
+			"plate_scale": 0.85,
+			"wear": 0.55,          # raider fleet: scruffier than the player's ship
+			"grime": 0.55,
+			"bolts": 0.55,
+			"stripe": Color(0.85, 0.10, 0.06) if hostile else Color(0.25, 0.6, 1.0),
+			"stripe_amount": 0.45,
+			"rim": Color(0.55, 0.25, 0.28) if hostile else Color(0.28, 0.45, 0.85),
+			"rim_strength": 0.9,
+			"glass_tint": Color(0.14, 0.05, 0.05) if hostile else Color(0.08, 0.14, 0.20),
+		})
 	var cs := CollisionShape3D.new()
 	var box := BoxShape3D.new()
 	box.size = aabb.size * edef.scale * 0.6
@@ -212,6 +219,10 @@ func take_hit(dmg: float, pos: Vector3, dir: Vector3, pen := 0.2,
 		_state_t = randf_range(0.8, 1.6)
 	if alive and attacker and attacker is Node3D and target == null:
 		target = attacker
+	# scorch the hull and open glowing heat cracks as integrity falls
+	var dmg_f := clampf(1.0 - hull_frac(), 0.0, 1.0)
+	if dmg_f > 0.25 and _model_root:
+		HullMaterial.set_damage(_model_root, (dmg_f - 0.25) / 0.75)
 
 # ================================================================ STEER + FIRE
 func _steer_and_fire(delta: float) -> void:

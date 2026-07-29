@@ -1,15 +1,24 @@
 class_name AsteroidField
 extends Node3D
 ## Thousands of instanced asteroids + a pool of physics colliders near the player.
+##
+## Rocks live in a flat array plus a uniform spatial hash. The collider pool only
+## ever scans the 27 hash cells around the player, so field size no longer drives
+## per-tick cost (the old full-array scan + sort of ~1700 rocks was the source of
+## the periodic 13 ms physics spikes).
 
 const PHYS_POOL := 26
 const PHYS_RANGE := 700.0
+const HASH_CELL := 700.0             # == PHYS_RANGE, so 3x3x3 cells always cover it
+const CHUNK_CELL := 2400.0           # MultiMesh chunk size; bigger = fewer draw calls
 
 var _meshes: Array[Mesh] = []
 var _mm_nodes: Array[MultiMeshInstance3D] = []
-var _rocks: Array = []              # per rock: {pos, scale, variant}
+var _rocks: Array = []               # per rock: {pos, scale, variant, rot}
+var _grid := {}                      # Vector3i cell -> PackedInt32Array of rock indices
 var _phys: Array[StaticBody3D] = []
 var _phys_timer := 0.0
+var _shader_mat: ShaderMaterial = null
 var player: Node3D = null
 
 func _ready() -> void:
@@ -17,9 +26,12 @@ func _ready() -> void:
 		var path := "res://assets/models/asteroid_%d.glb" % i
 		if ResourceLoader.exists(path):
 			var inst: Node3D = (load(path) as PackedScene).instantiate()
-			var mi: MeshInstance3D = inst.find_children("*", "MeshInstance3D", true)[0] if not inst.find_children("*", "MeshInstance3D", true).is_empty() else null
-			if mi:
+			var found := inst.find_children("*", "MeshInstance3D", true)
+			if not found.is_empty():
+				var mi := found[0] as MeshInstance3D
 				_meshes.append(mi.mesh)
+				if _shader_mat == null:
+					_shader_mat = _build_rock_material(mi.mesh)
 			inst.queue_free()
 	if _meshes.is_empty():
 		var fallback := SphereMesh.new()
@@ -37,6 +49,19 @@ func _ready() -> void:
 		sb.add_to_group("asteroid")
 		_phys.append(sb)
 
+## One ShaderMaterial shared by every rock variant: the four source GLBs embed
+## byte-identical texture sets, so binding one material for all of them removes
+## three redundant copies from VRAM and lets the chunks batch.
+func _build_rock_material(src_mesh: Mesh) -> ShaderMaterial:
+	var sm := ShaderMaterial.new()
+	sm.shader = load("res://shaders/asteroid.gdshader")
+	var base := src_mesh.surface_get_material(0)
+	if base is BaseMaterial3D:
+		var bm := base as BaseMaterial3D
+		if bm.albedo_texture:
+			sm.set_shader_parameter("albedo_tex", bm.albedo_texture)
+	return sm
+
 ## Belt: a thick ring of rocks around center in the XZ plane.
 func populate_belt(center: Vector3, radius: float, tube: float, count: int, seed_v := 1) -> void:
 	var rng := RandomNumberGenerator.new()
@@ -46,9 +71,7 @@ func populate_belt(center: Vector3, radius: float, tube: float, count: int, seed
 		var a := rng.randf() * TAU
 		var r := radius + rng.randfn(0.0, tube * 0.45)
 		var y := rng.randfn(0.0, tube * 0.35)
-		var pos := center + Vector3(cos(a) * r, y, sin(a) * r)
-		_rocks.append({"pos": pos, "scale": _rand_scale(rng), "variant": rng.randi() % _meshes.size(),
-			"rot": Basis(Vector3(rng.randf_range(-1, 1), rng.randf_range(-1, 1), rng.randf_range(-1, 1)).normalized(), rng.randf() * TAU)})
+		_push_rock(center + Vector3(cos(a) * r, y, sin(a) * r), rng)
 
 ## Cluster: gaussian blob of rocks.
 func populate_cluster(center: Vector3, radius: float, count: int, seed_v := 2) -> void:
@@ -56,9 +79,14 @@ func populate_cluster(center: Vector3, radius: float, count: int, seed_v := 2) -
 	rng.seed = seed_v
 	count = int(count * Game.preset().ast_density)
 	for i in count:
-		var pos := center + Vector3(rng.randfn(0, radius * 0.4), rng.randfn(0, radius * 0.3), rng.randfn(0, radius * 0.4))
-		_rocks.append({"pos": pos, "scale": _rand_scale(rng), "variant": rng.randi() % _meshes.size(),
-			"rot": Basis(Vector3(rng.randf_range(-1, 1), rng.randf_range(-1, 1), rng.randf_range(-1, 1)).normalized(), rng.randf() * TAU)})
+		_push_rock(center + Vector3(rng.randfn(0, radius * 0.4), rng.randfn(0, radius * 0.3),
+			rng.randfn(0, radius * 0.4)), rng)
+
+func _push_rock(pos: Vector3, rng: RandomNumberGenerator) -> void:
+	_rocks.append({
+		"pos": pos, "scale": _rand_scale(rng), "variant": rng.randi() % _meshes.size(),
+		"rot": Basis(Vector3(rng.randf_range(-1, 1), rng.randf_range(-1, 1),
+			rng.randf_range(-1, 1)).normalized(), rng.randf() * TAU)})
 
 func _rand_scale(rng: RandomNumberGenerator) -> float:
 	# mostly small rocks, a few giants
@@ -74,12 +102,19 @@ func commit() -> void:
 	for n in _mm_nodes:
 		n.queue_free()
 	_mm_nodes.clear()
+	_grid.clear()
 	if _rocks.is_empty():
 		return
-	# bucket rocks by variant and spatial chunk (1.6 km cells)
+	# spatial hash for the collider pool
+	for i in _rocks.size():
+		var c := _hash_cell(_rocks[i].pos)
+		if not _grid.has(c):
+			_grid[c] = PackedInt32Array()
+		_grid[c].append(i)
+	# bucket rocks by variant and spatial chunk for rendering
 	var buckets := {}
 	for rk in _rocks:
-		var cell := Vector3i((rk.pos / 1600.0).floor())
+		var cell := Vector3i((rk.pos / CHUNK_CELL).floor())
 		var key := "%d_%d_%d_%d" % [rk.variant, cell.x, cell.y, cell.z]
 		if not buckets.has(key):
 			buckets[key] = []
@@ -95,32 +130,52 @@ func commit() -> void:
 		for rk in list:
 			mid += rk.pos
 		mid /= list.size()
+		# exact chunk bounds beat the old fixed +/-900 m box: tighter culling and
+		# no popping when a 60 m giant sits on a chunk edge
+		var lo := Vector3.INF
+		var hi := -Vector3.INF
 		for i in list.size():
 			var rk: Dictionary = list[i]
-			var xf := Transform3D(rk.rot.scaled(Vector3.ONE * rk.scale), rk.pos - mid)
+			var local: Vector3 = rk.pos - mid
+			var xf := Transform3D(rk.rot.scaled(Vector3.ONE * rk.scale), local)
 			mm.set_instance_transform(i, xf)
+			var rad: float = rk.scale * 1.05
+			lo = lo.min(local - Vector3.ONE * rad)
+			hi = hi.max(local + Vector3.ONE * rad)
+		mm.custom_aabb = AABB(lo, hi - lo)
 		var mmi := MultiMeshInstance3D.new()
 		mmi.multimesh = mm
 		mmi.visibility_range_end = 9000.0
 		mmi.visibility_range_end_margin = 500.0
+		mmi.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+		if _shader_mat:
+			mmi.material_override = _shader_mat
 		add_child(mmi)
 		mmi.position = mid
-		var aabb := AABB(Vector3(-900, -900, -900), Vector3(1800, 1800, 1800))
-		mm.custom_aabb = aabb
 		_mm_nodes.append(mmi)
+
+func _hash_cell(p: Vector3) -> Vector3i:
+	return Vector3i((p / HASH_CELL).floor())
 
 func _physics_process(delta: float) -> void:
 	_phys_timer -= delta
 	if _phys_timer > 0.0 or player == null or not is_instance_valid(player):
 		return
 	_phys_timer = 0.5
-	# nearest rocks get physics colliders
+	# only the 27 hash cells around the player can hold a rock within PHYS_RANGE
 	var ppos: Vector3 = player.global_position
+	var base := _hash_cell(ppos)
 	var near: Array = []
-	for rk in _rocks:
-		var d: float = rk.pos.distance_squared_to(ppos)
-		if d < PHYS_RANGE * PHYS_RANGE:
-			near.append([d, rk])
+	var r2 := PHYS_RANGE * PHYS_RANGE
+	for dx in [-1, 0, 1]:
+		for dy in [-1, 0, 1]:
+			for dz in [-1, 0, 1]:
+				var ids: PackedInt32Array = _grid.get(base + Vector3i(dx, dy, dz), PackedInt32Array())
+				for idx in ids:
+					var rk: Dictionary = _rocks[idx]
+					var d: float = (rk.pos as Vector3).distance_squared_to(ppos)
+					if d < r2:
+						near.append([d, rk])
 	near.sort_custom(func(a, b): return a[0] < b[0])
 	var n := mini(near.size(), _phys.size())
 	for i in _phys.size():
@@ -132,15 +187,3 @@ func _physics_process(delta: float) -> void:
 			(cs.shape as SphereShape3D).radius = rk.scale * 0.92
 		else:
 			sb.position = Vector3(0, -100000 - i * 200, 0)
-
-func nearest_rock_distance(pos: Vector3) -> float:
-	var best := INF
-	for rk in _rocks:
-		best = minf(best, rk.pos.distance_to(pos) - rk.scale)
-	return best
-
-func is_clear(pos: Vector3, clearance: float) -> bool:
-	for rk in _rocks:
-		if rk.pos.distance_to(pos) < rk.scale + clearance:
-			return false
-	return true

@@ -44,7 +44,7 @@ var locked := false
 var incoming: Array = []
 
 # fx
-var _thrusters: Array[GPUParticles3D] = []
+var _plumes: Array[ExhaustPlume] = []
 var _trails: Array[EngineTrail] = []
 var _smoke: GPUParticles3D = null
 var model_root: Node3D
@@ -115,63 +115,30 @@ func _load_model() -> void:
 	_add_thrusters(aabb)
 
 func _tint_and_measure(inst: Node) -> AABB:
-	var aabb := AABB()
-	var first := true
-	var paint: Color = loadout.paint
-	var glow: Color = loadout.glow
-	for mi in inst.find_children("*", "MeshInstance3D", true):
-		var m3 := mi as MeshInstance3D
-		var ab: AABB = m3.get_aabb()
-		ab = m3.transform * ab
-		aabb = ab if first else aabb.merge(ab)
-		first = false
-		for s in m3.mesh.get_surface_count():
-			var mat := m3.mesh.surface_get_material(s)
-			if mat is BaseMaterial3D:
-				var bm := mat as BaseMaterial3D
-				var nm := mat.resource_name.to_lower()
-				if nm.ends_with("_hull") and not nm.ends_with("2_hull"):
-					var dup := bm.duplicate()
-					dup.albedo_color = paint
-					m3.set_surface_override_material(s, dup)
-				elif nm.find("_engine") != -1:
-					var dup2: StandardMaterial3D = bm.duplicate()
-					dup2.emission = glow
-					m3.set_surface_override_material(s, dup2)
-	return aabb
+	# hero ship: strongest procedural detail budget in the game
+	return HullMaterial.apply(inst, {
+		"paint": loadout.paint,
+		"glow": loadout.glow,
+		"plate_scale": 0.78,
+		"wear": 0.42,
+		"grime": 0.34,
+		"bolts": 0.7,
+		"stripe": loadout.glow,
+		"stripe_amount": 0.55,
+		"rim": Color(0.34, 0.48, 0.85),
+		"rim_strength": 1.0,
+	})
 
 func _add_thrusters(aabb: AABB) -> void:
 	var rear_z := aabb.position.z + aabb.size.z - 0.4
 	var offs: Array = sdef.get("thrusters", [Vector3(0.8, 0, 0), Vector3(-0.8, 0, 0)])
+	var glow: Color = loadout.glow
+	var rad: float = clampf(aabb.size.x * 0.09, 0.28, 0.75)
 	for o in offs:
-		var p := GPUParticles3D.new()
-		p.amount = 40
-		p.lifetime = 0.35
-		p.local_coords = false
-		var pm := ParticleProcessMaterial.new()
-		pm.direction = Vector3(0, 0, 1)
-		pm.spread = 3.0
-		pm.initial_velocity_min = 22.0
-		pm.initial_velocity_max = 30.0
-		pm.gravity = Vector3.ZERO
-		pm.scale_min = 0.35; pm.scale_max = 0.7
-		var grad := Gradient.new()
-		var g: Color = loadout.glow
-		grad.set_color(0, Color(g.r, g.g, g.b, 0.9))
-		grad.set_color(1, Color(g.r * 0.4, g.g * 0.5, g.b, 0.0))
-		var gt := GradientTexture1D.new(); gt.gradient = grad
-		pm.color_ramp = gt
-		p.process_material = pm
-		var quad := QuadMesh.new(); quad.size = Vector2(0.6, 0.6)
-		p.draw_pass_1 = quad
-		p.material_override = FX._add_mat(Color(1, 1, 1))
-		p.emitting = false
-		add_child(p)
-		p.position = Vector3(o.x, o.y, rear_z)
-		_thrusters.append(p)
+		var plume := ExhaustPlume.create(self, Vector3(o.x, o.y, rear_z), glow, rad, 5.2)
+		_plumes.append(plume)
 		# sleek ribbon "jet stripe" behind each engine
-		var g2: Color = loadout.glow
-		_trails.append(EngineTrail.attach(battle, p, g2, 0.5, self))
+		_trails.append(EngineTrail.attach(battle, plume, glow, 0.42, self))
 
 func _setup_weapons() -> void:
 	weapons = WeaponSystem.new()
@@ -256,11 +223,14 @@ func _flight(delta: float) -> void:
 	else:
 		if linear_velocity.length() > sdef.speed * sdef.boost_mult * 1.3:
 			linear_velocity = linear_velocity.normalized() * sdef.speed * sdef.boost_mult * 1.3
-	# thruster fx intensity
-	for t in _thrusters:
-		t.emitting = thrust > 0.05 or boost_on
+	# thruster fx intensity: idle glow at zero throttle, full cone under power
+	var plume_power := clampf(0.18 + absf(thrust) * 0.82, 0.0, 1.0)
+	for pl in _plumes:
+		if is_instance_valid(pl):
+			pl.set_power(plume_power, boost_on)
 	for etr in _trails:
-		etr.boost_gain = lerpf(etr.boost_gain, 1.8 if boost_on else 1.0, 1.0 - exp(-6.0 * delta))
+		if is_instance_valid(etr):
+			etr.boost_gain = lerpf(etr.boost_gain, 1.8 if boost_on else 1.0, 1.0 - exp(-6.0 * delta))
 	# engine audio follows throttle; boost whoosh on rising edge
 	if _engine_snd and _engine_snd.stream:
 		var spd_f := clampf(linear_velocity.length() / maxf(sdef.speed, 1.0), 0.0, 1.6)
@@ -441,6 +411,10 @@ func take_hit(dmg: float, pos: Vector3, dir: Vector3, pen := 0.2,
 		cam_rig.add_shake(clampf(dmg * 0.02, 0.05, 0.6))
 	if hull_frac() < 0.35 and _smoke == null:
 		_smoke = FX.damage_smoke(self, Vector3(0, 0.3, 1.5))
+	# scorch the hull and open glowing heat cracks as integrity falls
+	var dmg_f := clampf(1.0 - hull_frac(), 0.0, 1.0)
+	if dmg_f > 0.15 and model_root:
+		HullMaterial.set_damage(model_root, (dmg_f - 0.15) / 0.85)
 
 func die(killer: Node = null) -> void:
 	if not alive:
@@ -448,8 +422,9 @@ func die(killer: Node = null) -> void:
 	super.die(killer)
 	FX.explosion(battle, global_position, 2)
 	model_root.visible = false
-	for t in _thrusters:
-		t.emitting = false
+	for pl in _plumes:
+		if is_instance_valid(pl):
+			pl.visible = false
 	for etr in _trails:
 		if is_instance_valid(etr):
 			etr.queue_free()   # otherwise a frozen glow blob hangs at the death spot

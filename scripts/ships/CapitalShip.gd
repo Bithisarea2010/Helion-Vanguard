@@ -64,6 +64,21 @@ func _load_model() -> void:
 		return
 	var inst: Node3D = (load(cdef.model) as PackedScene).instantiate()
 	_model.add_child(inst)
+	# capitals are hundreds of metres long, so plating runs at a much coarser
+	# object-space frequency than a fighter's or the panels turn into moire
+	var hostile := team == TEAM_HOSTILE
+	HullMaterial.apply(inst, {
+		"glow": Color(1.0, 0.35, 0.16) if hostile else Color(0.4, 0.75, 1.0),
+		"plate_scale": 0.30,
+		"wear": 0.6,
+		"grime": 0.65,
+		"bolts": 0.5,
+		"stripe": Color(0.75, 0.12, 0.08) if hostile else Color(0.25, 0.6, 1.0),
+		"stripe_amount": 0.35,
+		"rim": Color(0.45, 0.28, 0.32) if hostile else Color(0.28, 0.45, 0.85),
+		"rim_strength": 0.8,
+		"detail_fade_end": 1400.0,
+	})
 	# main hull collision from big meshes; subsystems + mounts wired by name
 	for child in inst.get_children():
 		var nm: String = child.name

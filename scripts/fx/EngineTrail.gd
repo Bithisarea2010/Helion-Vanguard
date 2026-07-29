@@ -1,12 +1,19 @@
 class_name EngineTrail
 extends MeshInstance3D
-## Sleek additive ribbon trail behind an engine socket ("jet stripes").
+## Additive exhaust ribbon behind an engine socket.
 ## Camera-facing strip rebuilt each frame from a position history.
+##
+## The ribbon is built with a THREE-vertex profile (edge / hot core / edge) so it
+## has a soft falloff across its width. The previous two-vertex strip painted one
+## flat colour edge to edge, and because the material is additive the overlapping
+## segments saturated into the solid white slabs that hung behind every ship.
+
+const MAX_PTS := 40
 
 var socket: Node3D = null            # world-space emitter to follow
 var color := Color(0.3, 0.7, 1.0)
 var width := 0.55
-var life := 0.55                     # seconds a point survives
+var life := 0.5                      # seconds a point survives
 var boost_gain := 1.0                # external intensity multiplier (boost)
 var min_speed := 6.0                 # below this the ribbon fades out
 
@@ -25,10 +32,14 @@ func _init() -> void:
 	m.vertex_color_use_as_albedo = true
 	m.cull_mode = BaseMaterial3D.CULL_DISABLED
 	m.disable_receive_shadows = true
+	m.no_depth_test = false
+	m.depth_draw_mode = BaseMaterial3D.DEPTH_DRAW_DISABLED
 	material_override = m
 
 static func attach(parent_world: Node, emitter: Node3D, col: Color, w := 0.55,
 		vel_ref: Node3D = null) -> EngineTrail:
+	if "--notrails" in OS.get_cmdline_user_args():
+		return null
 	var t := EngineTrail.new()
 	t.socket = emitter
 	t.color = col
@@ -54,36 +65,37 @@ func _process(delta: float) -> void:
 	var speed := 999.0
 	if _vel_ref and is_instance_valid(_vel_ref) and _vel_ref is RigidBody3D:
 		speed = (_vel_ref as RigidBody3D).linear_velocity.length()
-	var emitting := speed > min_speed
-	if emitting:
+	if speed > min_speed:
 		var p: Vector3 = socket.global_position
-		if _pts.is_empty() or _pts[0].p.distance_squared_to(p) > 0.04:
+		if _pts.is_empty() or _pts[0].p.distance_squared_to(p) > 0.09:
 			_pts.push_front({"p": p, "t": 0.0})
-			if _pts.size() > 60:
+			if _pts.size() > MAX_PTS:
 				_pts.pop_back()
 	_rebuild()
 
 func _rebuild() -> void:
 	_im.clear_surfaces()
-	if _pts.size() < 2:
+	if _pts.size() < 3:
 		return
 	var cam := get_viewport().get_camera_3d()
 	if cam == null:
 		return
 	var cam_pos := cam.global_position
-	_im.surface_begin(Mesh.PRIMITIVE_TRIANGLE_STRIP)
-	for idx in _pts.size():
+	var n := _pts.size()
+	# precompute the ribbon spine so the triangle pass stays a flat loop
+	var core: PackedVector3Array = PackedVector3Array()
+	var side: PackedVector3Array = PackedVector3Array()
+	var alpha: PackedFloat32Array = PackedFloat32Array()
+	core.resize(n); side.resize(n); alpha.resize(n)
+	for idx in n:
 		var pt: Dictionary = _pts[idx]
 		var pp: Vector3 = pt.p
-		var frac := 1.0 - float(idx) / float(_pts.size())
+		var head_t := float(idx) / float(n - 1)
 		var age_f: float = 1.0 - float(pt.t) / life
-		var fade: float = age_f * frac
-		# profile: narrow at the nozzle, swell over the first third, taper to the tail
-		var head_t := float(idx) / maxf(float(_pts.size() - 1), 1.0)
-		var swell := lerpf(0.30, 1.0, clampf(head_t * 3.2, 0.0, 1.0))
-		fade *= lerpf(0.45, 1.0, clampf(head_t * 4.0, 0.0, 1.0))
+		# narrow at the nozzle, swell over the first third, taper to the tail
+		var swell := lerpf(0.35, 1.0, clampf(head_t * 3.0, 0.0, 1.0)) * (1.0 - head_t * 0.55)
 		var dirv: Vector3
-		if idx < _pts.size() - 1:
+		if idx < n - 1:
 			dirv = (_pts[idx + 1].p as Vector3) - pp
 		else:
 			dirv = pp - (_pts[idx - 1].p as Vector3)
@@ -92,16 +104,48 @@ func _rebuild() -> void:
 		dirv = dirv.normalized()
 		var cam_d := (cam_pos - pp).length()
 		var to_cam: Vector3 = (cam_pos - pp) / maxf(cam_d, 0.001)
-		var side := dirv.cross(to_cam)
-		if side.length_squared() < 0.0001:
-			side = Vector3.UP
-		side = side.normalized() * width * boost_gain * swell * (0.25 + 0.75 * age_f)
-		# fade out when the ribbon sweeps close to the camera (prevents the
-		# fullscreen wedge when the chase cam sits inside a turning trail)
-		var near_fade := clampf((cam_d - 2.5) / 7.0, 0.0, 1.0)
-		var c := Color(color.r * 1.35, color.g * 1.35, color.b * 1.35, fade * 0.7 * near_fade)
-		_im.surface_set_color(c)
-		_im.surface_add_vertex(pp - side)
-		_im.surface_set_color(c)
-		_im.surface_add_vertex(pp + side)
+		var s := dirv.cross(to_cam)
+		if s.length_squared() < 0.0001:
+			s = Vector3.UP
+		core[idx] = pp
+		side[idx] = s.normalized() * width * boost_gain * swell
+		# The chase camera looks straight down its own ship's trail. Seen end-on
+		# a ribbon has no real width, but the billboarded strip keeps its full
+		# width and every segment stacks additively into a solid white column.
+		# Fading by view alignment is both the fix and the physically honest
+		# behaviour for a flat ribbon.
+		var align := absf(dirv.dot(to_cam))
+		var align_fade := 1.0 - align * align * align
+		# Fade out when the ribbon sweeps close to the camera. The chase cam sits
+		# ~10 m behind the engines and looks straight down the ribbon, so without
+		# a generous near fade the additive segments stack end-on into a solid
+		# white slab across the lower half of the screen.
+		var near_fade := clampf((cam_d - 4.0) / 16.0, 0.0, 1.0)
+		alpha[idx] = age_f * age_f * (1.0 - head_t * 0.35) * near_fade * align_fade
+
+	var edge := Color(color.r * 0.55, color.g * 0.62, color.b * 0.75)
+	var hot := Color(color.r * 0.9 + 0.35, color.g * 0.9 + 0.4, color.b * 0.9 + 0.45)
+	_im.surface_begin(Mesh.PRIMITIVE_TRIANGLES)
+	for idx in n - 1:
+		var e0 := Color(edge.r, edge.g, edge.b, alpha[idx] * 0.10)
+		var e1 := Color(edge.r, edge.g, edge.b, alpha[idx + 1] * 0.10)
+		var h0 := Color(hot.r, hot.g, hot.b, alpha[idx] * 0.26)
+		var h1 := Color(hot.r, hot.g, hot.b, alpha[idx + 1] * 0.26)
+		var l0: Vector3 = core[idx] - side[idx]
+		var r0: Vector3 = core[idx] + side[idx]
+		var l1: Vector3 = core[idx + 1] - side[idx + 1]
+		var r1: Vector3 = core[idx + 1] + side[idx + 1]
+		# left half: edge -> hot core, then right half: hot core -> edge
+		_quad(l0, e0, core[idx], h0, core[idx + 1], h1, l1, e1)
+		_quad(core[idx], h0, r0, e0, r1, e1, core[idx + 1], h1)
 	_im.surface_end()
+
+## One quad as two triangles, each corner carrying its own colour + alpha.
+func _quad(p0: Vector3, c0: Color, p1: Vector3, c1: Color,
+		p2: Vector3, c2: Color, p3: Vector3, c3: Color) -> void:
+	_im.surface_set_color(c0); _im.surface_add_vertex(p0)
+	_im.surface_set_color(c1); _im.surface_add_vertex(p1)
+	_im.surface_set_color(c2); _im.surface_add_vertex(p2)
+	_im.surface_set_color(c0); _im.surface_add_vertex(p0)
+	_im.surface_set_color(c2); _im.surface_add_vertex(p2)
+	_im.surface_set_color(c3); _im.surface_add_vertex(p3)

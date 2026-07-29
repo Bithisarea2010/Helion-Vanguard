@@ -69,20 +69,20 @@ func _show_ship(id: String) -> void:
 	display_ship.position = Vector3(3.5, 0, 0)
 	display_ship.rotation.y = 0.6
 	var lo: Dictionary = Game.loadout_for(id)
-	for mi in inst.find_children("*", "MeshInstance3D", true):
-		var m3 := mi as MeshInstance3D
-		for s in m3.mesh.get_surface_count():
-			var mat := m3.mesh.surface_get_material(s)
-			if mat is BaseMaterial3D:
-				var nm := mat.resource_name.to_lower()
-				if nm.ends_with("_hull") and not nm.ends_with("2_hull"):
-					var dup: BaseMaterial3D = mat.duplicate()
-					dup.albedo_color = lo.paint
-					m3.set_surface_override_material(s, dup)
-				elif nm.find("_engine") != -1:
-					var dup2: StandardMaterial3D = mat.duplicate()
-					dup2.emission = lo.glow
-					m3.set_surface_override_material(s, dup2)
+	# same procedural hull treatment as in flight, so the hangar preview and the
+	# ship you actually fly are the same object
+	HullMaterial.apply(inst, {
+		"paint": lo.paint,
+		"glow": lo.glow,
+		"plate_scale": 0.78,
+		"wear": 0.30,          # showroom finish: cleaner than the combat version
+		"grime": 0.18,
+		"bolts": 0.7,
+		"stripe": lo.glow,
+		"stripe_amount": 0.55,
+		"rim": Color(0.34, 0.48, 0.85),
+		"rim_strength": 0.8,
+	})
 
 # =================================================================== UI
 func _build_ui() -> void:

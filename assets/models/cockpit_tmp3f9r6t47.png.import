@@ -3,9 +3,11 @@
 importer="texture"
 type="CompressedTexture2D"
 uid="uid://cbop1c04072qb"
-path="res://.godot/imported/cockpit_tmp3f9r6t47.png-ad1ec99aa3c27a14d9fcc2a2a57fec5f.ctex"
+path.s3tc="res://.godot/imported/cockpit_tmp3f9r6t47.png-ad1ec99aa3c27a14d9fcc2a2a57fec5f.s3tc.ctex"
+path.etc2="res://.godot/imported/cockpit_tmp3f9r6t47.png-ad1ec99aa3c27a14d9fcc2a2a57fec5f.etc2.ctex"
 metadata={
-"vram_texture": false
+"imported_formats": ["s3tc_bptc", "etc2_astc"],
+"vram_texture": true
 }
 generator_parameters={
 "md5": "63ebf2f29d70f72d9ad0ac88d3d1846d"
@@ -14,11 +16,11 @@ generator_parameters={
 [deps]
 
 source_file="res://assets/models/cockpit_tmp3f9r6t47.png"
-dest_files=["res://.godot/imported/cockpit_tmp3f9r6t47.png-ad1ec99aa3c27a14d9fcc2a2a57fec5f.ctex"]
+dest_files=["res://.godot/imported/cockpit_tmp3f9r6t47.png-ad1ec99aa3c27a14d9fcc2a2a57fec5f.s3tc.ctex", "res://.godot/imported/cockpit_tmp3f9r6t47.png-ad1ec99aa3c27a14d9fcc2a2a57fec5f.etc2.ctex"]
 
 [params]
 
-compress/mode=0
+compress/mode=2
 compress/high_quality=false
 compress/lossy_quality=0.7
 compress/uastc_level=0

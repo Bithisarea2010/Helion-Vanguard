@@ -31,6 +31,11 @@ func build(batl: Node, own_team: int, weapon := "e_turret", ship: Node3D = null)
 	if ResourceLoader.exists("res://assets/models/turret.glb"):
 		var inst: Node3D = (load("res://assets/models/turret.glb") as PackedScene).instantiate()
 		add_child(inst)
+		HullMaterial.apply(inst, {
+			"glow": Color(1.0, 0.3, 0.12) if team == Combatant.TEAM_HOSTILE else Color(0.4, 0.75, 1.0),
+			"plate_scale": 1.6, "wear": 0.6, "grime": 0.55, "bolts": 0.8,
+			"stripe_amount": 0.0, "rim_strength": 0.8,
+		})
 		mesh_node = inst
 		yoke = inst.find_child("TurretYoke*", true, false)
 		if yoke:
