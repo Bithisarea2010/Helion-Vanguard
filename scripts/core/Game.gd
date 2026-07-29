@@ -93,6 +93,7 @@ var save := {
 }
 
 var current_mission := "instant_action"
+var _hermetic := false          # --defaults: ignore and never write settings.cfg
 var battle_stats := {}
 var last_debrief := {}
 var rng := RandomNumberGenerator.new()
@@ -102,7 +103,14 @@ func _enter_tree() -> void:
 	# handling runs while the tree is paused (photo mode / pause menu traps).
 	process_mode = Node.PROCESS_MODE_ALWAYS
 	rng.randomize()
-	_load_settings()
+	# `--defaults` makes a run hermetic: start from the built-in settings and
+	# never write them back. Without it the harness is NOT reproducible —
+	# settings.cfg is saved on quit, so `--preset=0` silently leaks into every
+	# later run, and an A/B series measures whatever the previous run left
+	# behind. This invalidated a whole benchmark batch before it was noticed.
+	_hermetic = "--defaults" in OS.get_cmdline_user_args()
+	if not _hermetic:
+		_load_settings()
 	_load_save()
 	_setup_input_map()
 
@@ -116,6 +124,20 @@ func _ready() -> void:
 			# profiling: remove the vsync ceiling so [BENCH] shows real headroom
 			DisplayServer.window_set_vsync_mode(DisplayServer.VSYNC_DISABLED)
 			Engine.max_fps = 0
+		elif arg == "--windowed":
+			# Godot's own --resolution is USELESS here: apply_video_settings()
+			# runs first and forces MODE_FULLSCREEN, so every benchmark this
+			# project has ever run measured the same native 2880x1800 buffer.
+			# That is why "frame time is identical at 640x360 and 1920x1080"
+			# looked true and the game was misdiagnosed as CPU-bound.
+			settings.fullscreen = false
+			var win := get_window()
+			win.mode = Window.MODE_WINDOWED
+			win.size = Vector2i(1280, 720)
+			win.move_to_center()
+		elif arg.begins_with("--renderscale="):
+			settings.resolution_scale = clampf(float(arg.get_slice("=", 1)), 0.25, 1.0)
+			get_viewport().scaling_3d_scale = settings.resolution_scale
 		elif arg.begins_with("--preset="):
 			settings.preset = clampi(int(arg.get_slice("=", 1)), 0, 3)
 			apply_preset()
@@ -240,6 +262,8 @@ func _load_settings() -> void:
 		settings[k] = cf.get_value("settings", k, settings[k])
 
 func save_settings() -> void:
+	if _hermetic:
+		return
 	var cf := ConfigFile.new()
 	for k in settings.keys():
 		cf.set_value("settings", k, settings[k])

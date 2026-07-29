@@ -123,6 +123,25 @@ Godot --path . --resolution 1280x720 -- --mission=instant_action --autotest \
 | `--preset=0..3` | force a quality preset |
 | `--nocamcycle` | hold one camera, for comparable captures |
 | `--noast`, `--nodust`, `--notrails`, `--nohud` | subsystem isolation for profiling |
+| `--defaults` | **use for every A/B.** Ignore `settings.cfg` and never write it |
+| `--windowed` | 1280×720 window — Godot's own `--resolution` does NOT work here |
+| `--renderscale=0.25..1.0` | force the 3D render scale |
+
+Three traps this harness had, all of which produced confidently wrong numbers:
+
+1. **`--resolution` is ignored.** `Game.apply_video_settings()` forces
+   `MODE_FULLSCREEN` before the command line is parsed, so the window is always
+   native. Use `--windowed` / `--renderscale=`.
+2. **Runs were not hermetic.** Settings save on quit, so flags leak forward.
+   Always pass `--defaults` when comparing.
+3. **`--quitafter` used to hang.** `Battle` is `PROCESS_MODE_PAUSABLE`, and both
+   mission completion and the photo-mode self-test pause the tree, which stops
+   `_process` and with it the deadline check. There is now a `SceneTreeTimer`
+   watchdog that fires regardless.
+
+Also: an invalid `--mission=` id boots to the main menu and sits there forever.
+The valid ids are `training instant_action patrol convoy station_defence
+capital_strike survival arena main`.
 
 For effects specifically, use the deterministic probe instead — the battle
 harness screenshots on a fixed 4 s cadence and almost never lands on a blast:

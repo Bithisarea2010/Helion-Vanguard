@@ -160,22 +160,54 @@ Godot --path . --resolution 1280x720 -- --mission=instant_action --autotest --un
    full-screen additive overdraw from trails and particle squares. `main` runs
    28.2 and `survival` 33.1 under the same conditions.
 
-8. **The game is CPU-bound, and always has been.** Frame time is essentially
-   identical at 640×360 and 1920×1080 — the empty-scene floor is ~170 fps
-   (5.9 ms), a battle is ~60 fps (16 ms), and dropping resolution by 9× moves it
-   by less than one frame. Every remaining GPU-side idea is therefore nearly
-   free, and every CPU-side saving is worth more than it looks. Whatever occupies
-   that ~10 ms has not been isolated: disabling the HUD, dust, trails and the
-   entire asteroid field together only recovers ~2 ms. Next step is a real
-   sampling profile, not more guessing.
+8. **CORRECTED — the game is GPU-bound, not CPU-bound.** This file previously
+   claimed the opposite, on the evidence that "frame time is identical at
+   640×360 and 1920×1080". That evidence was an artefact: `apply_video_settings()`
+   forces `Window.MODE_FULLSCREEN`, and it runs *before* the command line is
+   parsed, so Godot's `--resolution` flag was silently overridden. **Every
+   resolution test this project ever ran measured the same native 2880×1800
+   buffer.** Both sides of the comparison were the same picture.
+
+   A `sample` profile settled it: **8,766 of 10,799 main-thread samples (81%)
+   sit in `-[IOSurfaceSharedEvent waitUntilSignaledValue:timeoutMS:]`** — the
+   CPU blocked waiting on the GPU. Only ~400 samples are in command encoding.
+
+   With the new `--windowed` / `--renderscale=` flags, which actually work:
+
+   | render scale (fullscreen) | fps |
+   |---|---|
+   | 0.85 (shipping, ~2448×1530) | 83.3 |
+   | 0.30 | 146.2 |
+
+   Cost breakdown, each measured alone against a same-batch baseline:
+   **glow ~40%**, MSAA 2× ~9%, the whole asteroid field ~3.5%, shadows ~3.5%.
+   Glow is by far the most expensive thing this game draws.
+
+9. **Machine state swings results by more than 2×, so only same-batch numbers
+   mean anything.** The identical build and configuration measured 83 fps and
+   165 fps in two batches an hour apart on the same Mac, purely from thermal
+   state. When cool the game becomes CPU-bound around 165 fps and GPU savings
+   stop showing; when hot it is firmly GPU-bound and they show fully. Always
+   bracket an A/B with a repeated baseline, and discard the batch if the two
+   baselines disagree.
+
+10. **The harness was not hermetic until `--defaults` was added.** Settings are
+    written to `user://settings.cfg` on quit, so `--preset=0` or `--windowed`
+    leaked into every later run and an A/B series silently measured whatever the
+    previous run left behind. One full benchmark batch was invalidated this way
+    before it was caught. Pass `--defaults` for anything you intend to compare.
 
 9. **`main` is the worst case at ~59 fps.** It builds 1,500 belt rocks plus a
    500-rock cluster and two capitals. Not investigated separately.
 
-10. **Wave spawns still hitch.** Occasional 13–19 ms physics frames line up with
-    `spawn_wave`, which instantiates `EnemyShip`, loads the GLB and walks every
-    surface through `HullMaterial`. A preloaded model + material cache warmed at
-    mission start would smooth it.
+11. **PARTLY FIXED — wave spawn hitches.** Building 3–4 fighters in one frame
+    cost a 31–39 ms spike on every wave. `Battle._prewarm_enemy_hulls()` now
+    loads each enemy GLB and warms the shared `HullMaterial` cache during
+    mission load, and `spawn_wave()` spawns the leader immediately then trickles
+    wingmen in one per frame. Per-wave spikes are gone; one ~35 ms spike remains
+    at the *first* wave of a mission (other first-use costs — tracer materials,
+    FX shaders — still land there). Waves arrive 2+ km out, so the stagger is
+    invisible.
 
 11. **VRAM is ~555 MB.** Down from 580 MB, but still high for the content. The
     4096×2048 RGBE sky panorama is ~33 MB of that; the duplicated asteroid

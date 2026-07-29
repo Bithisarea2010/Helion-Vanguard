@@ -4,6 +4,24 @@ extends Combatant
 
 enum S { PATROL, PURSUE, ATTACK, BREAK, EVADE, RETREAT, ESCORT }
 
+## Hull shading options for an AI ship. Static and shared so `Battle._prewarm()`
+## can cache exactly the material signatures a real spawn will ask for — if the
+## two drifted apart the prewarm would populate the cache with keys nobody uses
+## and the spawn spike would come straight back.
+static func hull_opts(hostile: bool) -> Dictionary:
+	return {
+		"glow": Color(1.0, 0.30, 0.14) if hostile else Color(0.35, 0.72, 1.0),
+		"plate_scale": 0.85,
+		"wear": 0.55,          # raider fleet: scruffier than the player's ship
+		"grime": 0.55,
+		"bolts": 0.55,
+		"stripe": Color(0.85, 0.10, 0.06) if hostile else Color(0.25, 0.6, 1.0),
+		"stripe_amount": 0.45,
+		"rim": Color(0.55, 0.25, 0.28) if hostile else Color(0.28, 0.45, 0.85),
+		"rim_strength": 0.9,
+		"glass_tint": Color(0.14, 0.05, 0.05) if hostile else Color(0.08, 0.14, 0.20),
+	}
+
 var eid := "jackal"
 var edef: Dictionary
 var battle: Node
@@ -74,19 +92,7 @@ func _load_model() -> void:
 		var inst: Node3D = (load(edef.model) as PackedScene).instantiate()
 		_model_root.add_child(inst)
 		inst.scale = Vector3.ONE * edef.scale
-		var hostile := team == TEAM_HOSTILE
-		aabb = HullMaterial.apply(inst, {
-			"glow": Color(1.0, 0.30, 0.14) if hostile else Color(0.35, 0.72, 1.0),
-			"plate_scale": 0.85,
-			"wear": 0.55,          # raider fleet: scruffier than the player's ship
-			"grime": 0.55,
-			"bolts": 0.55,
-			"stripe": Color(0.85, 0.10, 0.06) if hostile else Color(0.25, 0.6, 1.0),
-			"stripe_amount": 0.45,
-			"rim": Color(0.55, 0.25, 0.28) if hostile else Color(0.28, 0.45, 0.85),
-			"rim_strength": 0.9,
-			"glass_tint": Color(0.14, 0.05, 0.05) if hostile else Color(0.08, 0.14, 0.20),
-		})
+		aabb = HullMaterial.apply(inst, hull_opts(team == TEAM_HOSTILE))
 	var cs := CollisionShape3D.new()
 	var box := BoxShape3D.new()
 	box.size = aabb.size * edef.scale * 0.6

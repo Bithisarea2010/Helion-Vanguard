@@ -24,6 +24,7 @@ var over := false
 var victory := false
 var _wave_no := 0
 var _spawn_cd := 0.0
+var _spawn_queue: Array = []    # wingmen waiting to be built, one per frame
 var _attack_tokens: Array = []
 var _convoy: Array = []
 var _haulers_alive := 0
@@ -79,6 +80,7 @@ func _ready() -> void:
 	cam_rig = CameraRig.new()
 	add_child(cam_rig)
 	cam_rig.setup(player)
+	_prewarm_enemy_hulls()
 	if not "--nodust" in OS.get_cmdline_user_args():
 		var dust := SpaceDust.new()
 		add_child(dust)
@@ -169,6 +171,7 @@ func _process(delta: float) -> void:
 	if over or get_tree().paused:
 		return
 	mission_time += delta
+	_drain_spawn_queue()
 	if Input.is_action_just_pressed("cycle_target"):
 		player.cycle_target()
 	if Input.is_action_just_pressed("target_crosshair"):
@@ -196,6 +199,16 @@ func _parse_harness_args() -> void:
 			DirAccess.make_dir_recursive_absolute(_shot_dir)
 		elif arg.begins_with("--quitafter="):
 			_quit_after = float(arg.get_slice("=", 1))
+			# Hard watchdog. The normal deadline is checked in _process, but this
+			# node is PROCESS_MODE_PAUSABLE and both mission completion and the
+			# photo-mode self-test pause the tree — so _process simply stops and
+			# the run hangs forever. `escort` and `survival` finish early often
+			# enough that this cost several six-minute timeouts before it was
+			# noticed. A SceneTreeTimer with process_always fires regardless.
+			get_tree().create_timer(_quit_after + 8.0, true, false, true) \
+				.timeout.connect(func():
+					print("[BENCH] harness watchdog fired (tree paused or mission over)")
+					get_tree().quit())
 
 ## Screenshots on a fixed cadence + frame-time telemetry printed once a second.
 func _harness_tick(delta: float) -> void:
@@ -361,6 +374,32 @@ func release_attack_token(who: Node) -> void:
 	_attack_tokens.erase(who)
 
 # =================================================================== SPAWNING
+## Pay the per-hull-type cost up front instead of on the frame a wave arrives.
+##
+## `spawn_enemy` used to parse the GLB and build every HullMaterial signature
+## the first time each type appeared, which landed as a 31-39 ms spike exactly
+## when the player was being attacked. Loading each PackedScene here puts it in
+## the resource cache, and running HullMaterial over one throwaway instance
+## populates the shared material cache, so later spawns are pure node
+## construction. Costs ~50 ms once, during the frame the mission is already
+## loading in.
+func _prewarm_enemy_hulls() -> void:
+	var seen := {}
+	for eid in ShipDB.ENEMIES:
+		var path: String = ShipDB.ENEMIES[eid].model
+		if seen.has(path) or not ResourceLoader.exists(path):
+			continue
+		seen[path] = true
+		var scn := load(path) as PackedScene
+		if scn == null:
+			continue
+		# never parented: HullMaterial only walks the node tree and reads mesh
+		# AABBs, so an orphan is enough and nothing touches the live scene
+		var inst := scn.instantiate()
+		for hostile in [true, false]:
+			HullMaterial.apply(inst, EnemyShip.hull_opts(hostile))
+		inst.free()
+
 func spawn_enemy(eid: String, pos: Vector3, team := Combatant.TEAM_HOSTILE) -> EnemyShip:
 	var e := EnemyShip.new()
 	add_child(e)
@@ -369,13 +408,43 @@ func spawn_enemy(eid: String, pos: Vector3, team := Combatant.TEAM_HOSTILE) -> E
 	e.look_at(player.global_position if player else Vector3.ZERO, Vector3.UP)
 	return e
 
-func spawn_wave(comp: Array, center: Vector3, radius := 300.0, team := Combatant.TEAM_HOSTILE) -> Array:
+## Spawn a formation. The leader appears immediately; the rest trickle in one
+## per frame.
+##
+## Even with the hull prewarm, building 3-4 fighters in a single frame cost
+## 20-28 ms — a guaranteed dropped frame every single wave, right as the fight
+## started. Waves arrive 2+ km away, so a ~50 ms stagger between wingmen is
+## invisible, and the frame budget stops being blown.
+##
+## `on_spawned` is called as (ship, lead) for each ship as it actually appears,
+## which is how callers tag roles now that the full array is not available
+## synchronously.
+func spawn_wave(comp: Array, center: Vector3, radius := 300.0,
+		team := Combatant.TEAM_HOSTILE, on_spawned := Callable()) -> Array:
 	var out: Array = []
-	for eid in comp:
+	var lead: EnemyShip = null
+	for i in comp.size():
 		var pos := center + Vector3(randf_range(-1, 1), randf_range(-0.5, 0.5), randf_range(-1, 1)) * radius
-		out.append(spawn_enemy(eid, pos, team))
+		if i == 0:
+			lead = spawn_enemy(comp[i], pos, team)
+			out.append(lead)
+			if on_spawned.is_valid():
+				on_spawned.call(lead, lead)
+		else:
+			_spawn_queue.append({"eid": comp[i], "pos": pos, "team": team,
+				"cb": on_spawned, "lead": lead})
 	AudioMgr.play_ui("radar_ping", -6.0)
 	return out
+
+## One queued wingman per frame.
+func _drain_spawn_queue() -> void:
+	if _spawn_queue.is_empty():
+		return
+	var j: Dictionary = _spawn_queue.pop_front()
+	var e := spawn_enemy(j.eid, j.pos, j.team)
+	var cb: Callable = j.cb
+	if cb.is_valid():
+		cb.call(e, j.lead if is_instance_valid(j.lead) else e)
 
 func spawn_capital(cap_id: String, pos: Vector3, team := Combatant.TEAM_HOSTILE, yaw := 0.0) -> CapitalShip:
 	var c := CapitalShip.new()
@@ -387,7 +456,13 @@ func spawn_capital(cap_id: String, pos: Vector3, team := Combatant.TEAM_HOSTILE,
 	return c
 
 func hostile_fighters_alive() -> int:
+	# queued wingmen count as alive: mission logic gates the next wave (and
+	# mission completion) on this reaching zero, and a wave still trickling in
+	# must not read as cleared
 	var n := 0
+	for j in _spawn_queue:
+		if int(j.team) == Combatant.TEAM_HOSTILE:
+			n += 1
 	for h in get_tree().get_nodes_in_group("hostiles"):
 		if h is EnemyShip and (h as EnemyShip).alive:
 			n += 1
@@ -731,14 +806,17 @@ func _dir_station() -> void:
 		_spawn_cd = 10.0
 		var comps := [["mauler", "razor", "razor"], ["mauler", "mauler", "jackal"],
 			["mauler", "stinger", "stinger", "razor"], ["mauler", "mauler", "brute", "jackal"]]
-		var wave := spawn_wave(comps[_wave_no - 1],
-			_carrier.global_position + Vector3(randf_range(-2500, 2500), randf_range(-300, 500), -3400))
-		# bombers hunt the carrier
-		for e in wave:
-			if e.eid == "mauler":
-				e.target = _carrier
-			else:
-				e.escort = wave[0]
+		# bombers hunt the carrier, everyone else escorts the wave leader.
+		# Roles are assigned per ship as it arrives, because wingmen now spawn
+		# one per frame and the full array is not available synchronously.
+		spawn_wave(comps[_wave_no - 1],
+			_carrier.global_position + Vector3(randf_range(-2500, 2500), randf_range(-300, 500), -3400),
+			300.0, Combatant.TEAM_HOSTILE,
+			func(e: EnemyShip, lead: EnemyShip):
+				if e.eid == "mauler":
+					e.target = _carrier
+				else:
+					e.escort = lead)
 		hud.set_objective("Defend the Solace", "Bomber wave %d of 4" % _wave_no)
 		hud.comms("SOLACE ACTUAL", "Wave %d on the scope. Splash those Maulers!" % _wave_no)
 	if _wave_no >= 4 and hostile_fighters_alive() == 0 and stage_t > 20.0:
