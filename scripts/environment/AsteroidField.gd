@@ -16,7 +16,7 @@ var _meshes: Array[Mesh] = []
 var _mm_nodes: Array[MultiMeshInstance3D] = []
 var _rocks: Array = []               # per rock: {pos, scale, variant, rot}
 var _grid := {}                      # Vector3i cell -> PackedInt32Array of rock indices
-var _phys: Array[StaticBody3D] = []
+var _phys: Array[AsteroidBody] = []
 var _phys_timer := 0.0
 var _shader_mat: ShaderMaterial = null
 var player: Node3D = null
@@ -43,15 +43,13 @@ func _ready() -> void:
 		fallback.radius = 1.0
 		_meshes.append(fallback)
 	for i in PHYS_POOL:
-		var sb := StaticBody3D.new()
-		sb.collision_layer = 2
-		sb.collision_mask = 0
+		var sb := AsteroidBody.new()
+		sb.setup(self)
 		var cs := CollisionShape3D.new()
 		cs.shape = SphereShape3D.new()
 		sb.add_child(cs)
 		add_child(sb)
 		sb.position = Vector3(0, -100000 - i * 200, 0)
-		sb.add_to_group("asteroid")
 		_phys.append(sb)
 
 ## One ShaderMaterial shared by every rock variant: the four source GLBs embed
@@ -192,15 +190,18 @@ func _physics_process(delta: float) -> void:
 					var rk: Dictionary = _rocks[idx]
 					var d: float = (rk.pos as Vector3).distance_squared_to(ppos)
 					if d < r2:
-						near.append([d, rk])
+						near.append([d, rk, idx])
 	near.sort_custom(func(a, b): return a[0] < b[0])
 	var n := mini(near.size(), _phys.size())
 	for i in _phys.size():
-		var sb := _phys[i]
+		var sb: AsteroidBody = _phys[i]
 		if i < n:
 			var rk: Dictionary = near[i][1]
 			sb.position = rk.pos
+			sb.rock_radius = rk.scale
+			sb.rock_index = int(near[i][2])
 			var cs := sb.get_child(0) as CollisionShape3D
 			(cs.shape as SphereShape3D).radius = rk.scale * 0.92
 		else:
 			sb.position = Vector3(0, -100000 - i * 200, 0)
+			sb.rock_index = -1

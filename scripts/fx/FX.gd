@@ -6,6 +6,29 @@ static var _live_explosions := 0
 static var _ring_tex: GradientTexture2D = null
 static var _ball_mesh: SphereMesh = null
 static var _fire_shader: Shader = null
+static var _quad_mesh: QuadMesh = null
+static var _scar_tex: GradientTexture2D = null
+static var _live_muzzle_lights := 0
+static var _live_impact_marks := 0
+const MAX_MUZZLE_LIGHTS := 8
+const MAX_IMPACT_MARKS := 56
+
+static func clear_caches() -> void:
+	_mat_cache.clear()
+	_ring_tex = null
+	_ball_mesh = null
+	_fire_shader = null
+	_quad_mesh = null
+	_scar_tex = null
+	_live_explosions = 0
+	_live_muzzle_lights = 0
+	_live_impact_marks = 0
+
+static func quad_mesh() -> QuadMesh:
+	if _quad_mesh == null:
+		_quad_mesh = QuadMesh.new()
+		_quad_mesh.size = Vector2(1, 1)
+	return _quad_mesh
 
 ## Shared low-poly sphere for fireballs. The shader boils the silhouette, so the
 ## tessellation only has to be dense enough to carry the vertex displacement.
@@ -124,11 +147,14 @@ static func _particles(parent: Node, pos: Vector3, amount: int, life: float,
 		color_a: Color, color_b: Color, gravity := Vector3.ZERO,
 		spread := 180.0, dir := Vector3.UP, damping := 0.0) -> GPUParticles3D:
 	var p := GPUParticles3D.new()
-	p.amount = amount
+	p.amount = maxi(amount, 1)
 	p.lifetime = life
 	p.one_shot = true
 	p.explosiveness = 0.95
-	p.fixed_fps = 0
+	# Simulating at an uncapped render rate made particles 2–3× more expensive
+	# on high-refresh displays without adding visible motion samples.
+	p.fixed_fps = 60
+	p.interpolate = true
 	var pm := ParticleProcessMaterial.new()
 	pm.direction = dir
 	pm.spread = spread
@@ -151,9 +177,7 @@ static func _particles(parent: Node, pos: Vector3, amount: int, life: float,
 	sc.curve = cur
 	pm.scale_curve = sc
 	p.process_material = pm
-	var quad := QuadMesh.new()
-	quad.size = Vector2(1, 1)
-	p.draw_pass_1 = quad
+	p.draw_pass_1 = quad_mesh()
 	p.material_override = _add_mat(Color(1, 1, 1))
 	parent.add_child(p)
 	p.global_position = pos
@@ -247,6 +271,8 @@ static func _smoke_puff(parent: Node, pos: Vector3, amount: int, life: float,
 	p.lifetime = life
 	p.one_shot = true
 	p.explosiveness = 0.75
+	p.fixed_fps = 30
+	p.interpolate = true
 	var pm := ParticleProcessMaterial.new()
 	pm.spread = 180.0
 	pm.initial_velocity_min = 1.5
@@ -271,9 +297,7 @@ static func _smoke_puff(parent: Node, pos: Vector3, amount: int, life: float,
 	sc.curve = cur
 	pm.scale_curve = sc
 	p.process_material = pm
-	var quad := QuadMesh.new()
-	quad.size = Vector2(1, 1)
-	p.draw_pass_1 = quad
+	p.draw_pass_1 = quad_mesh()
 	p.material_override = _smoke_mat()
 	p.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 	parent.add_child(p)
@@ -323,9 +347,93 @@ static func debris(parent: Node, pos: Vector3, count: int, s: float) -> void:
 			if is_instance_valid(rb): rb.queue_free())
 
 static func impact(parent: Node, pos: Vector3, color: Color, big := false) -> void:
-	var n := 8 if not big else 16
+	var n := int((8 if not big else 16) * float(Game.preset().particles))
 	_particles(parent, pos, n, 0.35, 6.0, 18.0, 0.15, 0.35,
 		Color(color.r, color.g, color.b, 1.0), Color(color.r, color.g, color.b, 0.0))
+
+static func _scar_texture() -> GradientTexture2D:
+	if _scar_tex == null:
+		var g := Gradient.new()
+		g.set_color(0, Color(1, 1, 1, 0.95))
+		g.add_point(0.32, Color(1, 1, 1, 0.78))
+		g.add_point(0.68, Color(1, 1, 1, 0.20))
+		g.set_color(1, Color(1, 1, 1, 0.0))
+		_scar_tex = GradientTexture2D.new()
+		_scar_tex.gradient = g
+		_scar_tex.fill = GradientTexture2D.FILL_RADIAL
+		_scar_tex.fill_from = Vector2(0.5, 0.5)
+		_scar_tex.fill_to = Vector2(0.98, 0.5)
+		_scar_tex.width = 128
+		_scar_tex.height = 128
+	return _scar_tex
+
+static func _scar_material(kind: String) -> StandardMaterial3D:
+	var key := "scar_" + kind
+	if _mat_cache.has(key):
+		return _mat_cache[key]
+	var m := StandardMaterial3D.new()
+	m.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+	m.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+	m.cull_mode = BaseMaterial3D.CULL_DISABLED
+	m.albedo_texture = _scar_texture()
+	m.albedo_color = Color(0.045, 0.025, 0.015, 0.82) if kind == "rock" \
+		else Color(0.025, 0.018, 0.016, 0.88)
+	m.disable_receive_shadows = true
+	m.depth_draw_mode = BaseMaterial3D.DEPTH_DRAW_DISABLED
+	_mat_cache[key] = m
+	return m
+
+## Persistent-but-bounded scorch mark. It follows moving ships/wrecks when
+## attached to them, while asteroid marks stay in world space. Marks do not
+## collide and never alter or break the underlying mesh.
+static func surface_scar(parent: Node3D, pos: Vector3, normal: Vector3,
+		kind := "metal", size := 0.8, life := 9.0) -> void:
+	if _live_impact_marks >= MAX_IMPACT_MARKS or parent == null or not is_instance_valid(parent):
+		return
+	if normal.length_squared() < 0.01:
+		normal = Vector3.UP
+	normal = normal.normalized()
+	var mi := MeshInstance3D.new()
+	mi.mesh = quad_mesh()
+	mi.material_override = _scar_material(kind)
+	mi.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+	mi.scale = Vector3.ONE * size
+	mi.visibility_range_end = 1800.0
+	mi.visibility_range_end_margin = 120.0
+	parent.add_child(mi)
+	var up := Vector3.UP if absf(normal.dot(Vector3.UP)) < 0.95 else Vector3.RIGHT
+	# QuadMesh faces +Z; Basis.looking_at(-normal) points +Z along the normal.
+	mi.global_transform = Transform3D(Basis.looking_at(-normal, up),
+		pos + normal * maxf(size * 0.018, 0.012))
+	_live_impact_marks += 1
+	var tree := parent.get_tree()
+	var fade := tree.create_tween()
+	fade.tween_interval(maxf(life - 1.5, 0.1))
+	fade.tween_property(mi, "transparency", 1.0, 1.5)
+	tree.create_timer(life + 0.1, true, false, true).timeout.connect(func():
+		_live_impact_marks = maxi(_live_impact_marks - 1, 0)
+		if is_instance_valid(mi):
+			mi.queue_free())
+
+## Sparks/dust + a persistent mark for any repeatable surface hit.
+static func surface_impact(fx_parent: Node, attach_to: Node3D, pos: Vector3,
+		normal: Vector3, kind := "metal", energy := 10.0, make_mark := true) -> void:
+	if normal.length_squared() < 0.01:
+		normal = Vector3.UP
+	normal = normal.normalized()
+	var col := Color(0.76, 0.70, 0.58) if kind == "rock" else Color(1.0, 0.68, 0.26)
+	var count := int(clampf(5.0 + energy * 0.20, 5.0, 18.0) * float(Game.preset().particles))
+	_particles(fx_parent, pos, count, 0.42, 5.0, clampf(12.0 + energy * 0.25, 14.0, 34.0),
+		0.10, 0.30, Color(col.r, col.g, col.b, 1.0),
+		Color(col.r * 0.45, col.g * 0.30, col.b * 0.20, 0.0),
+		Vector3.ZERO, 58.0, normal, 0.8)
+	if kind == "rock" and energy > 8.0 and _live_explosions < 20:
+		_smoke_puff(fx_parent, pos + normal * 0.05,
+			maxi(int(4 * float(Game.preset().particles)), 2), 1.15, 0.25, 0.75)
+	if make_mark and attach_to and is_instance_valid(attach_to):
+		surface_scar(attach_to, pos, normal, kind,
+			clampf(0.35 + sqrt(maxf(energy, 0.0)) * 0.08, 0.4, 1.5),
+			11.0 if kind == "rock" else 8.0)
 
 static func shield_hit(parent: Node, pos: Vector3) -> void:
 	_particles(parent, pos, 10, 0.4, 2.0, 8.0, 0.5, 1.2,
@@ -362,8 +470,7 @@ static func rocket_smoke(parent: Node3D, offset: Vector3, size := 1.0) -> GPUPar
 	sc.curve = cur
 	pm.scale_curve = sc
 	p.process_material = pm
-	var quad := QuadMesh.new(); quad.size = Vector2(1, 1)
-	p.draw_pass_1 = quad
+	p.draw_pass_1 = quad_mesh()
 	p.material_override = _smoke_mat()
 	p.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 	parent.add_child(p)
@@ -391,6 +498,11 @@ static func launch_flash(parent: Node, pos: Vector3, dir: Vector3) -> void:
 	tw.tween_callback(l.queue_free)
 
 static func muzzle_flash(parent: Node, pos: Vector3, color: Color) -> void:
+	if _live_muzzle_lights >= MAX_MUZZLE_LIGHTS:
+		return
+	var cam := parent.get_viewport().get_camera_3d()
+	if cam and cam.global_position.distance_squared_to(pos) > 850.0 * 850.0:
+		return
 	var l := OmniLight3D.new()
 	l.light_color = color
 	l.light_energy = 2.0
@@ -398,9 +510,13 @@ static func muzzle_flash(parent: Node, pos: Vector3, color: Color) -> void:
 	l.shadow_enabled = false
 	parent.add_child(l)
 	l.global_position = pos
+	_live_muzzle_lights += 1
 	var tw := parent.get_tree().create_tween()
 	tw.tween_property(l, "light_energy", 0.0, 0.08)
-	tw.tween_callback(l.queue_free)
+	parent.get_tree().create_timer(0.10, true, false, true).timeout.connect(func():
+		_live_muzzle_lights = maxi(_live_muzzle_lights - 1, 0)
+		if is_instance_valid(l):
+			l.queue_free())
 
 ## Continuous licking fire (wrecks, missile exhausts). Cheap: 30 fps sim.
 static func fire_emitter(parent: Node3D, offset: Vector3, size := 1.0,
@@ -432,8 +548,7 @@ static func fire_emitter(parent: Node3D, offset: Vector3, size := 1.0,
 	sc.curve = cur
 	pm.scale_curve = sc
 	p.process_material = pm
-	var quad := QuadMesh.new(); quad.size = Vector2(1, 1)
-	p.draw_pass_1 = quad
+	p.draw_pass_1 = quad_mesh()
 	p.material_override = _add_mat(Color(1, 1, 1))
 	parent.add_child(p)
 	p.position = offset
@@ -460,8 +575,7 @@ static func smoke_emitter(parent: Node3D, offset: Vector3, size := 1.0) -> GPUPa
 	var gt := GradientTexture1D.new(); gt.gradient = grad
 	pm.color_ramp = gt
 	p.process_material = pm
-	var quad := QuadMesh.new(); quad.size = Vector2(1, 1)
-	p.draw_pass_1 = quad
+	p.draw_pass_1 = quad_mesh()
 	p.material_override = _smoke_mat()
 	parent.add_child(p)
 	p.position = offset
@@ -487,8 +601,7 @@ static func damage_smoke(target: Node3D, offset: Vector3) -> GPUParticles3D:
 	var gt := GradientTexture1D.new(); gt.gradient = grad
 	pm.color_ramp = gt
 	p.process_material = pm
-	var quad := QuadMesh.new(); quad.size = Vector2(1, 1)
-	p.draw_pass_1 = quad
+	p.draw_pass_1 = quad_mesh()
 	p.material_override = _add_mat(Color(1, 1, 1))
 	target.add_child(p)
 	p.position = offset

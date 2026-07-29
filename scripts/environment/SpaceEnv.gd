@@ -22,7 +22,11 @@ func build(cfg: Dictionary) -> void:
 	# to carry the nebula's colour into the metal. QUALITY mode is essential
 	# here: the default re-derives the radiance cubemap EVERY frame, and at
 	# 128 px that alone cost ~8 fps for a sky that never changes after its bake.
-	sky.radiance_size = Sky.RADIANCE_SIZE_128
+	var p: Dictionary = Game.preset()
+	sky.radiance_size = [
+		Sky.RADIANCE_SIZE_32, Sky.RADIANCE_SIZE_64,
+		Sky.RADIANCE_SIZE_128, Sky.RADIANCE_SIZE_256,
+	][clampi(int(Game.settings.preset), 0, 3)] as Sky.RadianceSize
 	sky.process_mode = Sky.PROCESS_MODE_QUALITY
 	env.background_mode = Environment.BG_SKY
 	env.sky = sky
@@ -36,9 +40,8 @@ func build(cfg: Dictionary) -> void:
 	env.tonemap_mode = Environment.TONE_MAPPER_ACES
 	env.tonemap_exposure = 1.0
 	env.tonemap_white = 8.0
-	var p: Dictionary = Game.preset()
 	env.glow_enabled = p.glow
-	env.glow_intensity = 0.62
+	env.glow_intensity = 0.62 * float(p.glow_quality)
 	env.glow_strength = 1.0
 	env.glow_bloom = 0.02
 	# a low threshold plus SCREEN blending lifted the entire frame toward white
@@ -78,7 +81,7 @@ func build(cfg: Dictionary) -> void:
 	# Shadow-casting geometry tripled with the greeble pass, and the shadow pass
 	# re-draws every triangle in range. At dogfight scale nothing beyond ~350 m
 	# reads as a shadow anyway, so this is free quality.
-	sun_light.directional_shadow_max_distance = 350.0
+	sun_light.directional_shadow_max_distance = float(p.shadow_distance)
 	add_child(sun_light)
 	sun_light.look_at_from_position(Vector3.ZERO, sun_dir, Vector3.UP if absf(sun_dir.dot(Vector3.UP)) < 0.98 else Vector3.RIGHT)
 	# soft cool fill from the opposite side so ships never go pitch black
@@ -100,7 +103,7 @@ func _bake_sky(env: Environment, cfg: Dictionary, dir_to_sun: Vector3, sun_col: 
 	# a 1080p screen pixel at this FOV — which is why the old starfield was a
 	# field of soft blobs. 4096 matches the screen closely enough; the bake still
 	# happens exactly once per mission.
-	vp.size = Vector2i(4096, 2048)
+	vp.size = Game.preset().sky_size
 	vp.disable_3d = true
 	vp.use_hdr_2d = true
 	vp.render_target_update_mode = SubViewport.UPDATE_ONCE
@@ -139,10 +142,13 @@ func _add_planet(pl: Dictionary, dir_to_sun: Vector3, sun_col: Color) -> void:
 	var r: float = pl.get("radius", 3000.0)
 	sm.radius = r
 	sm.height = r * 2.0
-	# planets can fill a third of the screen; 48x24 left a visibly faceted limb
-	sm.radial_segments = 96
-	sm.rings = 48
+	# Preset-driven tessellation makes Ultra visibly crisper at a planet limb,
+	# while lower tiers avoid spending vertices on distant silhouettes.
+	var p: Dictionary = Game.preset()
+	sm.radial_segments = int(p.planet_segments)
+	sm.rings = int(p.planet_rings)
 	mi.mesh = sm
+	mi.set_meta("quality_planet", true)
 	var rocky: float = pl.get("rocky", 0.0)
 	var mat := ShaderMaterial.new()
 	mat.shader = load("res://shaders/planet.gdshader")
@@ -196,5 +202,13 @@ func apply_preset() -> void:
 	var p: Dictionary = Game.preset()
 	if world_env:
 		world_env.environment.glow_enabled = p.glow
+		world_env.environment.glow_intensity = 0.62 * float(p.glow_quality)
 	if sun_light:
 		sun_light.shadow_enabled = p.shadows
+		sun_light.directional_shadow_max_distance = float(p.shadow_distance)
+	for child in get_children():
+		if child is MeshInstance3D and child.has_meta("quality_planet"):
+			var sphere := (child as MeshInstance3D).mesh as SphereMesh
+			if sphere:
+				sphere.radial_segments = int(p.planet_segments)
+				sphere.rings = int(p.planet_rings)

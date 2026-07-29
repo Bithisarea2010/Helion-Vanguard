@@ -72,7 +72,9 @@ func _physics_process(delta: float) -> void:
 	var dir := (aim - global_position).normalized()
 	var muzzle: Vector3 = barrels.global_position + dir * 3.5 if barrels else global_position + dir * 3.5
 	var dist := global_position.distance_to(target.global_position)
-	if _cd <= 0.0 and dist < w.range:
+	var aligned_dir := -barrels.global_transform.basis.z if barrels else -global_transform.basis.z
+	var aligned := aligned_dir.angle_to(dir) < deg_to_rad(14.0)
+	if _cd <= 0.0 and dist < w.range and aligned:
 		_cd = 1.0 / w.rof
 		if target is Missile:
 			# point defence: chance to kill the missile
@@ -88,24 +90,28 @@ func _pick_target() -> void:
 	var best_d := 1600.0 * 1600.0
 	# point defence priority: hostile torpedoes near our ship
 	if pd_capable:
-		for m in battle.get_children():
+		for m in get_tree().get_nodes_in_group("missiles"):
 			if m is Missile and (m as Missile).team != team:
 				var d: float = global_position.distance_squared_to(m.global_position)
 				if d < 500.0 * 500.0:
 					target = m
 					return
 	var cands: Array = battle.friendly_targets() if team == Combatant.TEAM_HOSTILE else battle.hostile_targets()
+	var space := get_world_3d().direct_space_state
 	for c in cands:
 		if not is_instance_valid(c):
 			continue
 		var d2: float = global_position.distance_squared_to(c.global_position)
 		if d2 < best_d:
 			# line of sight
-			var space := get_world_3d().direct_space_state
 			var q := PhysicsRayQueryParameters3D.create(global_position + Vector3.UP * 4.0, c.global_position)
 			q.exclude = [get_rid()]
+			if owner_ship is CollisionObject3D:
+				q.exclude.append(owner_ship.get_rid())
 			var hit := space.intersect_ray(q)
-			if hit.is_empty() or hit.collider == c:
+			var hit_node: Node = hit.get("collider") as Node
+			var reaches_target: bool = hit.is_empty() or hit_node == c or (hit_node and c.is_ancestor_of(hit_node))
+			if reaches_target:
 				best_d = d2
 				best = c
 	target = best

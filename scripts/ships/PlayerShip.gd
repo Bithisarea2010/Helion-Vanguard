@@ -80,7 +80,7 @@ func setup(id: String, batl: Node) -> void:
 	linear_damp = 0.0
 	angular_damp = 2.0
 	collision_layer = 1
-	collision_mask = 1 | 2 | 4
+	collision_mask = 1 | 2 | 4 | 8
 	add_to_group("player")
 	_load_model()
 	_setup_weapons()
@@ -96,6 +96,16 @@ func setup(id: String, batl: Node) -> void:
 	add_child(_engine_snd)
 	_engine_snd.volume_db = -18.0
 	_engine_snd.play()
+
+func shutdown_audio() -> void:
+	if is_instance_valid(_engine_snd):
+		_engine_snd.stop()
+		_engine_snd.stream = null
+		_engine_snd.free()
+	_engine_snd = null
+
+func _exit_tree() -> void:
+	shutdown_audio()
 
 func _load_model() -> void:
 	model_root = Node3D.new()
@@ -429,19 +439,29 @@ func _cleanup_incoming() -> void:
 
 # ============================================================= DAMAGE / DEATH
 func _on_body_entered(body: Node) -> void:
-	var rel_speed := linear_velocity.length()
+	var other_vel := Vector3.ZERO
+	var other_mass := 1000.0
 	if body is RigidBody3D:
-		rel_speed = (linear_velocity - (body as RigidBody3D).linear_velocity).length()
+		other_vel = (body as RigidBody3D).linear_velocity
+		other_mass = maxf((body as RigidBody3D).mass, 0.1)
+	var rel_vel := linear_velocity - other_vel
+	var rel_speed := rel_vel.length()
 	if rel_speed > 12.0:
-		var dmg := rel_speed * rel_speed * 0.02
-		take_hit(dmg, global_position + linear_velocity.normalized() * 2.0, linear_velocity.normalized(), 0.9, 1.0, 1.0, body)
+		# Reduced-mass kinetic-energy approximation, bounded for arcade play.
+		# This distinguishes clipping a light wreck from hitting a giant rock.
+		var reduced_mass := mass * other_mass / maxf(mass + other_mass, 0.1)
+		var dmg := clampf(0.5 * reduced_mass * rel_speed * rel_speed * 0.0035, 2.0, 85.0)
+		var travel := rel_vel.normalized()
+		take_hit(dmg, global_position + travel * 2.0, -travel, 0.9,
+			1.0, 1.0, body, -travel)
 		AudioMgr.play_3d("collision", global_position, 2.0)
 		if cam_rig and cam_rig.has_method("add_shake"):
 			cam_rig.add_shake(clampf(dmg * 0.04, 0.2, 1.0))
 
 func take_hit(dmg: float, pos: Vector3, dir: Vector3, pen := 0.2,
-		sh_mult := 1.0, hu_mult := 1.0, attacker: Node = null) -> void:
-	super.take_hit(dmg, pos, dir, pen, sh_mult, hu_mult, attacker)
+		sh_mult := 1.0, hu_mult := 1.0, attacker: Node = null,
+		surface_normal := Vector3.ZERO) -> void:
+	super.take_hit(dmg, pos, dir, pen, sh_mult, hu_mult, attacker, surface_normal)
 	if cam_rig and cam_rig.has_method("add_shake"):
 		cam_rig.add_shake(clampf(dmg * 0.02, 0.05, 0.6))
 	if hull_frac() < 0.35 and _smoke == null:
@@ -470,4 +490,6 @@ func die(killer: Node = null) -> void:
 		if cam_rig.cockpit_model:
 			cam_rig.cockpit_model.visible = false
 	set_deferred("freeze", true)
+	collision_layer = 0
+	collision_mask = 0
 	died_final.emit()

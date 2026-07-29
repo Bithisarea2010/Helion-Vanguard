@@ -24,6 +24,8 @@ render_mode cull_back, specular_schlick_ggx;
 // =============================================================================
 
 uniform vec3 base_color : source_color = vec3(0.55, 0.56, 0.60);
+uniform sampler2D albedo_tex : source_color, filter_linear_mipmap_anisotropic, repeat_enable;
+uniform bool use_albedo_tex = false;
 uniform float metallic_amt : hint_range(0.0, 1.0) = 0.85;
 uniform float roughness_amt : hint_range(0.0, 1.0) = 0.42;
 uniform vec3 emission_color : source_color = vec3(0.0);
@@ -84,6 +86,9 @@ void vertex() {
 
 void fragment() {
 	vec3 albedo = base_color;
+	if (use_albedo_tex) {
+		albedo *= texture(albedo_tex, UV).rgb;
+	}
 	float rough = roughness_amt;
 	float metal = metallic_amt;
 	vec3 emit = emission_color * emission_energy;

@@ -21,6 +21,7 @@ var min_speed := 6.0                 # below this the ribbon fades out
 var _pts: Array = []                 # [{p: Vector3, t: age}]
 var _im: ImmediateMesh
 var _vel_ref: Node3D = null          # body whose speed gates the trail
+var _mesh_accum := 0.0
 
 func _init() -> void:
 	_im = ImmediateMesh.new()
@@ -85,7 +86,12 @@ func _process(delta: float) -> void:
 	var head: Vector3 = _pts[0].p if not _pts.is_empty() else Vector3.ZERO
 	while _pts.size() > 3 and head.distance_squared_to(_pts[_pts.size() - 1].p) > MAX_LEN * MAX_LEN:
 		_pts.pop_back()
-	_rebuild()
+	# Geometry at 60 Hz is visually continuous even when the game renders at
+	# 120–240 Hz, and halves/quarters ImmediateMesh rebuild cost on those panels.
+	_mesh_accum += delta
+	if _mesh_accum >= 1.0 / 60.0:
+		_mesh_accum = fmod(_mesh_accum, 1.0 / 60.0)
+		_rebuild()
 
 func _rebuild() -> void:
 	_im.clear_surfaces()

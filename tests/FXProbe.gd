@@ -106,4 +106,6 @@ func _grab() -> void:
 
 func _quit() -> void:
 	print("[FXPROBE] done, shots=%d" % _idx)
+	Game.prepare_shutdown()
+	await get_tree().create_timer(0.2).timeout
 	get_tree().quit()

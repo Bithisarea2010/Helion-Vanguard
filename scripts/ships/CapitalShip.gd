@@ -156,27 +156,33 @@ func _wire_subsystem(mesh_root: Node3D, nm: String) -> void:
 		"engine": engines_alive += 1
 
 ## Capital shield: soaks subsystem/hull damage while generators are online.
-func absorb_with_shield(dmg: float, pos: Vector3) -> float:
+func absorb_with_shield(dmg: float, pos: Vector3, shield_multiplier := 1.0) -> float:
 	if shield_pool_max <= 0.0 or shieldgens_alive <= 0 or shield_pool <= 0.0:
 		return dmg
-	shield_pool = maxf(0.0, shield_pool - dmg)
-	FX.shield_hit(battle, pos)
-	return 0.0
+	var mult := maxf(shield_multiplier, 0.01)
+	var absorbed_base := minf(dmg, shield_pool / mult)
+	shield_pool = maxf(0.0, shield_pool - absorbed_base * mult)
+	if is_instance_valid(battle):
+		FX.shield_hit(battle, pos)
+	return maxf(dmg - absorbed_base, 0.0)
 
 func notify_sub_hit(_sub: Subsystem, _dmg: float, pos: Vector3) -> void:
 	if randf() < 0.3:
 		FX.impact(battle, pos, Color(1.0, 0.6, 0.3))
 
 func take_hit(dmg: float, pos: Vector3, dir: Vector3, pen := 0.2,
-		sh_mult := 1.0, hu_mult := 1.0, attacker: Node = null) -> void:
+		sh_mult := 1.0, hu_mult := 1.0, attacker: Node = null,
+	surface_normal := Vector3.ZERO) -> void:
 	if shield_pool_max > 0.0:
-		dmg = absorb_with_shield(dmg * sh_mult, pos)
+		dmg = absorb_with_shield(dmg, pos, sh_mult)
 		if dmg <= 0.0:
 			return
 		# bastion hull is only killable through the reactor
 		if reactor and reactor.alive:
 			dmg *= 0.15
-	super.take_hit(dmg, pos, dir, pen, sh_mult, hu_mult, attacker)
+	super.take_hit(dmg, pos, dir, pen, sh_mult, hu_mult, attacker, surface_normal)
+	if _model and hull_frac() < 0.85:
+		HullMaterial.set_damage(_model, clampf((0.85 - hull_frac()) / 0.85, 0.0, 1.0))
 
 func _physics_process(delta: float) -> void:
 	super._physics_process(delta)
@@ -214,6 +220,8 @@ func _on_sub_destroyed(sub) -> void:
 	FX.explosion(battle, sub.global_position, 2)
 	if sub is Subsystem and (sub as Subsystem).mesh_node:
 		(sub as Subsystem).mesh_node.visible = false
+	if sub is CollisionObject3D:
+		(sub as CollisionObject3D).collision_layer = 0
 	match sub.kind if "kind" in sub else "":
 		"shieldgen":
 			shieldgens_alive -= 1
@@ -223,7 +231,7 @@ func _on_sub_destroyed(sub) -> void:
 			engines_alive -= 1
 			velocity_hint = Vector3.ZERO
 		"reactor":
-			die(null)
+			die(sub.last_attacker if "last_attacker" in sub else null)
 	subsystem_destroyed.emit(sub)
 	if battle.has_method("on_subsystem_destroyed"):
 		battle.on_subsystem_destroyed(self, sub)
@@ -256,7 +264,8 @@ func die(killer: Node = null) -> void:
 		if battle.has_method("on_kill"):
 			battle.on_kill(self, killer)
 		if _model:
-			_model.visible = false
+			Wreck.spawn(battle, _model, global_transform, velocity_hint, radar_size)
+			_model = null
 		collision_layer = 0
 		for t in turrets:
 			t.set_physics_process(false)

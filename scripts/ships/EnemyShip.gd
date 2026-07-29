@@ -48,6 +48,8 @@ var _acc := 0.65
 var _reaction := 0.5
 var _aggression := 1.0
 var _model_root: Node3D
+var _avoid_timer := 0.0
+var _avoid_push := Vector3.ZERO
 
 func _init() -> void:
 	team = TEAM_HOSTILE
@@ -71,7 +73,7 @@ func setup(id: String, batl: Node, spawn_team := TEAM_HOSTILE) -> void:
 	linear_damp = 0.0
 	angular_damp = 2.0
 	collision_layer = 1
-	collision_mask = 1 | 2 | 4
+	collision_mask = 1 | 2 | 4 | 8
 	add_to_group("hostiles" if team == TEAM_HOSTILE else "friendlies")
 	_load_model()
 	weapons = WeaponSystem.new()
@@ -218,8 +220,9 @@ func ai_missile_warning(_m: Node) -> void:
 			Flare.deploy(battle, global_position, linear_velocity, team)
 
 func take_hit(dmg: float, pos: Vector3, dir: Vector3, pen := 0.2,
-		sh_mult := 1.0, hu_mult := 1.0, attacker: Node = null) -> void:
-	super.take_hit(dmg, pos, dir, pen, sh_mult, hu_mult, attacker)
+		sh_mult := 1.0, hu_mult := 1.0, attacker: Node = null,
+		surface_normal := Vector3.ZERO) -> void:
+	super.take_hit(dmg, pos, dir, pen, sh_mult, hu_mult, attacker, surface_normal)
 	if alive and randf() < 0.35 and state != S.EVADE:
 		state = S.EVADE
 		_state_t = randf_range(0.8, 1.6)
@@ -286,7 +289,7 @@ func _steer_and_fire(delta: float) -> void:
 			if hull_frac() > 0.55:
 				state = S.PATROL
 	# asteroid avoidance
-	desired = _avoid(desired)
+	desired = _avoid(desired, delta)
 	# rotate toward desired
 	var fwd := -global_transform.basis.z
 	var ang_to := fwd.angle_to(desired)
@@ -331,18 +334,28 @@ func _try_missile(dist: float, ang: float) -> void:
 	Missile.launch(battle, global_position - global_transform.basis.z * 3.0,
 		-global_transform.basis.z, linear_velocity, mdef, target, team, self)
 
-func _avoid(desired: Vector3) -> Vector3:
+func _avoid(desired: Vector3, delta: float) -> Vector3:
+	_avoid_timer -= delta
+	if _avoid_timer > 0.0:
+		return (desired + _avoid_push * 2.2).normalized() if _avoid_push.length_squared() > 0.01 else desired
+	# Collision geometry moves slowly relative to a fighter; 12 Hz sensing is
+	# enough, while removing one physics ray per enemy on five of six ticks.
+	_avoid_timer = 0.075 + float(get_instance_id() % 17) * 0.0015
 	var space := get_world_3d().direct_space_state
-	var ahead := global_position + linear_velocity.normalized() * clampf(linear_velocity.length() * 1.8, 60.0, 260.0)
+	var motion_dir := linear_velocity.normalized() if linear_velocity.length_squared() > 25.0 \
+		else -global_transform.basis.z
+	var ahead := global_position + motion_dir * clampf(linear_velocity.length() * 1.8, 60.0, 280.0)
 	var q := PhysicsRayQueryParameters3D.create(global_position, ahead)
 	q.exclude = [get_rid()]
-	q.collision_mask = 2 | 4
+	q.collision_mask = 2 | 4 | 8
 	var hit := space.intersect_ray(q)
 	if hit:
 		var away: Vector3 = hit.normal
 		if away.length_squared() < 0.1:
 			away = global_transform.basis.y
-		return (desired + away * 2.2).normalized()
+		_avoid_push = away.normalized()
+		return (desired + _avoid_push * 2.2).normalized()
+	_avoid_push = _avoid_push.lerp(Vector3.ZERO, 0.65)
 	return desired
 
 var _spiraling := false

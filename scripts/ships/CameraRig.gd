@@ -95,6 +95,10 @@ func _frame_from_hull() -> void:
 	_standoff = clampf(half_span / tan(deg_to_rad(base_fov * 0.5) * 0.58), 6.0, 30.0) * mult
 	_rise = clampf(ab.size.y * 1.0, 2.2, 6.0) * mult
 
+func refresh_camera_settings() -> void:
+	if is_instance_valid(ship):
+		_frame_from_hull()
+
 func _add_practical(pos: Vector3, col: Color, energy: float, range_m: float) -> void:
 	var l := OmniLight3D.new()
 	l.light_energy = energy

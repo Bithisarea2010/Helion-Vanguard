@@ -3,9 +3,11 @@ extends Node3D
 ## Pooled raycast projectiles + beams. One instance lives in the Battle scene.
 
 signal player_hit_confirmed(target: Node, was_shield: bool)
+signal player_surface_hit(target: Node, kind: String)
 
 const POOL := 320
 var _pool: Array[MeshInstance3D] = []
+var _free_pool: Array[int] = []
 var _active: Array[Dictionary] = []
 var _mat_cache := {}
 var _mesh_cache := {}
@@ -17,6 +19,17 @@ func _ready() -> void:
 		mi.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 		add_child(mi)
 		_pool.append(mi)
+		_free_pool.append(i)
+
+func has_bullet_capacity() -> bool:
+	return not _free_pool.is_empty()
+
+func _release_bullet(index: int) -> void:
+	if index < 0 or index >= _pool.size():
+		return
+	_pool[index].visible = false
+	if not index in _free_pool:
+		_free_pool.append(index)
 
 func _tracer_mat(color: Color) -> StandardMaterial3D:
 	var key := color.to_html()
@@ -47,14 +60,13 @@ func _tracer_mesh(size: float) -> Mesh:
 	return cm
 
 func fire_bullet(shooter: Node3D, muzzle: Vector3, dir: Vector3, wpn: Dictionary,
-		team: int, inherit_vel: Vector3) -> void:
-	var mi: MeshInstance3D = null
-	for p in _pool:
-		if not p.visible:
-			mi = p
-			break
-	if mi == null:
-		return
+		team: int, inherit_vel: Vector3) -> bool:
+	if _free_pool.is_empty() or shooter == null or not is_instance_valid(shooter):
+		return false
+	if not dir.is_finite() or dir.length_squared() < 0.0001:
+		return false
+	var pool_index: int = int(_free_pool.pop_back())
+	var mi: MeshInstance3D = _pool[pool_index]
 	var spread: float = deg_to_rad(wpn.spread)
 	if spread > 0.0:
 		dir = dir.rotated(dir.cross(Vector3.UP).normalized() if absf(dir.dot(Vector3.UP)) < 0.99 else Vector3.RIGHT, randf_range(-spread, spread))
@@ -70,11 +82,13 @@ func fire_bullet(shooter: Node3D, muzzle: Vector3, dir: Vector3, wpn: Dictionary
 		mi.rotate_object_local(Vector3.RIGHT, PI / 2.0)  # capsule length axis is Y
 	_active.append({
 		"mi": mi, "pos": muzzle, "vel": vel,
+		"pool_index": pool_index,
 		"ttl": wpn.range / maxf(wpn.speed, 1.0) * 1.15,
 		"dmg": wpn.dmg, "pen": wpn.pen, "sh": wpn.sh, "hu": wpn.hu,
 		"team": team, "shooter": shooter,
 		"excl": [shooter.get_rid()] if shooter is CollisionObject3D else [],
 	})
+	return true
 
 func _physics_process(delta: float) -> void:
 	if _active.is_empty():
@@ -86,7 +100,7 @@ func _physics_process(delta: float) -> void:
 		var mi: MeshInstance3D = b.mi
 		b.ttl -= delta
 		if b.ttl <= 0.0:
-			mi.visible = false
+			_release_bullet(int(b.pool_index))
 			_active.remove_at(i)
 			i -= 1
 			continue
@@ -96,12 +110,13 @@ func _physics_process(delta: float) -> void:
 		q.collision_mask = 0xFFFFFFFF
 		var hit := space.intersect_ray(q)
 		if hit and _resolve_hit(b, hit):
-			mi.visible = false
+			_release_bullet(int(b.pool_index))
 			_active.remove_at(i)
+			i -= 1
 		else:
 			b.pos = new_pos
 			mi.global_position = new_pos
-		i -= 1
+			i -= 1
 
 func _resolve_hit(b: Dictionary, hit: Dictionary) -> bool:
 	var col: Object = hit.collider
@@ -115,22 +130,42 @@ func _resolve_hit(b: Dictionary, hit: Dictionary) -> bool:
 			break
 		n = n.get_parent()
 	if recv:
-		var rteam: int = recv.team if "team" in recv else (recv.owner_ship.team if "owner_ship" in recv and recv.owner_ship and "team" in recv.owner_ship else -1)
-		if rteam == b.team:
+		var rteam := _receiver_team(recv)
+		if rteam >= 0 and rteam == int(b.team):
 			return false   # pass through friendlies
-		recv.take_hit(b.dmg, hit.position, b.vel.normalized(), b.pen, b.sh, b.hu, b.shooter)
-		var was_shield: bool = "shield_front" in recv and (recv.shield_front > 0.0 or recv.shield_rear > 0.0)
-		if was_shield:
+		var was_shield: bool = "shield_front" in recv \
+			and (recv.shield_front > 0.0 or recv.shield_rear > 0.0)
+		recv.take_hit(b.dmg, hit.position, b.vel.normalized(), b.pen, b.sh, b.hu,
+			b.shooter, hit.get("normal", Vector3.ZERO))
+		var reactive := recv.is_in_group("reactive_surface")
+		var kind: String = str(recv.get_meta("surface_kind", "metal"))
+		if reactive:
+			# AsteroidBody/Wreck owns its rate-limited repeated-hit response.
+			pass
+		elif was_shield:
 			FX.shield_hit(self, hit.position)
 		else:
-			FX.impact(self, hit.position, Color(1.0, 0.7, 0.3))
+			FX.surface_impact(self, recv as Node3D, hit.position,
+				hit.get("normal", Vector3.ZERO), "metal", float(b.dmg), true)
 		if is_instance_valid(b.shooter) and b.shooter.is_in_group("player"):
-			player_hit_confirmed.emit(recv, was_shield)
-		AudioMgr.play_3d("hit_shield" if was_shield else "hit_armor", hit.position, -6.0)
+			if rteam >= 0:
+				player_hit_confirmed.emit(recv, was_shield)
+			else:
+				player_surface_hit.emit(recv, kind)
+		AudioMgr.play_3d("hit_rock" if kind == "rock" else (
+			"hit_shield" if was_shield else "hit_armor"), hit.position, -6.0)
 	else:
-		FX.impact(self, hit.position, Color(0.8, 0.75, 0.7))
+		FX.surface_impact(self, self, hit.position, hit.get("normal", Vector3.ZERO),
+			"rock", float(b.dmg), true)
 		AudioMgr.play_3d("hit_rock", hit.position, -8.0)
 	return true
+
+func _receiver_team(recv: Node) -> int:
+	if "team" in recv:
+		return int(recv.team)
+	if "owner_ship" in recv and recv.owner_ship and "team" in recv.owner_ship:
+		return int(recv.owner_ship.team)
+	return -1
 
 ## Continuous beam: damages and returns end point for rendering.
 func beam_tick(shooter: Node3D, muzzle: Vector3, dir: Vector3, wpn: Dictionary,
@@ -150,19 +185,37 @@ func beam_tick(shooter: Node3D, muzzle: Vector3, dir: Vector3, wpn: Dictionary,
 				break
 			n = n.get_parent()
 		if recv:
-			var rteam: int = recv.team if "team" in recv else -1
+			var rteam := _receiver_team(recv)
 			if rteam != team:
-				recv.take_hit(wpn.dmg * delta, hit.position, dir, wpn.pen, wpn.sh, wpn.hu, shooter)
-				if is_instance_valid(shooter) and shooter.is_in_group("player") and randf() < delta * 6.0:
-					player_hit_confirmed.emit(recv, recv.shield_front > 0.0 if "shield_front" in recv else false)
-		if randf() < delta * 20.0:
-			FX.impact(self, hit.position, wpn.color)
+				var was_shield: bool = "shield_front" in recv \
+					and (recv.shield_front > 0.0 or recv.shield_rear > 0.0)
+				recv.take_hit(wpn.dmg * delta, hit.position, dir, wpn.pen, wpn.sh,
+					wpn.hu, shooter, hit.get("normal", Vector3.ZERO))
+				var reactive := recv.is_in_group("reactive_surface")
+				if reactive:
+					if is_instance_valid(shooter) and shooter.is_in_group("player") \
+							and randf() < delta * 6.0:
+						player_surface_hit.emit(recv, str(recv.get_meta("surface_kind", "metal")))
+				elif randf() < delta * 8.0:
+					if was_shield:
+						FX.shield_hit(self, hit.position)
+					else:
+						FX.surface_impact(self, recv as Node3D, hit.position,
+							hit.get("normal", Vector3.ZERO), "metal",
+							float(wpn.dmg) * delta, randf() < 0.35)
+				if is_instance_valid(shooter) and shooter.is_in_group("player") \
+						and rteam >= 0 and randf() < delta * 6.0:
+					player_hit_confirmed.emit(recv, was_shield)
+		elif randf() < delta * 8.0:
+			FX.surface_impact(self, self, hit.position, hit.get("normal", Vector3.ZERO),
+				"rock", float(wpn.dmg) * delta, randf() < 0.25)
 		return hit.position
 	return to
 
 ## Mathematical lead solution: where to aim so a projectile at speed s hits the target.
 static func lead_point(shooter_pos: Vector3, shooter_vel: Vector3, target_pos: Vector3,
 		target_vel: Vector3, target_acc: Vector3, proj_speed: float) -> Vector3:
+	proj_speed = maxf(proj_speed, 1.0)
 	var rel_pos := target_pos - shooter_pos
 	var rel_vel := target_vel - shooter_vel
 	# solve |rel_pos + rel_vel*t + 0.5*acc*t^2| = s*t  (iterate twice for acc)

@@ -16,6 +16,8 @@ var _battle: Node = null
 var _plume: ExhaustPlume = null
 var _light: OmniLight3D = null
 var _flicker := 0.0
+var _ignored_rids: Array[RID] = []
+var _detonated := false
 
 static func launch(battle: Node, from: Vector3, dir: Vector3, inherit_vel: Vector3,
 		def: Dictionary, tgt: Node3D, own_team: int, own: Node3D) -> Missile:
@@ -29,6 +31,7 @@ static func launch(battle: Node, from: Vector3, dir: Vector3, inherit_vel: Vecto
 	m._ttl = def.range / def.speed * 2.2
 	m._battle = battle
 	battle.add_child(m)
+	m.add_to_group("missiles")
 	m.global_position = from
 	m._build_visual()
 	FX.launch_flash(battle, from, dir)
@@ -148,7 +151,10 @@ func _physics_process(delta: float) -> void:
 	if target and is_instance_valid(target) and (not ("alive" in target) or target.alive or target is Flare):
 		var tpos: Vector3 = target.global_position
 		var tvel: Vector3 = target.get_velocity() if target.has_method("get_velocity") else Vector3.ZERO
-		var aim := Projectiles.lead_point(global_position, Vector3.ZERO, tpos, tvel, Vector3.ZERO, maxf(vel.length(), 50.0))
+		# Lead from the missile's actual velocity. Passing ZERO here made the
+		# seeker repeatedly over-lead fast crossing targets.
+		var aim := Projectiles.lead_point(global_position, vel, tpos, tvel,
+			Vector3.ZERO, maxf(vel.length(), 50.0))
 		desired = (aim - global_position).normalized()
 		# proximity fuse
 		if _armed and global_position.distance_to(tpos) < (8.0 if not (target is Flare) else 4.0):
@@ -166,34 +172,70 @@ func _physics_process(delta: float) -> void:
 	# collision check
 	var space := get_world_3d().direct_space_state
 	var q := PhysicsRayQueryParameters3D.create(global_position, global_position + vel * delta)
+	q.exclude = _ignored_rids.duplicate()
 	if shooter is CollisionObject3D and is_instance_valid(shooter):
-		q.exclude = [shooter.get_rid()]
+		q.exclude.append(shooter.get_rid())
 	var hit := space.intersect_ray(q)
 	if hit:
 		global_position = hit.position
 		var recv: Node = hit.collider
 		while recv and not recv.has_method("take_hit"):
 			recv = recv.get_parent()
+		var recv_team := _receiver_team(recv)
+		if recv and recv_team >= 0 and recv_team == team:
+			# Friendly hulls should neither take damage nor detonate our missile.
+			if hit.collider is CollisionObject3D:
+				_ignored_rids.append((hit.collider as CollisionObject3D).get_rid())
+			global_position += vel.normalized() * 0.6
+			return
 		if recv and _armed:
-			recv.take_hit(mdef.dmg, hit.position, vel.normalized(), 0.5, 1.0, 1.0, shooter)
-		_detonate(false)
+			recv.take_hit(mdef.dmg, hit.position, vel.normalized(), 0.5, 1.0, 1.0,
+				shooter, hit.get("normal", Vector3.ZERO))
+		# The collision damage above is the direct hit. Exclude that receiver
+		# from splash or an armed missile charges the same target twice.
+		_detonate(false, recv)
 		return
 	global_position += vel * delta
 	if vel.length() > 1.0:
 		look_at(global_position + vel.normalized(), Vector3.UP if absf(vel.normalized().dot(Vector3.UP)) < 0.99 else Vector3.RIGHT)
 
-func _detonate(direct: bool) -> void:
+func _detonate(direct: bool, already_hit: Node = null) -> void:
+	if _detonated:
+		return
+	_detonated = true
+	var direct_target: Node = already_hit
 	if direct and target and is_instance_valid(target) and target.has_method("take_hit"):
-		target.take_hit(mdef.dmg, global_position, vel.normalized(), 0.5, 1.0, 1.0, shooter)
-	elif _armed:
-		# splash to nearby combatants
-		if _battle:
-			for c in _battle.all_combatants():
-				if is_instance_valid(c) and c.alive and c.team != team:
-					var d: float = global_position.distance_to(c.global_position)
-					if d < 25.0:
-						c.take_hit(mdef.dmg * clampf(1.0 - d / 25.0, 0.0, 0.6), global_position, vel.normalized(), 0.4, 1.0, 1.0, shooter)
+		direct_target = target
+		target.take_hit(mdef.dmg, global_position, vel.normalized(), 0.5, 1.0, 1.0,
+			shooter, -vel.normalized())
+	if _armed and _battle:
+		# Splash includes exposed capital subsystems/turrets, deduplicated so a
+		# direct target is not charged twice.
+		var candidates: Array = _battle.hostile_targets() \
+			if team == Combatant.TEAM_FRIEND else _battle.friendly_targets()
+		var seen := {}
+		for c in candidates:
+			if not is_instance_valid(c) or c == direct_target or seen.has(c.get_instance_id()):
+				continue
+			seen[c.get_instance_id()] = true
+			if "alive" in c and not c.alive:
+				continue
+			var d: float = global_position.distance_to(c.global_position)
+			if d < 28.0:
+				var splash: float = float(mdef.dmg) * clampf(1.0 - d / 28.0, 0.0, 0.65)
+				if splash > 0.01:
+					c.take_hit(splash, global_position, vel.normalized(), 0.4,
+						1.0, 1.0, shooter, -vel.normalized())
 	# a warhead is not a stray cannon round: kind 1 gives it the shockwave,
 	# debris and smoke the old kind-0 burst skipped entirely
 	FX.explosion(get_parent(), global_position, 1)
 	queue_free()
+
+func _receiver_team(recv: Node) -> int:
+	if recv == null:
+		return -1
+	if "team" in recv:
+		return int(recv.team)
+	if "owner_ship" in recv and recv.owner_ship and "team" in recv.owner_ship:
+		return int(recv.owner_ship.team)
+	return -1

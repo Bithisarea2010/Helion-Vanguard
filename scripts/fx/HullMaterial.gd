@@ -17,6 +17,9 @@ static var _cache := {}
 const GLASS_SHADER := "res://shaders/canopy.gdshader"
 const HULL_SHADER := "res://shaders/hull.gdshader"
 
+static func clear_cache() -> void:
+	_cache.clear()
+
 ## opts:
 ##   paint      Color  — override for materials named "*_hull"
 ##   glow       Color  — override for materials named "*_engine" / emissive
@@ -45,6 +48,7 @@ static func _material_for(src: BaseMaterial3D, opts: Dictionary) -> Material:
 	var albedo := src.albedo_color
 	var metal := src.metallic
 	var rough := src.roughness
+	var albedo_tex: Texture2D = src.albedo_texture
 	var emit_col := src.emission if src.emission_enabled else Color(0, 0, 0)
 	var emit_e := src.emission_energy_multiplier if src.emission_enabled else 0.0
 
@@ -52,7 +56,7 @@ static func _material_for(src: BaseMaterial3D, opts: Dictionary) -> Material:
 	var transparent: bool = src.transparency != BaseMaterial3D.TRANSPARENCY_DISABLED \
 		or albedo.a < 0.99
 	if transparent:
-		return _glass_material(opts)
+		return _glass_material(src, opts)
 
 	# named-slot overrides keep the existing loadout paint/glow behaviour
 	if name.ends_with("_hull") and not name.ends_with("2_hull"):
@@ -67,11 +71,12 @@ static func _material_for(src: BaseMaterial3D, opts: Dictionary) -> Material:
 		# Blender exported emission strength 30, which blooms into a featureless
 		# white blob; 3.5 still reads as hot without eating the nozzle geometry
 		var trim_e: float = clampf(emit_e, 2.0, 3.5)
-		return _hull_material(albedo, metal, rough, emit_col, trim_e, opts, true)
-	return _hull_material(albedo, metal, rough, emit_col, emit_e, opts, false)
+		return _hull_material(albedo, metal, rough, emit_col, trim_e, albedo_tex, opts, true)
+	return _hull_material(albedo, metal, rough, emit_col, emit_e, albedo_tex, opts, false)
 
 static func _hull_material(albedo: Color, metal: float, rough: float,
-		emit_col: Color, emit_e: float, opts: Dictionary, is_trim: bool) -> ShaderMaterial:
+		emit_col: Color, emit_e: float, albedo_tex: Texture2D,
+		opts: Dictionary, is_trim: bool) -> ShaderMaterial:
 	var plate: float = opts.get("plate_scale", 2.6)
 	var wear: float = opts.get("wear", 0.45)
 	var grime: float = opts.get("grime", 0.40)
@@ -81,15 +86,20 @@ static func _hull_material(albedo: Color, metal: float, rough: float,
 	var rim_s: float = opts.get("rim_strength", 1.0)
 	var fade_a: float = opts.get("detail_fade_start", 90.0)
 	var fade_b: float = opts.get("detail_fade_end", 320.0)
-	var key := "%s|%.2f|%.2f|%s|%.1f|%.2f|%.2f|%.2f|%s|%.2f|%s|%.2f|%.0f|%.0f|%d" % [
+	var tex_key := "none" if albedo_tex == null else (
+		albedo_tex.resource_path if albedo_tex.resource_path != "" else str(albedo_tex.get_instance_id()))
+	var key := "%s|%.2f|%.2f|%s|%.1f|%s|%.2f|%.2f|%.2f|%s|%.2f|%s|%.2f|%.0f|%.0f|%d" % [
 		albedo.to_html(), metal, rough, emit_col.to_html(), emit_e,
-		plate, wear, grime, stripe.to_html(), stripe_amt, rim.to_html(), rim_s,
+		tex_key, plate, wear, grime, stripe.to_html(), stripe_amt, rim.to_html(), rim_s,
 		fade_a, fade_b, 1 if is_trim else 0]
 	if _cache.has(key):
 		return _cache[key]
 	var m := ShaderMaterial.new()
 	m.shader = load(HULL_SHADER)
 	m.set_shader_parameter("base_color", albedo)
+	m.set_shader_parameter("use_albedo_tex", albedo_tex != null)
+	if albedo_tex:
+		m.set_shader_parameter("albedo_tex", albedo_tex)
 	m.set_shader_parameter("metallic_amt", metal)
 	m.set_shader_parameter("roughness_amt", rough)
 	m.set_shader_parameter("emission_color", emit_col)
@@ -110,14 +120,20 @@ static func _hull_material(albedo: Color, metal: float, rough: float,
 	_cache[key] = m
 	return m
 
-static func _glass_material(opts: Dictionary) -> ShaderMaterial:
+static func _glass_material(src: BaseMaterial3D, opts: Dictionary) -> ShaderMaterial:
 	var tint: Color = opts.get("glass_tint", Color(0.10, 0.16, 0.22))
-	var key := "glass|" + tint.to_html()
+	var tex: Texture2D = src.albedo_texture
+	var tex_key := "none" if tex == null else (
+		tex.resource_path if tex.resource_path != "" else str(tex.get_instance_id()))
+	var key := "glass|%s|%s" % [tint.to_html(), tex_key]
 	if _cache.has(key):
 		return _cache[key]
 	var m := ShaderMaterial.new()
 	m.shader = load(GLASS_SHADER)
 	m.set_shader_parameter("tint", tint)
+	m.set_shader_parameter("use_albedo_tex", tex != null)
+	if tex:
+		m.set_shader_parameter("albedo_tex", tex)
 	m.render_priority = 1
 	_cache[key] = m
 	return m

@@ -95,6 +95,10 @@ func _try_fire(id: String, delta: float, aim_dir: Vector3, is_a: bool) -> void:
 	var cd := _cd_a if is_a else _cd_b
 	if cd > 0.0:
 		return
+	# Do not charge energy/heat/ammo for a shot the visual/raycast pool cannot
+	# represent. The old linear scan silently dropped those shots under load.
+	if not pm.has_bullet_capacity():
+		return
 	if ammo.has(id) and ammo[id] <= 0:
 		return
 	if not ship.consume_fire_cost(w.energy, w.heat):
@@ -110,7 +114,8 @@ func _try_fire(id: String, delta: float, aim_dir: Vector3, is_a: bool) -> void:
 	if ammo.has(id):
 		ammo[id] -= 1
 	var inherit: Vector3 = ship.get_velocity() if ship.has_method("get_velocity") else Vector3.ZERO
-	pm.fire_bullet(ship, mzl, aim_dir, w, ship.team, inherit)
+	if not pm.fire_bullet(ship, mzl, aim_dir, w, ship.team, inherit):
+		return
 	FX.muzzle_flash(pm, mzl, w.color)
 	AudioMgr.play_3d(w.sound, mzl, -2.0)
 	if ship.is_in_group("player") and "battle" in ship and ship.battle:

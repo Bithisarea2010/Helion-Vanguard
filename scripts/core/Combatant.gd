@@ -50,9 +50,13 @@ func get_velocity() -> Vector3:
 
 ## Central damage entry point. dir = direction the projectile was travelling.
 func take_hit(dmg: float, pos: Vector3, dir: Vector3, pen := 0.2,
-		sh_mult := 1.0, hu_mult := 1.0, attacker: Node = null) -> void:
+		sh_mult := 1.0, hu_mult := 1.0, attacker: Node = null,
+		surface_normal := Vector3.ZERO) -> void:
 	if not alive:
 		return
+	if not is_finite(dmg) or dmg <= 0.0:
+		return
+	var travel_dir := dir.normalized() if dir.length_squared() > 0.0001 else -global_transform.basis.z
 	var local := to_local(pos)
 	var from_front := local.z < 0.0   # ship forward is -Z
 	var was_shield := false
@@ -70,15 +74,24 @@ func take_hit(dmg: float, pos: Vector3, dir: Vector3, pen := 0.2,
 	_shield_cd = shield_delay
 	if remaining > 0.01:
 		# armor: angle + penetration model
-		var n := (global_position - pos).normalized()
-		var angle_factor := clampf(absf(n.dot(dir.normalized())), 0.25, 1.0)
+		var n := surface_normal.normalized() if surface_normal.length_squared() > 0.01 \
+			else (global_position - pos).normalized()
+		var angle_factor := clampf(absf(n.dot(travel_dir)), 0.25, 1.0)
 		var reduction := armor * (1.0 - pen) * (2.0 - angle_factor)
 		reduction = clampf(reduction, 0.0, 0.85)
 		var hull_dmg := remaining * hu_mult * (1.0 - reduction)
-		hull -= hull_dmg
+		hull = maxf(hull - hull_dmg, 0.0)
 		damaged.emit(hull_dmg, pos, false)
 	else:
 		damaged.emit(dmg, pos, true)
+	# Even arcade projectiles should transfer momentum. The cap prevents rapid
+	# cannons from turning a hit into an uncontrollable physics exploit.
+	if not freeze:
+		var impulse := travel_dir * clampf(dmg * 0.055, 0.05, 12.0)
+		var offset := pos - global_position
+		if offset.length() > 30.0:
+			offset = offset.normalized() * 30.0
+		apply_impulse(impulse, offset)
 	if hull <= 0.0:
 		die(attacker)
 
@@ -89,7 +102,7 @@ func die(killer: Node = null) -> void:
 	died.emit(killer)
 
 func hull_frac() -> float:
-	return clampf(hull / hull_max, 0.0, 1.0)
+	return clampf(hull / maxf(hull_max, 0.001), 0.0, 1.0)
 
 func shield_frac() -> float:
 	if shield_max <= 0.0:

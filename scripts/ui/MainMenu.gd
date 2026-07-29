@@ -11,6 +11,10 @@ var _sel_mission := "instant_action"
 
 func _ready() -> void:
 	Input.mouse_mode = Input.MOUSE_MODE_VISIBLE
+	# A static menu gains nothing above 60 fps. Capping only this scene cuts GPU
+	# and CPU power on 120/144/165 Hz displays; Battle restores the user's cap.
+	var user_cap := int(Game.settings.fps_limit)
+	Engine.max_fps = mini(user_cap if user_cap > 0 else 60, 60)
 	env = SpaceEnv.new()
 	add_child(env)
 	env.build({
@@ -45,7 +49,12 @@ func _ready() -> void:
 	ui = CanvasLayer.new()
 	add_child(ui)
 	_build_ui()
+	Game.settings_changed.connect(_on_settings_changed)
 	AudioMgr.play_music("menu")
+
+func _on_settings_changed() -> void:
+	if env:
+		env.apply_preset()
 
 func _process(delta: float) -> void:
 	_t += delta
@@ -87,21 +96,40 @@ func _show_ship(id: String) -> void:
 # =================================================================== UI
 func _build_ui() -> void:
 	var root := Control.new()
-	root.set_anchors_preset(Control.PRESET_FULL_RECT)
+	root.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	ui.add_child(root)
-	# left column
+	# Left navigation card. The old loose column was often unreadable over a
+	# bright planet and had no stable visual hierarchy at small window sizes.
+	var nav_panel := PanelContainer.new()
+	nav_panel.anchor_left = 0.025
+	nav_panel.anchor_right = 0.235
+	nav_panel.anchor_top = 0.045
+	nav_panel.anchor_bottom = 0.955
+	nav_panel.add_theme_stylebox_override("panel", Styles.panel(
+		Color(0.018, 0.032, 0.060, 0.94), 10,
+		Color(Styles.CYAN.r, Styles.CYAN.g, Styles.CYAN.b, 0.32)))
+	root.add_child(nav_panel)
+	var nav_margin := MarginContainer.new()
+	nav_margin.add_theme_constant_override("margin_left", 20)
+	nav_margin.add_theme_constant_override("margin_right", 20)
+	nav_margin.add_theme_constant_override("margin_top", 20)
+	nav_margin.add_theme_constant_override("margin_bottom", 18)
+	nav_panel.add_child(nav_margin)
 	var left := VBoxContainer.new()
-	left.position = Vector2(60, 70)
-	left.add_theme_constant_override("separation", 10)
-	root.add_child(left)
-	var title := Styles.label("HELION", 64, Color(0.95, 0.97, 1.0), true)
-	var title2 := Styles.label("VANGUARD", 64, Styles.ORANGE, true)
-	title2.position.y = -18
+	left.add_theme_constant_override("separation", 9)
+	nav_margin.add_child(left)
+	left.add_child(Styles.label("FLIGHT DECK  //  ONLINE", 11, Styles.CYAN, true))
+	var title := Styles.label("HELION", 51, Color(0.95, 0.97, 1.0), true)
+	var title2 := Styles.label("VANGUARD", 44, Styles.ORANGE, true)
 	left.add_child(title)
 	left.add_child(title2)
-	left.add_child(Styles.label("Deep-belt space combat  ·  v%s" % Game.VERSION, 14, Styles.DIM))
+	var rule := HSeparator.new()
+	left.add_child(rule)
+	left.add_child(Styles.label("DEEP-BELT SPACE COMBAT", 12, Styles.DIM, true))
+	left.add_child(Styles.label("Build %s  •  %s" % [Game.VERSION,
+		Game.PRESET_NAMES[int(Game.settings.preset)]], 12, Color(0.72, 0.80, 0.88)))
 	var spacer := Control.new()
-	spacer.custom_minimum_size.y = 26
+	spacer.custom_minimum_size.y = 10
 	left.add_child(spacer)
 	var entries := [
 		["INSTANT ACTION", func(): Game.start_mission("instant_action")],
@@ -111,26 +139,43 @@ func _build_ui() -> void:
 		["CREDITS & LICENCES", func(): _show_credits()],
 		["QUIT", func(): _quit()],
 	]
+	var first_button: Button = null
 	for e in entries:
 		var b := Styles.button(e[0], 21)
 		b.alignment = HORIZONTAL_ALIGNMENT_LEFT
-		b.custom_minimum_size.x = 330
+		b.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 		b.pressed.connect(e[1])
 		left.add_child(b)
+		if first_button == null:
+			first_button = b
 	if not Game.save.training_done:
-		var hint := Styles.label("New pilot? Fly FLIGHT ACADEMY under MISSIONS first.", 14, Styles.CYAN)
+		var hint := Styles.label("NEW PILOT?\nFlight Academy is under MISSIONS.", 12, Styles.CYAN, true)
+		hint.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 		left.add_child(hint)
+	var flex := Control.new()
+	flex.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	left.add_child(flex)
+	var display_status := Styles.label("%s  •  3D %d%%" % [
+		Game.display_mode_name(), int(round(float(Game.settings.resolution_scale) * 100.0))],
+		11, Styles.DIM)
+	display_status.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	left.add_child(display_status)
+	if first_button:
+		first_button.grab_focus.call_deferred()
 	# right content area
 	content = PanelContainer.new()
 	content.set_anchors_preset(Control.PRESET_CENTER_RIGHT)
-	content.position = Vector2(-40, 0)
-	content.anchor_left = 0.44
+	content.anchor_left = 0.42
 	content.anchor_right = 0.97
 	content.anchor_top = 0.08
 	content.anchor_bottom = 0.92
-	content.offset_left = 0; content.offset_right = 0
-	content.offset_top = 0; content.offset_bottom = 0
-	(content as PanelContainer).add_theme_stylebox_override("panel", Styles.panel())
+	content.offset_left = 0
+	content.offset_right = 0
+	content.offset_top = 0
+	content.offset_bottom = 0
+	(content as PanelContainer).add_theme_stylebox_override("panel", Styles.panel(
+		Color(0.018, 0.034, 0.065, 0.95), 10,
+		Color(Styles.ORANGE.r, Styles.ORANGE.g, Styles.ORANGE.b, 0.30)))
 	content.visible = false
 	root.add_child(content)
 
@@ -214,6 +259,7 @@ func _show_hangar() -> void:
 			b.add_theme_color_override("font_color", Styles.ORANGE)
 		b.pressed.connect(func():
 			Game.save.selected_ship = sid
+			Game.mark_save_dirty()
 			Game.save_game()
 			_show_ship(sid)
 			# deferred: rebuilding now would free the button mid-signal
@@ -361,4 +407,5 @@ No assets were taken from any commercial game.
 func _quit() -> void:
 	Game.save_settings()
 	Game.save_game()
+	Game.prepare_shutdown()
 	get_tree().quit()

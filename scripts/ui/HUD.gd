@@ -7,6 +7,7 @@ var battle: Node
 var show_tacmap := false
 var _hitmarker_t := 0.0
 var _hit_shield := false
+var _hit_surface := false
 var _comms: Array = []              # [{text, speaker, t}]
 var _objective := ""
 var _objective_sub := ""
@@ -23,9 +24,10 @@ func setup(p: PlayerShip, b: Node) -> void:
 	# ALWAYS: the HUD must keep redrawing while paused, otherwise a stale
 	# HUD frame stays plastered over photo mode
 	process_mode = Node.PROCESS_MODE_ALWAYS
-	set_anchors_preset(Control.PRESET_FULL_RECT)
+	set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	mouse_filter = Control.MOUSE_FILTER_IGNORE
 	battle.projectiles.player_hit_confirmed.connect(_on_hit_confirmed)
+	battle.projectiles.player_surface_hit.connect(_on_surface_hit)
 	player.damaged.connect(func(_amt, _pos, was_shield):
 		if not was_shield:
 			_dmg_t = 0.55)
@@ -33,7 +35,14 @@ func setup(p: PlayerShip, b: Node) -> void:
 func _on_hit_confirmed(_t: Node, was_shield: bool) -> void:
 	_hitmarker_t = 0.22
 	_hit_shield = was_shield
+	_hit_surface = false
 	AudioMgr.play_ui("hitmarker", -10.0)
+
+func _on_surface_hit(_t: Node, kind: String) -> void:
+	_hitmarker_t = 0.16
+	_hit_shield = false
+	_hit_surface = true
+	AudioMgr.play_ui("hitmarker", -15.0, 0.82 if kind == "rock" else 0.92)
 
 func comms(speaker: String, text: String) -> void:
 	_comms.append({"speaker": speaker, "text": text, "t": 7.0})
@@ -58,6 +67,7 @@ func _process(delta: float) -> void:
 		position = Vector2.ZERO
 		size = vr
 	_hitmarker_t -= delta
+	_dmg_t = maxf(0.0, _dmg_t - delta)
 	_warn_blink += delta * 6.0
 	for c in _comms:
 		c.t -= delta
@@ -82,7 +92,6 @@ func _draw() -> void:
 	var f := Styles.title_font()
 	var bf := Styles.body_font()
 	# damage vignette: red edge flash on hull hits, steady pulse when critical
-	_dmg_t = maxf(0.0, _dmg_t - get_process_delta_time())
 	var vig := clampf(_dmg_t * 1.6, 0.0, 0.85)
 	if player.hull_frac() < 0.3:
 		vig = maxf(vig, 0.25 + 0.15 * sin(_warn_blink * 0.8))
@@ -118,7 +127,8 @@ func _draw_crosshair(vp: Vector2) -> void:
 	draw_circle(vp * 0.5, 2.0, Color(col.r, col.g, col.b, 0.5))
 	# hit marker
 	if _hitmarker_t > 0.0:
-		var hc := Styles.CYAN if _hit_shield else Styles.ORANGE
+		var hc := Color(0.72, 0.68, 0.60) if _hit_surface \
+			else (Styles.CYAN if _hit_shield else Styles.ORANGE)
 		for a in [PI * 0.25, PI * 0.75, PI * 1.25, PI * 1.75]:
 			var d := Vector2(cos(a), sin(a))
 			draw_line(c + d * 8.0, c + d * 16.0, hc, 2.0, true)

@@ -6,6 +6,7 @@ var _music_a: AudioStreamPlayer
 var _music_b: AudioStreamPlayer
 var _music_active_a := true
 var _current_track := ""
+var _music_tween: Tween = null
 var _pool_2d: Array[AudioStreamPlayer] = []
 var _pool_3d: Array[AudioStreamPlayer3D] = []
 const POOL_2D := 12
@@ -64,11 +65,15 @@ func has_sound(sound: String) -> bool:
 
 func apply_volumes() -> void:
 	var s: Dictionary = Game.settings
-	AudioServer.set_bus_volume_db(0, linear_to_db(clampf(s.vol_master, 0.0001, 1.0)))
-	AudioServer.set_bus_volume_db(AudioServer.get_bus_index("Music"), linear_to_db(clampf(s.vol_music, 0.0001, 1.0)))
-	AudioServer.set_bus_volume_db(AudioServer.get_bus_index("SFX"), linear_to_db(clampf(s.vol_sfx, 0.0001, 1.0)))
-	AudioServer.set_bus_volume_db(AudioServer.get_bus_index("UI"), linear_to_db(clampf(s.vol_ui, 0.0001, 1.0)))
-	AudioServer.set_bus_mute(0, s.vol_master <= 0.001)
+	var levels := {"Master": float(s.vol_master), "Music": float(s.vol_music),
+		"SFX": float(s.vol_sfx), "UI": float(s.vol_ui)}
+	for bus_name in levels:
+		var idx := 0 if bus_name == "Master" else AudioServer.get_bus_index(bus_name)
+		if idx < 0:
+			continue
+		var level: float = levels[bus_name]
+		AudioServer.set_bus_volume_db(idx, linear_to_db(clampf(level, 0.0001, 1.0)))
+		AudioServer.set_bus_mute(idx, level <= 0.001)
 
 # ---------------------------------------------------------------- one-shots
 func play_ui(sound: String, volume_db := 0.0, pitch := 1.0) -> void:
@@ -99,7 +104,6 @@ func play_3d(sound: String, pos: Vector3, volume_db := 0.0, pitch := 1.0, max_di
 func play_music(track: String, fade := 1.5) -> void:
 	if track == _current_track:
 		return
-	_current_track = track
 	var stream: AudioStream = null
 	var path := "res://assets/audio/music/%s.ogg" % track
 	if ResourceLoader.exists(path):
@@ -109,7 +113,9 @@ func play_music(track: String, fade := 1.5) -> void:
 		if ResourceLoader.exists(path):
 			stream = load(path)
 	if stream == null:
+		push_warning("Music track not found: %s" % track)
 		return
+	_current_track = track
 	if stream is AudioStreamWAV:
 		(stream as AudioStreamWAV).loop_mode = AudioStreamWAV.LOOP_FORWARD
 		(stream as AudioStreamWAV).loop_end = int(stream.get_length() * stream.mix_rate)
@@ -119,17 +125,54 @@ func play_music(track: String, fade := 1.5) -> void:
 	incoming.stream = stream
 	incoming.volume_db = -40.0
 	incoming.play()
-	var tw := create_tween()
-	tw.set_parallel(true)
-	tw.tween_property(incoming, "volume_db", 0.0, fade)
+	if _music_tween and _music_tween.is_valid():
+		_music_tween.kill()
+	fade = maxf(fade, 0.01)
+	_music_tween = create_tween()
+	_music_tween.set_parallel(true)
+	_music_tween.tween_property(incoming, "volume_db", 0.0, fade)
 	if outgoing.playing:
-		tw.tween_property(outgoing, "volume_db", -40.0, fade)
-		tw.chain().tween_callback(outgoing.stop)
+		_music_tween.tween_property(outgoing, "volume_db", -40.0, fade)
+		_music_tween.chain().tween_callback(outgoing.stop)
 
 func stop_music(fade := 1.0) -> void:
 	_current_track = ""
+	if _music_tween and _music_tween.is_valid():
+		_music_tween.kill()
 	for p in [_music_a, _music_b]:
 		if p.playing:
 			var tw := create_tween()
 			tw.tween_property(p, "volume_db", -40.0, fade)
 			tw.tween_callback(p.stop)
+
+func shutdown() -> void:
+	# Release active playback objects synchronously. Exported builds normally
+	# fade them out, but test harnesses and OS quits can tear the tree down in
+	# one frame and would otherwise retain the WAV playback references.
+	if _music_tween and _music_tween.is_valid():
+		_music_tween.kill()
+	_music_tween = null
+	for p in _pool_2d:
+		if is_instance_valid(p):
+			p.stop()
+			p.stream = null
+			p.free()
+	for p in _pool_3d:
+		if is_instance_valid(p):
+			p.stop()
+			p.stream = null
+			p.free()
+	for p in [_music_a, _music_b]:
+		if is_instance_valid(p):
+			p.stop()
+			p.stream = null
+			p.free()
+	_pool_2d.clear()
+	_pool_3d.clear()
+	_music_a = null
+	_music_b = null
+	_sounds.clear()
+	_current_track = ""
+
+func _exit_tree() -> void:
+	shutdown()

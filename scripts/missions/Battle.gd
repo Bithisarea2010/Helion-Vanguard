@@ -26,6 +26,10 @@ var _wave_no := 0
 var _spawn_cd := 0.0
 var _spawn_queue: Array = []    # wingmen waiting to be built, one per frame
 var _attack_tokens: Array = []
+var _target_cache_stamp := -10.0
+var _cached_combatants: Array = []
+var _cached_hostiles: Array = []
+var _cached_friendlies: Array = []
 var _convoy: Array = []
 var _haulers_alive := 0
 var _capitals: Array = []
@@ -55,8 +59,13 @@ var _bench_t := 0.0
 var _bench_frames := 0
 var _bench_worst := 0.0
 var _bench_samples: Array[float] = []
+var _harness_quitting := false
 
 func _ready() -> void:
+	# MainMenu deliberately caps itself at 60 fps; restore the gameplay limit
+	# (including uncapped) before building the mission.
+	Game.apply_video_settings()
+	Game.apply_preset()
 	mission_id = Game.current_mission
 	mdef = MissionDefs.get_mission(mission_id)
 	process_mode = Node.PROCESS_MODE_PAUSABLE
@@ -208,7 +217,7 @@ func _parse_harness_args() -> void:
 			get_tree().create_timer(_quit_after + 8.0, true, false, true) \
 				.timeout.connect(func():
 					print("[BENCH] harness watchdog fired (tree paused or mission over)")
-					get_tree().quit())
+					_quit_harness_cleanly())
 
 ## Screenshots on a fixed cadence + frame-time telemetry printed once a second.
 func _harness_tick(delta: float) -> void:
@@ -242,7 +251,15 @@ func _harness_tick(delta: float) -> void:
 		if _shot_dir != "":
 			_grab_shot()
 		print("[BENCH] harness complete, shots=%d" % _shot_idx)
-		get_tree().create_timer(0.4).timeout.connect(func(): get_tree().quit())
+		_quit_harness_cleanly(0.4)
+
+func _quit_harness_cleanly(delay := 0.25) -> void:
+	if _harness_quitting:
+		return
+	_harness_quitting = true
+	Game.prepare_shutdown()
+	await get_tree().create_timer(delay, true, false, true).timeout
+	get_tree().quit()
 
 func _grab_shot() -> void:
 	var img := get_viewport().get_texture().get_image()
@@ -322,43 +339,49 @@ func _autotest_tick(delta: float) -> void:
 
 
 # =================================================================== TARGET LISTS
-func all_combatants() -> Array:
-	var out: Array = []
+func _refresh_target_cache() -> void:
+	# HUD, turrets, missiles and every fighter used to rebuild the same scene
+	# group arrays independently. An 80 ms cache is below targeting reaction
+	# time but removes dozens of allocations/group walks per rendered frame.
+	if mission_time - _target_cache_stamp < 0.08:
+		return
+	_target_cache_stamp = mission_time
+	_cached_combatants.clear()
+	_cached_hostiles.clear()
+	_cached_friendlies.clear()
 	for n in get_tree().get_nodes_in_group("hostiles"):
 		if n is Combatant and (n as Combatant).alive:
-			out.append(n)
-	for n in get_tree().get_nodes_in_group("friendlies"):
-		if n is Combatant and (n as Combatant).alive:
-			out.append(n)
-	if player and player.alive:
-		out.append(player)
-	return out
-
-func hostile_targets() -> Array:
-	var out: Array = []
-	for n in get_tree().get_nodes_in_group("hostiles"):
-		if n is Combatant and (n as Combatant).alive:
-			out.append(n)
+			_cached_combatants.append(n)
+			_cached_hostiles.append(n)
 			if n is CapitalShip:
 				for s in (n as CapitalShip).subsystems:
-					if s.alive:
-						out.append(s)
+					if is_instance_valid(s) and s.alive:
+						_cached_hostiles.append(s)
 				for t in (n as CapitalShip).turrets:
-					if t.alive:
-						out.append(t)
-	for t in _turret_line:
-		if is_instance_valid(t) and t.alive:
-			out.append(t)
-	return out
-
-func friendly_targets() -> Array:
-	var out: Array = []
-	if player and player.alive:
-		out.append(player)
+					if is_instance_valid(t) and t.alive:
+						_cached_hostiles.append(t)
 	for n in get_tree().get_nodes_in_group("friendlies"):
 		if n is Combatant and (n as Combatant).alive:
-			out.append(n)
-	return out
+			_cached_combatants.append(n)
+			_cached_friendlies.append(n)
+	if player and player.alive:
+		_cached_combatants.append(player)
+		_cached_friendlies.append(player)
+	for t in _turret_line:
+		if is_instance_valid(t) and t.alive:
+			_cached_hostiles.append(t)
+
+func all_combatants() -> Array:
+	_refresh_target_cache()
+	return _cached_combatants
+
+func hostile_targets() -> Array:
+	_refresh_target_cache()
+	return _cached_hostiles
+
+func friendly_targets() -> Array:
+	_refresh_target_cache()
+	return _cached_friendlies
 
 func request_attack_token(who: Node) -> bool:
 	_attack_tokens = _attack_tokens.filter(func(w): return is_instance_valid(w))
@@ -492,12 +515,15 @@ func on_kill(victim: Node, killer: Node) -> void:
 
 func on_subsystem_destroyed(ship: Node, sub) -> void:
 	hud.kill_feed("%s — %s destroyed" % [ship.display_name, sub.display_name])
-	score += 150
+	var attacker: Node = sub.last_attacker if "last_attacker" in sub else null
+	if "team" in ship and ship.team == Combatant.TEAM_HOSTILE \
+			and is_instance_valid(attacker) and attacker.is_in_group("player"):
+		score += 150
 
 # =================================================================== UI OVERLAYS
 func _title_card() -> void:
 	var cc := CenterContainer.new()
-	cc.set_anchors_preset(Control.PRESET_FULL_RECT)
+	cc.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	cc.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	var vb := VBoxContainer.new()
 	vb.alignment = BoxContainer.ALIGNMENT_CENTER
@@ -547,14 +573,14 @@ func _open_settings() -> void:
 
 func _build_menu_panel(title: String, entries: Array) -> Control:
 	var root := Control.new()
-	root.set_anchors_preset(Control.PRESET_FULL_RECT)
+	root.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	root.process_mode = Node.PROCESS_MODE_ALWAYS
 	var dim := ColorRect.new()
 	dim.color = Color(0.0, 0.01, 0.03, 0.72)
-	dim.set_anchors_preset(Control.PRESET_FULL_RECT)
+	dim.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	root.add_child(dim)
 	var cc := CenterContainer.new()
-	cc.set_anchors_preset(Control.PRESET_FULL_RECT)
+	cc.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	root.add_child(cc)
 	var panel := PanelContainer.new()
 	panel.add_theme_stylebox_override("panel", Styles.panel())
@@ -614,14 +640,14 @@ func _show_debrief(win: bool) -> void:
 	release_mouse()
 	var s := _stats_dict()
 	var root := Control.new()
-	root.set_anchors_preset(Control.PRESET_FULL_RECT)
+	root.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	root.process_mode = Node.PROCESS_MODE_ALWAYS
 	var dim := ColorRect.new()
 	dim.color = Color(0.0, 0.01, 0.03, 0.8)
-	dim.set_anchors_preset(Control.PRESET_FULL_RECT)
+	dim.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	root.add_child(dim)
 	var cc := CenterContainer.new()
-	cc.set_anchors_preset(Control.PRESET_FULL_RECT)
+	cc.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	root.add_child(cc)
 	var panel := PanelContainer.new()
 	panel.add_theme_stylebox_override("panel", Styles.panel(Styles.BG_SOLID))
@@ -899,6 +925,7 @@ func _dir_training() -> void:
 					if h is Combatant:
 						(h as Combatant).die(null)
 				Game.save.training_done = true
+				Game.mark_save_dirty()
 				Game.save_game()
 				hud.comms("INSTRUCTOR", "That's a pass, pilot. The fleet needs you — report to the Solace.")
 				mission_complete()

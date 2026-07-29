@@ -125,15 +125,13 @@ Godot --path . --resolution 1280x720 -- --mission=instant_action --autotest --un
    gauges are the only real instruments. This needs geometry work in
    `blender_src/cockpit_v2.py`, not more shader tuning.
 
-5. **`HullMaterial.apply()` discards textures.** Any surface whose GLB material
-   carries an albedo texture loses it — only `cockpit.glb` and the asteroids have
-   textures today, and the asteroids bypass the helper, so nothing regresses in
-   practice. It will bite the moment a textured asset is added.
+5. **FIXED in 1.1 — `HullMaterial.apply()` discarded textures.** Albedo textures
+   are now preserved, included in material-cache signatures, and sampled by the
+   hull/canopy shaders.
 
-6. **Damage response is wired but never driven.** `hull.gdshader` has a `damage`
-   uniform (scorch + glowing cracks) and `HullMaterial.set_damage()` exists, but
-   no gameplay code calls it. Hooking it to `Combatant.hull_frac()` is a small
-   change with a large payoff.
+6. **FIXED in 1.1 — Damage response was wired but never driven.** Player,
+   enemy, capital, and wreck damage now update the hull shader's scorch/crack
+   response as integrity falls.
 
 ---
 
@@ -209,9 +207,10 @@ Godot --path . --resolution 1280x720 -- --mission=instant_action --autotest --un
     FX shaders — still land there). Waves arrive 2+ km out, so the stagger is
     invisible.
 
-11. **VRAM is ~555 MB.** Down from 580 MB, but still high for the content. The
-    4096×2048 RGBE sky panorama is ~33 MB of that; the duplicated asteroid
-    textures are most of the rest (see 1).
+11. **VRAM remains high for the content.** The 4096×2048 RGBE sky panorama is a
+    material part of it. The duplicated embedded asteroid textures were removed
+    in the second pass; a current release-build capture should replace the old
+    555 MB estimate before further conclusions are drawn.
 
 ---
 

@@ -24,15 +24,18 @@ automatically in fullscreen.
 
 ## What the presets change
 
-| Preset | MSAA | Glow | Shadows | Asteroid density | Particles | Debris life |
+| Preset | AA | Glow | Shadows | Asteroid density | Particles | Debris life |
 |---|---|---|---|---|---|---|
-| Low | off | off | off | 45 % | 50 % | 3 s |
-| Medium | off | on | off | 70 % | 75 % | 5 s |
-| High (default) | 2× | on | on | 100 % | 100 % | 8 s |
-| Ultra | 4× | on | on | 135 % | 130 % | 12 s |
+| Low | FXAA | off | off | 45 % | 50 % | 3 s |
+| Medium | SMAA | on | off | 70 % | 75 % | 5 s |
+| High (default) | 2× MSAA | on | 2K / 350 m | 100 % | 100 % | 8 s |
+| Ultra | 4× MSAA + TAA | enhanced | 4K / 560 m | 135 % | 130 % | 12 s |
 
-Render scale (0.5–1.0, bilinear) applies to the 3D buffer only; UI stays
-native-crisp. VSync and an optional 60/120 fps cap are in Settings → Video.
+Render scale (0.5–2.0) applies to the 3D buffer only; UI stays native-crisp.
+Values above 1.0 render above output resolution and downsample. Bilinear,
+FSR 1, FSR 2, and MetalFX Temporal are selectable for sub-native rendering.
+V-Sync supports Off/On/Adaptive and the frame cap includes common 30–240 Hz
+display rates.
 
 ## Main GPU costs (in order)
 
