@@ -55,3 +55,59 @@ Godot --path . -- --mission=survival --autotest
   then `player_ships.py` / `enemy_ships.py` / `props.py` build functions.
 - Audio: `python3 tools/gen_audio.py` (needs numpy).
 - Icon: `python3 tools/gen_icon.py`, then `iconutil` (see tools file).
+
+---
+
+## Detail / AO asset pass (2026-07-29)
+
+The shipped GLBs are generated, not hand-modelled. `blender_src/detail_pass.py`
+takes the pristine sources in `assets/models_original/`, adds a deterministic
+greeble layer and bakes per-vertex ambient occlusion into `COLOR_0`:
+
+```sh
+BLENDER="/Applications/További programok Boldi/Fejlesztés/Blender.app/Contents/MacOS/Blender"
+"$BLENDER" --background --python blender_src/detail_pass.py -- /tmp/hv_models
+cp /tmp/hv_models/*.glb assets/models/
+```
+
+**The pass is not idempotent.** It defaults to reading `assets/models_original/`
+for exactly this reason — running it over its own output greebles the greebles
+and roughly doubles the triangle count again. Pass `--src=<dir>` to override.
+
+Add ship names after the output directory to process a subset:
+
+```sh
+"$BLENDER" --background --python blender_src/detail_pass.py -- /tmp/hv_models enemy_razor enemy_jackal
+```
+
+After any asset change, refresh Godot's import cache before running from the CLI
+(new `class_name` scripts need this too, or the global class cache is stale):
+
+```sh
+Godot --headless --path . --import
+```
+
+## Verification harness
+
+Every performance and visual claim in `docs/PROBLEMS.md` came from this:
+
+```sh
+Godot --path . --resolution 1280x720 -- --mission=instant_action --autotest \
+      --uncapped --nocamcycle --shotdir=/abs/path --quitafter=18
+```
+
+| flag | effect |
+|---|---|
+| `--mission=<id>` | boot straight into a mission |
+| `--autotest` | self-driving combat bot |
+| `--shotdir=<abs>` | PNG capture every 4 s |
+| `--quitafter=<s>` | exit after N mission-seconds |
+| `--uncapped` | disable vsync and the FPS limit, to see real headroom |
+| `--preset=0..3` | force a quality preset |
+| `--nocamcycle` | hold one camera, for comparable captures |
+| `--noast`, `--nodust`, `--notrails`, `--nohud` | subsystem isolation for profiling |
+
+`[BENCH]` lines print fps, p95/worst frame time, objects, primitives, draw calls,
+VRAM and node count once a second. `tests/PerfFloor.tscn` measures the
+empty-scene ceiling on the machine so battle numbers can be read against a real
+floor rather than an assumed one.
