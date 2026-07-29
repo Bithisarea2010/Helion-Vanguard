@@ -13,6 +13,9 @@ var _armed := false
 var _arm_t := 0.4
 var _cm_checked := {}
 var _battle: Node = null
+var _plume: ExhaustPlume = null
+var _light: OmniLight3D = null
+var _flicker := 0.0
 
 static func launch(battle: Node, from: Vector3, dir: Vector3, inherit_vel: Vector3,
 		def: Dictionary, tgt: Node3D, own_team: int, own: Node3D) -> Missile:
@@ -28,7 +31,8 @@ static func launch(battle: Node, from: Vector3, dir: Vector3, inherit_vel: Vecto
 	battle.add_child(m)
 	m.global_position = from
 	m._build_visual()
-	AudioMgr.play_3d("missile_launch", from, 0.0)
+	FX.launch_flash(battle, from, dir)
+	AudioMgr.play_3d("missile_launch", from, 2.0)
 	# warn the target if it's the player
 	if tgt and tgt.is_in_group("player") and tgt.has_method("incoming_missile"):
 		tgt.incoming_missile(m)
@@ -40,60 +44,87 @@ func _build_visual() -> void:
 	# body + red nose + 4 tail fins
 	var body := MeshInstance3D.new()
 	var cm := CylinderMesh.new()
-	cm.top_radius = 0.075; cm.bottom_radius = 0.075
-	cm.height = 1.0; cm.radial_segments = 8
+	cm.top_radius = 0.085; cm.bottom_radius = 0.085
+	cm.height = 1.05; cm.radial_segments = 12
 	body.mesh = cm
 	body.rotation_degrees = Vector3(-90, 0, 0)
 	var bm := StandardMaterial3D.new()
-	bm.albedo_color = Color(0.82, 0.82, 0.86); bm.metallic = 0.7; bm.roughness = 0.35
+	bm.albedo_color = Color(0.78, 0.79, 0.84); bm.metallic = 0.85; bm.roughness = 0.28
 	body.material_override = bm
 	add_child(body)
+	# warning band aft of the seeker, the one detail that reads at 30 m
+	var band := MeshInstance3D.new()
+	var bcm := CylinderMesh.new()
+	bcm.top_radius = 0.092; bcm.bottom_radius = 0.092
+	bcm.height = 0.13; bcm.radial_segments = 12
+	band.mesh = bcm
+	band.rotation_degrees = Vector3(-90, 0, 0)
+	band.position.z = -0.34
+	var bandm := StandardMaterial3D.new()
+	bandm.albedo_color = Color(0.85, 0.55, 0.05); bandm.metallic = 0.2; bandm.roughness = 0.6
+	band.material_override = bandm
+	add_child(band)
 	var nose := MeshInstance3D.new()
 	var ncm := CylinderMesh.new()
-	ncm.top_radius = 0.0; ncm.bottom_radius = 0.075
-	ncm.height = 0.32; ncm.radial_segments = 8
+	ncm.top_radius = 0.0; ncm.bottom_radius = 0.085
+	ncm.height = 0.36; ncm.radial_segments = 12
 	nose.mesh = ncm
 	nose.rotation_degrees = Vector3(-90, 0, 0)
-	nose.position.z = -0.65
+	nose.position.z = -0.68
 	var nm := StandardMaterial3D.new()
-	nm.albedo_color = Color(0.75, 0.12, 0.08); nm.metallic = 0.4; nm.roughness = 0.4
+	nm.albedo_color = Color(0.30, 0.05, 0.04); nm.metallic = 0.3; nm.roughness = 0.25
+	nm.emission_enabled = true
+	nm.emission = Color(1.0, 0.18, 0.10)      # live seeker head
+	nm.emission_energy_multiplier = 1.4
 	nose.material_override = nm
 	add_child(nose)
 	var fm := StandardMaterial3D.new()
-	fm.albedo_color = Color(0.25, 0.26, 0.3); fm.metallic = 0.7
+	fm.albedo_color = Color(0.20, 0.21, 0.25); fm.metallic = 0.8; fm.roughness = 0.35
 	for k in 4:
 		var fin := MeshInstance3D.new()
 		var fb := BoxMesh.new()
-		fb.size = Vector3(0.02, 0.16, 0.22)
+		fb.size = Vector3(0.02, 0.20, 0.26)
 		fin.mesh = fb
 		fin.material_override = fm
 		add_child(fin)
 		fin.position = Vector3(0, 0, 0.42)
 		fin.rotation_degrees = Vector3(0, 0, 45 + k * 90)
-		fin.position += fin.transform.basis.y * 0.09
-	# small RED burning exhaust — same style as wreck fires, miniaturised
-	FX.fire_emitter(self, Vector3(0, 0, 0.62), 0.38, Color(1.0, 0.22, 0.05))
-	var l := OmniLight3D.new()
-	l.light_color = Color(1.0, 0.35, 0.1)
-	l.light_energy = 1.4
-	l.omni_range = 7.0
-	l.shadow_enabled = false
-	add_child(l)
+		fin.position += fin.transform.basis.y * 0.11
+	# Motor: one additive cone shell, the same construction as the ship engines.
+	# The old version was a particle fire emitter, which at missile scale was a
+	# handful of overlapping billboards that clipped into an orange rectangle.
+	_plume = ExhaustPlume.create(self, Vector3(0, 0, 0.60), Color(1.0, 0.42, 0.12), 0.11, 1.5)
+	_plume.set_power(1.0, false)
+	FX.rocket_smoke(self, Vector3(0, 0, 0.72), 0.55)
+	_light = OmniLight3D.new()
+	_light.light_color = Color(1.0, 0.4, 0.12)
+	_light.light_energy = 2.4
+	_light.omni_range = 11.0
+	_light.shadow_enabled = false
+	add_child(_light)
 	# red-hot exhaust stripe
 	var sock := Node3D.new()
 	add_child(sock)
 	sock.position = Vector3(0, 0, 0.6)
 	var tr := EngineTrail.new()
 	tr.socket = sock
-	tr.color = Color(1.0, 0.3, 0.1)
-	tr.width = 0.2
-	tr.life = 0.7
+	tr.color = Color(1.0, 0.34, 0.10)
+	tr.width = 0.16
+	tr.life = 0.55
 	tr.min_speed = 0.0
 	_battle.add_child(tr)
 
 func _physics_process(delta: float) -> void:
 	_ttl -= delta
 	_arm_t -= delta
+	# solid-motor roughness: the plume and its light breathe together, so the
+	# missile pulses instead of towing a constant-brightness lamp
+	_flicker += delta * 34.0
+	var burn := 0.82 + 0.18 * sin(_flicker) + 0.10 * sin(_flicker * 2.7)
+	if _plume:
+		_plume.set_power(clampf(burn, 0.0, 1.0), false)
+	if _light:
+		_light.light_energy = 2.4 * burn
 	if _arm_t <= 0.0:
 		_armed = true
 	if _ttl <= 0.0:
@@ -162,5 +193,7 @@ func _detonate(direct: bool) -> void:
 					var d: float = global_position.distance_to(c.global_position)
 					if d < 25.0:
 						c.take_hit(mdef.dmg * clampf(1.0 - d / 25.0, 0.0, 0.6), global_position, vel.normalized(), 0.4, 1.0, 1.0, shooter)
-	FX.explosion(get_parent(), global_position, 0)
+	# a warhead is not a stray cannon round: kind 1 gives it the shockwave,
+	# debris and smoke the old kind-0 burst skipped entirely
+	FX.explosion(get_parent(), global_position, 1)
 	queue_free()

@@ -7,6 +7,8 @@ signal target_changed(t: Node)
 signal died_final
 
 const AIM_CONVERGE := 900.0
+const STICK_DEADZONE := 0.25
+const EXPO := 0.45                     # cubic blend: fine near centre, full at the stops
 
 var ship_id := "vanguard"
 var sdef: Dictionary
@@ -19,14 +21,18 @@ var cam_rig: Node = null
 var flight_assist := true
 var boost_on := false
 var match_vel_target := false
-var mouse_offset := Vector2.ZERO       # virtual cursor, -1..1 of half-screen
+var mouse_offset := Vector2.ZERO       # smoothed virtual cursor, -1..1 of half-screen
+var _cursor_raw := Vector2.ZERO        # what the mouse actually writes, pre-filter
 var turn_rate_base := 1.7              # rad/s at full deflection
 var input_pitch := 0.0                 # exposed for cockpit yoke animation
 var input_yaw := 0.0
 var input_thrust := 0.0
+var _cmd := Vector3.ZERO               # smoothed pitch / yaw / roll demand
+var _wish := Vector3.ZERO              # smoothed strafe / lift / thrust demand
 var _accel_prev := Vector3.ZERO
 var accel_estimate := Vector3.ZERO
 var _vel_prev := Vector3.ZERO
+var model_aabb := AABB(Vector3(-2, -1, -7), Vector3(4, 2, 14))  # hull bounds, for the camera
 
 # resources
 var energy := 100.0
@@ -100,6 +106,7 @@ func _load_model() -> void:
 		var inst := scn.instantiate()
 		model_root.add_child(inst)
 		aabb = _tint_and_measure(inst)
+	model_aabb = aabb
 	# collision approximated with 3 boxes (body + wings)
 	var cs := CollisionShape3D.new()
 	var box := BoxShape3D.new()
@@ -163,8 +170,24 @@ func _unhandled_input(event: InputEvent) -> void:
 			return
 		var vp := get_viewport().get_visible_rect().size
 		var sens: float = Game.settings.mouse_sens * 2.2
-		mouse_offset += (event as InputEventMouseMotion).relative * sens / vp.y
-		mouse_offset = mouse_offset.limit_length(1.0)
+		# raw target only; _flight filters it into mouse_offset
+		_cursor_raw += (event as InputEventMouseMotion).relative * sens / vp.y
+		_cursor_raw = _cursor_raw.limit_length(1.0)
+
+## Cubic expo blend — precise around centre, still reaches full deflection.
+static func _curve(x: float) -> float:
+	var a := absf(x)
+	return signf(x) * ((1.0 - EXPO) * a + EXPO * a * a * a)
+
+## Signed axis with the dead zone rescaled out. Godot zeroes anything below the
+## action's dead zone but passes the raw value above it, so a stick leaving the
+## zone jumps straight to 0.25 — a visible flick on every small correction.
+func _stick(pos: String, neg: String) -> float:
+	var v := Input.get_action_strength(pos) - Input.get_action_strength(neg)
+	var a := absf(v)
+	if a <= STICK_DEADZONE:
+		return 0.0
+	return signf(v) * minf((a - STICK_DEADZONE) / (1.0 - STICK_DEADZONE), 1.0)
 
 func _physics_process(delta: float) -> void:
 	super._physics_process(delta)
@@ -179,29 +202,43 @@ func _physics_process(delta: float) -> void:
 	_vel_prev = linear_velocity
 
 func _flight(delta: float) -> void:
-	var gp_pitch := Input.get_action_strength("pitch_up") - Input.get_action_strength("pitch_down")
-	var gp_yaw := Input.get_action_strength("yaw_right") - Input.get_action_strength("yaw_left")
+	var smooth: float = clampf(Game.settings.control_smoothing, 0.0, 1.0)
+	# --- 1. virtual cursor. Mouse deltas arrive in ragged bursts of wildly
+	# different size; filtering the CURSOR rather than the ship removes that
+	# jitter without decoupling where you aim from where you point.
+	_cursor_raw = _cursor_raw.lerp(Vector2.ZERO, 1.0 - exp(-0.85 * delta))
+	mouse_offset = mouse_offset.lerp(_cursor_raw, 1.0 - exp(-lerpf(55.0, 16.0, smooth) * delta))
+	# --- 2. rotation demand, expo-curved per axis so small corrections stay small
 	var inv := -1.0 if Game.settings.invert_y else 1.0
-	var pitch_in := clampf(-mouse_offset.y * inv + gp_pitch * inv, -1, 1)
-	var yaw_in := clampf(-mouse_offset.x - gp_yaw, -1, 1)
+	var pitch_in := clampf((_curve(-mouse_offset.y) + _curve(_stick("pitch_up", "pitch_down"))) * inv, -1, 1)
+	var yaw_in := clampf(_curve(-mouse_offset.x) - _curve(_stick("yaw_right", "yaw_left")), -1, 1)
 	var roll_in := Input.get_action_strength("roll_right") - Input.get_action_strength("roll_left")
+	# --- 3. filter the demand itself: a flick of the wrist becomes a sweep, and
+	# the rigid body never has to chase a step discontinuity in target velocity.
+	_cmd = _cmd.lerp(Vector3(pitch_in, yaw_in, roll_in),
+		1.0 - exp(-lerpf(38.0, 13.0, smooth) * delta))
 	var tr := turn_rate_base
 	if boost_on:
 		tr *= 0.55
-	input_pitch = pitch_in
-	input_yaw = yaw_in
-	var target_ang_local := Vector3(pitch_in * tr, yaw_in * tr, -roll_in * tr * 1.6)
+	input_pitch = _cmd.x
+	input_yaw = _cmd.y
+	var target_ang_local := Vector3(_cmd.x * tr, _cmd.y * tr, -_cmd.z * tr * 1.6)
 	var target_ang := global_transform.basis * target_ang_local
-	# snappier, more precise rotation response
-	angular_velocity = angular_velocity.lerp(target_ang, 1.0 - exp(-14.0 * delta))
-	# translation
-	var thrust := Input.get_action_strength("thrust_forward") - Input.get_action_strength("thrust_back")
-	var strafe := Input.get_action_strength("strafe_right") - Input.get_action_strength("strafe_left")
-	var vert := Input.get_action_strength("move_up") - Input.get_action_strength("move_down")
-	boost_on = Input.is_action_pressed("boost") and energy > 2.0 and thrust > 0.1
+	# the demand is already smooth, so this stage can stay quick and precise
+	angular_velocity = angular_velocity.lerp(target_ang, 1.0 - exp(-17.0 * delta))
+	# --- 4. translation. Keyboard thrust is binary; ramping it gives the
+	# thrusters a spool-up instead of a step, which is most of what read as jerky.
+	var thrust_raw := Input.get_action_strength("thrust_forward") - Input.get_action_strength("thrust_back")
+	_wish = _wish.lerp(Vector3(
+			Input.get_action_strength("strafe_right") - Input.get_action_strength("strafe_left"),
+			Input.get_action_strength("move_up") - Input.get_action_strength("move_down"),
+			thrust_raw),
+		1.0 - exp(-lerpf(26.0, 9.0, smooth) * delta))
+	var thrust := _wish.z
+	boost_on = Input.is_action_pressed("boost") and energy > 2.0 and thrust_raw > 0.1
 	var max_spd: float = sdef.speed * (sdef.boost_mult if boost_on else 1.0)
 	var acc: float = sdef.accel * (1.6 if boost_on else 1.0)
-	var wish_local := Vector3(strafe * 0.8, vert * 0.7, -thrust)
+	var wish_local := Vector3(_wish.x * 0.8, _wish.y * 0.7, -thrust)
 	if wish_local.length() > 1.0:
 		wish_local = wish_local.normalized()
 	var wish_world := global_transform.basis * wish_local
@@ -241,8 +278,6 @@ func _flight(delta: float) -> void:
 		AudioMgr.play_ui("boost", -8.0)
 	_boost_was = boost_on
 	input_thrust = thrust
-	# gentler recentring: the cursor stays where you put it (precision aiming)
-	mouse_offset = mouse_offset.lerp(Vector2.ZERO, 1.0 - exp(-0.85 * delta))
 
 func aim_direction() -> Vector3:
 	# orbit/cinematic/photo cameras give nonsense aim rays — use boresight

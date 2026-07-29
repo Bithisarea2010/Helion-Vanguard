@@ -9,6 +9,7 @@ extends MeshInstance3D
 ## segments saturated into the solid white slabs that hung behind every ship.
 
 const MAX_PTS := 40
+const MAX_LEN := 42.0                # metres of ribbon, regardless of speed
 
 var socket: Node3D = null            # world-space emitter to follow
 var color := Color(0.3, 0.7, 1.0)
@@ -29,6 +30,13 @@ func _init() -> void:
 	var m := StandardMaterial3D.new()
 	m.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
 	m.blend_mode = BaseMaterial3D.BLEND_MODE_ADD
+	# THE reason this ribbon has always drawn as a solid white slab. Additive
+	# blending does not switch on an alpha pipeline in Godot: with the default
+	# TRANSPARENCY_DISABLED the generated shader hard-codes ALPHA = 1.0, so
+	# every per-vertex alpha below — the age fade, the view-alignment fade, the
+	# near fade and the soft edge-to-core falloff — was computed and then
+	# discarded, and every quad drew at full colour.
+	m.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
 	m.vertex_color_use_as_albedo = true
 	m.cull_mode = BaseMaterial3D.CULL_DISABLED
 	m.disable_receive_shadows = true
@@ -71,6 +79,12 @@ func _process(delta: float) -> void:
 			_pts.push_front({"p": p, "t": 0.0})
 			if _pts.size() > MAX_PTS:
 				_pts.pop_back()
+	# Hard length cap. Age alone let the ribbon reach speed x life ~ 125 m at
+	# combat speed; anything past MAX_LEN is behind the chase camera anyway, so
+	# it only ever contributed additive haze the fades then had to fight.
+	var head: Vector3 = _pts[0].p if not _pts.is_empty() else Vector3.ZERO
+	while _pts.size() > 3 and head.distance_squared_to(_pts[_pts.size() - 1].p) > MAX_LEN * MAX_LEN:
+		_pts.pop_back()
 	_rebuild()
 
 func _rebuild() -> void:
@@ -81,6 +95,7 @@ func _rebuild() -> void:
 	if cam == null:
 		return
 	var cam_pos := cam.global_position
+	var cam_fwd := -cam.global_transform.basis.z
 	var n := _pts.size()
 	# precompute the ribbon spine so the triangle pass stays a flat loop
 	var core: PackedVector3Array = PackedVector3Array()
@@ -116,21 +131,28 @@ func _rebuild() -> void:
 		# behaviour for a flat ribbon.
 		var align := absf(dirv.dot(to_cam))
 		var align_fade := 1.0 - align * align * align
-		# Fade out when the ribbon sweeps close to the camera. The chase cam sits
-		# ~10 m behind the engines and looks straight down the ribbon, so without
-		# a generous near fade the additive segments stack end-on into a solid
-		# white slab across the lower half of the screen.
-		var near_fade := clampf((cam_d - 4.0) / 16.0, 0.0, 1.0)
+		# Fade out as a point approaches, then passes, the lens. Fading on raw
+		# DISTANCE (what this did before) is wrong in a chase view: the ribbon
+		# always overshoots the camera, and once a point is behind it the distance
+		# starts growing again — so the overshot half came back to full brightness
+		# and painted the white wedges across the lower half of the frame. Depth
+		# along the view axis goes negative back there and stays faded.
+		var depth := (pp - cam_pos).dot(cam_fwd)
+		var near_fade := clampf((depth - 2.5) / 14.0, 0.0, 1.0)
 		alpha[idx] = age_f * age_f * (1.0 - head_t * 0.35) * near_fade * align_fade
 
-	var edge := Color(color.r * 0.55, color.g * 0.62, color.b * 0.75)
-	var hot := Color(color.r * 0.9 + 0.35, color.g * 0.9 + 0.4, color.b * 0.9 + 0.45)
+	var edge := Color(color.r * 0.5, color.g * 0.58, color.b * 0.72)
+	# keep the core tinted rather than near-white: additive segments seen
+	# broadside stack, and a white core reached 1.0 across the whole ribbon
+	var hot := Color(color.r * 0.85 + 0.16, color.g * 0.85 + 0.2, color.b * 0.85 + 0.24)
 	_im.surface_begin(Mesh.PRIMITIVE_TRIANGLES)
 	for idx in n - 1:
-		var e0 := Color(edge.r, edge.g, edge.b, alpha[idx] * 0.10)
-		var e1 := Color(edge.r, edge.g, edge.b, alpha[idx + 1] * 0.10)
-		var h0 := Color(hot.r, hot.g, hot.b, alpha[idx] * 0.26)
-		var h1 := Color(hot.r, hot.g, hot.b, alpha[idx + 1] * 0.26)
+		# these were tuned while ALPHA was being discarded, i.e. against a
+		# constant 1.0 — now that the fades apply they have to come back up
+		var e0 := Color(edge.r, edge.g, edge.b, alpha[idx] * 0.18)
+		var e1 := Color(edge.r, edge.g, edge.b, alpha[idx + 1] * 0.18)
+		var h0 := Color(hot.r, hot.g, hot.b, alpha[idx] * 0.45)
+		var h1 := Color(hot.r, hot.g, hot.b, alpha[idx + 1] * 0.45)
 		var l0: Vector3 = core[idx] - side[idx]
 		var r0: Vector3 = core[idx] + side[idx]
 		var l1: Vector3 = core[idx + 1] - side[idx + 1]

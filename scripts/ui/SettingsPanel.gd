@@ -117,6 +117,9 @@ func _video_tab() -> Control:
 	var shake := Styles.hslider(0.0, 1.5, Game.settings.camera_shake, 0.1)
 	shake.value_changed.connect(func(v): Game.settings.camera_shake = v)
 	_row(vb, "Camera shake", shake)
+	var camd := Styles.hslider(0.6, 2.0, Game.settings.cam_distance, 0.05)
+	camd.value_changed.connect(func(v): Game.settings.cam_distance = v)
+	_row(vb, "Chase camera distance", camd)
 	return pair[0]
 
 # ------------------------------------------------------------------ audio
@@ -140,6 +143,9 @@ func _game_tab() -> Control:
 	var sens := Styles.hslider(0.2, 3.0, Game.settings.mouse_sens, 0.05)
 	sens.value_changed.connect(func(v): Game.settings.mouse_sens = v)
 	_row(vb, "Mouse / trackpad sensitivity", sens)
+	var csm := Styles.hslider(0.0, 1.0, Game.settings.control_smoothing, 0.05)
+	csm.value_changed.connect(func(v): Game.settings.control_smoothing = v)
+	_row(vb, "Control smoothing", csm)
 	var inv := CheckButton.new()
 	inv.button_pressed = Game.settings.invert_y
 	inv.toggled.connect(func(on): Game.settings.invert_y = on)

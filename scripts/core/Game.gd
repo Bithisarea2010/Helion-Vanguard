@@ -62,9 +62,11 @@ var settings := {
 	"fps_limit": 0,                 # 0 = uncapped
 	"preset": 2,                    # 0 low 1 medium 2 high 3 ultra
 	"mouse_sens": 1.0,
+	"control_smoothing": 0.55,      # 0 = raw and twitchy, 1 = heavily filtered
 	"invert_y": false,
 	"aim_assist": true,
 	"camera_shake": 1.0,
+	"cam_distance": 1.0,            # chase-cam standoff multiplier, 0.7 .. 1.8
 	"vol_master": 0.9, "vol_music": 0.7, "vol_sfx": 1.0, "vol_ui": 0.9,
 	"difficulty": 1,                # 0 easy 1 normal 2 hard
 	"momentum_mode": false,         # flight assist off by default? no: assist on

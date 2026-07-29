@@ -53,7 +53,24 @@ Godot --path . -- --mission=survival --autotest
 
 - Ships/stations: open Blender ≥ 4.x, run `blender_src/shipgen.py`,
   then `player_ships.py` / `enemy_ships.py` / `props.py` build functions.
-- Audio: `python3 tools/gen_audio.py` (needs numpy).
+- Audio: `tools/gen_audio.py` (needs numpy). The system python here has no
+  numpy; Blender's bundled interpreter does, and runs the whole set in ~5 s:
+
+  ```sh
+  "$BLENDER" --background --python tools/gen_audio.py
+  ```
+
+  Rewritten 2026-07-29 (second pass): every sound is layered transient / body /
+  sub / tail, with convolution reverb against a synthesised decaying-noise
+  impulse. Two things to keep in mind when editing it:
+  * convolution pads each one-shot out to the length of the impulse, so
+    `write_wav` trims the tail (`DEFAULT_SFX_MAX`, overridden per sound).
+    Without that a 0.2 s laser shipped as a 2.5 s file of mostly silence and a
+    big explosion held one of the 32 positional voices for twelve seconds.
+  * looping assets (`engine_loop`, both music tracks) go through `seamless()`,
+    which crossfades the tail into the head. Noise layers never line up at a
+    loop boundary, so without it the engine ticks once per cycle. Music is
+    stereo; **3D sounds must stay mono** — `AudioStreamPlayer3D` pans them.
 - Icon: `python3 tools/gen_icon.py`, then `iconutil` (see tools file).
 
 ---
@@ -106,6 +123,18 @@ Godot --path . --resolution 1280x720 -- --mission=instant_action --autotest \
 | `--preset=0..3` | force a quality preset |
 | `--nocamcycle` | hold one camera, for comparable captures |
 | `--noast`, `--nodust`, `--notrails`, `--nohud` | subsystem isolation for profiling |
+
+For effects specifically, use the deterministic probe instead — the battle
+harness screenshots on a fixed 4 s cadence and almost never lands on a blast:
+
+```sh
+Godot --path . --resolution 1280x720 tests/FXProbe.tscn -- --shotdir=/abs/path
+```
+
+**Always measure a baseline in the same sitting.** Absolute fps on this machine
+varies by more than 2× with thermal state: commit `e8378a3` measured 63.5 fps in
+one session and 27.7 fps in another with no code change at all. Comparing
+against a number written down on a previous day is worthless.
 
 `[BENCH]` lines print fps, p95/worst frame time, objects, primitives, draw calls,
 VRAM and node count once a second. `tests/PerfFloor.tscn` measures the

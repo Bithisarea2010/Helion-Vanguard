@@ -22,11 +22,16 @@ var _needles: Array = []            # [spd, pwr, heat]
 var _yoke_base := Vector3.ZERO
 var _thr_base := Vector3.ZERO
 var head_look := Vector2.ZERO       # free-look: x yaw rad, y pitch rad
+# chase framing, derived from the hull's own bounds in _frame_from_hull()
+var _tail_z := 10.8                 # aft-most point of the hull, ship-local
+var _standoff := 9.5                # gap between that point and the lens
+var _rise := 3.6                    # how far above the centreline the lens sits
 
 func setup(s: PlayerShip) -> void:
 	process_mode = Node.PROCESS_MODE_ALWAYS  # must hear input while photo-paused
 	ship = s
 	ship.cam_rig = self
+	_frame_from_hull()
 	cam = Camera3D.new()
 	cam.fov = base_fov
 	cam.near = 0.15
@@ -72,6 +77,23 @@ func setup(s: PlayerShip) -> void:
 			cockpit_model.find_child("Needle_pwr*", true, false),
 			cockpit_model.find_child("Needle_heat*", true, false)]
 	top_level = true
+
+## Work the chase standoff out from the hull the player actually flies.
+##
+## The old rig was a fixed +10.4 m on Z. Every player hull is 15-19 m long with
+## its tail at roughly +10.8, so the lens sat INSIDE the engine block: the near
+## plane clipped through the hull and only the wingtips ever reached the frame.
+## Measuring from the tail instead makes "the whole ship is visible" true for
+## every ship in the roster rather than for none of them.
+func _frame_from_hull() -> void:
+	var ab: AABB = ship.model_aabb
+	_tail_z = ab.position.z + ab.size.z
+	# distance at which the widest transverse span fills a little over half the
+	# vertical frame; the horizontal FOV is far wider, so wingtips always clear
+	var half_span := maxf(ab.size.x, ab.size.y) * 0.5
+	var mult: float = clampf(Game.settings.get("cam_distance", 1.0), 0.6, 2.0)
+	_standoff = clampf(half_span / tan(deg_to_rad(base_fov * 0.5) * 0.58), 6.0, 30.0) * mult
+	_rise = clampf(ab.size.y * 1.0, 2.2, 6.0) * mult
 
 func _add_practical(pos: Vector3, col: Color, energy: float, range_m: float) -> void:
 	var l := OmniLight3D.new()
@@ -138,28 +160,37 @@ func _shake_off() -> Vector3:
 func _chase(delta: float) -> void:
 	var b := ship.global_transform.basis
 	var speed := ship.linear_velocity.length()
-	var boost_pull := 1.35 if ship.boost_on else 1.0
-	var want_pos := ship.global_position + b * Vector3(0, 2.9, 10.4 * boost_pull)
-	global_position = global_position.lerp(want_pos, 1.0 - exp(-26.0 * delta))
-	# look further ahead so the ship sits lower in frame and more sky is visible
-	var look_pt := ship.global_position + (-b.z) * 95.0 + b.y * 2.0
+	var smooth: float = clampf(Game.settings.get("control_smoothing", 0.55), 0.0, 1.0)
+	# boost slides the lens further back — the ship shrinking away reads as speed
+	var boost_pull := 1.22 if ship.boost_on else 1.0
+	var want_pos := ship.global_position + b * Vector3(0, _rise, _tail_z + _standoff * boost_pull)
+	# softer follow than the old rig, which was welded to the hull at 26/s. The
+	# camera now trails slightly through a hard turn, so the turn reads as one.
+	global_position = global_position.lerp(want_pos, 1.0 - exp(-lerpf(20.0, 9.5, smooth) * delta))
+	# aim ahead of the nose so the hull sits low in frame with sky above it;
+	# the distance scales with the hull, so every ship frames the same way
+	var look_pt := ship.global_position + (-b.z) * (_standoff * 6.0) + b.y * (_rise * 0.35)
 	if ship.target and is_instance_valid(ship.target):
 		var to_t := (ship.target.global_position - ship.global_position)
 		if to_t.length() < 2500.0 and (-b.z).angle_to(to_t.normalized()) < deg_to_rad(40.0):
 			look_pt = look_pt.lerp(ship.target.global_position, 0.18)
 	var up := b.y
 	var tr := Transform3D(Basis.looking_at(look_pt - global_position, up), global_position)
-	global_transform = global_transform.interpolate_with(tr, 1.0 - exp(-20.0 * delta))
+	global_transform = global_transform.interpolate_with(tr, 1.0 - exp(-lerpf(18.0, 9.0, smooth) * delta))
 	global_position += global_transform.basis * _shake_off()
 	var want_fov := base_fov + clampf(speed / ship.sdef.speed, 0.0, 2.2) * 9.0
 	cam.fov = lerpf(cam.fov, want_fov, 1.0 - exp(-4.0 * delta))
-	# anti-clip: pull camera in if an asteroid blocks the view
+	# anti-clip: ease the lens in when a rock blocks the view. Snapping to the
+	# hit point (the old behaviour) is far more visible now that the standoff is
+	# long enough for something to actually get between ship and camera.
 	var space := ship.get_world_3d().direct_space_state
-	var q := PhysicsRayQueryParameters3D.create(ship.global_position, global_position)
+	var q := PhysicsRayQueryParameters3D.create(
+		ship.global_position + b * Vector3(0, _rise * 0.5, 0), global_position)
 	q.exclude = [ship.get_rid()]
 	var hit := space.intersect_ray(q)
 	if hit:
-		global_position = hit.position + (ship.global_position - hit.position).normalized() * 0.5
+		var safe: Vector3 = hit.position + (ship.global_position - hit.position).normalized() * 0.6
+		global_position = global_position.lerp(safe, 1.0 - exp(-25.0 * delta))
 
 func _cockpit(delta: float) -> void:
 	# eye raised + pulled back so the whole office is visible by default
@@ -200,7 +231,7 @@ func _cockpit(delta: float) -> void:
 
 func _orbit(delta: float) -> void:
 	_orbit_ang += delta * 0.25
-	var r := 26.0
+	var r: float = (_tail_z + _standoff) * 1.25
 	var pos := ship.global_position + Vector3(cos(_orbit_ang) * r, r * 0.35, sin(_orbit_ang) * r)
 	global_position = global_position.lerp(pos, 1.0 - exp(-6.0 * delta))
 	look_at(ship.global_position, Vector3.UP)

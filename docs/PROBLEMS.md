@@ -2,7 +2,36 @@
 
 A running, honest list of what is still wrong, written for whoever picks this up
 next (including me). Anything marked **FIXED** was closed during the 2026-07-29
-graphics pass and is kept for context; everything else is genuinely open.
+graphics passes and is kept for context; everything else is genuinely open.
+
+---
+
+## The one bug worth reading first (2026-07-29, second pass)
+
+**`BLEND_MODE_ADD` does not enable an alpha pipeline in Godot 4.** A
+`StandardMaterial3D` left at the default `TRANSPARENCY_DISABLED` generates a
+shader with `ALPHA = 1.0` hard-coded. Additive blending then adds the full
+albedo of every fragment, and any alpha you supply — from a texture, from vertex
+colours, from a tween — is computed and silently discarded.
+
+This single mistake was behind four separate "the effects look wrong" symptoms
+that had each been attributed to something else:
+
+| symptom | previously blamed on | actually |
+|---|---|---|
+| sparks / embers / impacts drew as hard opaque squares | additive saturation clipping the soft dot texture | texture alpha discarded |
+| engine ribbons drew as solid white slabs | ribbon geometry seen end-on | every per-vertex fade discarded |
+| shockwave ring drew as a solid square, never faded | — | ring alpha and the alpha tween both discarded |
+| explosion smoke read as bright haze | — | same material path |
+
+Fixed by setting `transparency = TRANSPARENCY_ALPHA` on the ring material, and
+by replacing the particle materials with `shaders/spark.gdshader` and
+`shaders/smoke.gdshader`, which compute the radial falloff from `UV` and so
+cannot be caught by this again. **Opaque additive geometry — cannon tracers,
+beam cylinders — is intentional and deliberately left alone.**
+
+If an additive effect ever looks "too solid" in this project, check
+`transparency` before touching anything else.
 
 Every performance number here came from the in-game harness, not from feel:
 
@@ -46,15 +75,38 @@ Godot --path . --resolution 1280x720 -- --mission=instant_action --autotest --un
 
 ---
 
-## Open — correctness
+## Fixed in the second 2026-07-29 pass
 
-1. **The four asteroid GLBs still embed byte-identical texture sets.**
-   `asteroid_0..3.glb` each carry the same ~3.9 MB of images, so four copies sit
-   in VRAM. `AsteroidField` now binds one shared `ShaderMaterial` for all
-   variants, so the duplicates are no longer *used* — but they are still loaded.
-   The real fix is re-exporting the rocks with no embedded material and pointing
-   the shader at `assets/textures/asteroid_albedo.png`, which already exists as a
-   standalone file.
+- **FIXED — The chase camera sat inside the ship.** The rig was a fixed
+  `+10.4 m` on Z. Every player hull is 15–19 m long with its tail at roughly
+  `+10.8`, so the lens was *inside the engine block*: the near plane clipped
+  through the hull and only the wingtips ever reached frame. `CameraRig` now
+  derives the standoff from `PlayerShip.model_aabb` — measured from the tail,
+  not the origin — so "the whole ship is visible" is true for every ship in the
+  roster rather than for none of them. Tunable via the new
+  `cam_distance` setting (Video tab).
+- **FIXED — Twitchy controls.** Raw mouse deltas drove turn rate directly, with
+  a linear response and no stick dead-zone rescale. Now: the virtual cursor is
+  exponentially filtered, both axes get a cubic expo curve, gamepad axes have
+  the dead zone rescaled out (Godot zeroes below it but passes the raw value
+  above, so a stick jumped straight to 0.25), and the rotation demand and
+  translation wish are each smoothed before reaching the rigid body. Amount is
+  tunable via `control_smoothing` (Gameplay tab); 0 restores near-raw response.
+- **FIXED — The additive-transparency bug above.**
+- **FIXED — Asteroid crater rings drew as hard dark circles.** The crater field
+  picked the *nearest* crater per pixel; the winner flips between adjacent
+  pixels, and since the bump normal comes from `dFdx/dFdy` of that height, the
+  step became an infinite gradient. Summing overlapping bowls instead is
+  C0-continuous and the outlines are gone.
+- **FIXED — The duplicated asteroid textures are now actually dropped**
+  (was open item 1). `AsteroidField` binds
+  `assets/textures/asteroid_albedo.png` and then clears the embedded material
+  off each variant mesh, so the four copies are released rather than merely
+  unused.
+
+---
+
+## Open — correctness
 
 2. **`detail_pass.py` is not idempotent.** Running it with `assets/models` as
    both source and destination greebles the already-greebled mesh and roughly
@@ -87,19 +139,26 @@ Godot --path . --resolution 1280x720 -- --mission=instant_action --autotest --un
 
 ## Open — performance
 
-7. **Roughly 5% slower than the pre-pass build, uncapped.** Measured means over
-   12–13 one-second samples at 1280×720, uncapped, autotest bot, camera locked:
+7. **Absolute fps figures in this file are not comparable across sessions.**
+   The 67.4 / 63.5 numbers previously recorded here were re-measured on
+   2026-07-29 (second pass) on the same machine and the *same commit* came back
+   at **27.7 fps**, i.e. less than half. Nothing in the project changed; the
+   host was simply in a different thermal/power state. Treat any number here as
+   meaningful only against a baseline measured in the same sitting.
 
-   | mission | before | after | delta |
-   |---|---|---|---|
-   | `instant_action` | 67.4 fps | 63.5 fps | −5.8% |
-   | `main` | 61.4 fps | 58.8 fps | −4.2% |
+   Second-pass comparison, both measured back to back, 1280×720, uncapped,
+   autotest bot, camera locked, 14–16 one-second samples:
 
-   Bought with: ~2–3× hull geometry, full procedural PBR shading with baked AO,
-   a 4K nebula bake, rewritten planets, and a new exhaust system. Draw calls
-   went the other way, ~350 → ~150. Both figures sit around the 60 fps vsync
-   target the game actually ships at, but the claim "no performance cost" would
-   be false and is not made.
+   | build | `instant_action` |
+   |---|---|
+   | `e8378a3` (pre-pass baseline) | 27.7 fps |
+   | second pass | 32.6 fps |
+
+   So the second pass is **not** a regression despite adding a fireball shell
+   shader, per-instance asteroid variation and a heavier rock surface — most
+   likely because fixing the transparency bug removed a great deal of
+   full-screen additive overdraw from trails and particle squares. `main` runs
+   28.2 and `survival` 33.1 under the same conditions.
 
 8. **The game is CPU-bound, and always has been.** Frame time is essentially
    identical at 640×360 and 1920×1080 — the empty-scene floor is ~170 fps
@@ -131,7 +190,22 @@ Godot --path . --resolution 1280x720 -- --mission=instant_action --autotest --un
 
 13. **No automated visual regression.** The harness captures screenshots but
     nothing compares them; a bad shader edit would only be caught by a human
-    looking at the output.
+    looking at the output. `tests/FXProbe.tscn` narrows the gap for effects
+    specifically — it parks a static camera, fires one effect at a known time
+    and grabs the frame at a known offset, so explosion/missile/asteroid shots
+    are reproducible run to run instead of depending on the battle harness
+    happening to screenshot during a blast:
+
+    ```sh
+    Godot --path . --resolution 1280x720 tests/FXProbe.tscn -- --shotdir=/abs/dir
+    ```
+
+    Two cautions learned the hard way while writing it: keep the probe camera
+    **outside** the asteroid cluster (`populate_cluster` spreads rocks by
+    `radius * 0.4` sigma, so a radius of 70 reaches ~60 m and swallows a camera
+    at 56 m), and keep its ambient light near-neutral — a saturated blue fill
+    made the rocks look like blue glass and sent me hunting a shader bug that
+    was the probe's own lighting.
 
 14. **Rings are implemented but unused.** `shaders/rings.gdshader` and
     `SpaceEnv._add_rings()` work, but no mission declares `"rings"` on a planet

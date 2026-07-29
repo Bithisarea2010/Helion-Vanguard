@@ -32,6 +32,11 @@ func _ready() -> void:
 				_meshes.append(mi.mesh)
 				if _shader_mat == null:
 					_shader_mat = _build_rock_material(mi.mesh)
+				# every chunk binds _shader_mat as material_override, so the
+				# embedded material is dead weight — clearing it releases the
+				# duplicated 3.9 MB texture set each GLB carries
+				for s in mi.mesh.get_surface_count():
+					mi.mesh.surface_set_material(s, null)
 			inst.queue_free()
 	if _meshes.is_empty():
 		var fallback := SphereMesh.new()
@@ -52,14 +57,20 @@ func _ready() -> void:
 ## One ShaderMaterial shared by every rock variant: the four source GLBs embed
 ## byte-identical texture sets, so binding one material for all of them removes
 ## three redundant copies from VRAM and lets the chunks batch.
+##
+## The albedo now comes from the standalone `assets/textures/asteroid_albedo.png`
+## and the embedded materials are cleared off the meshes afterwards, so the four
+## duplicated copies inside the GLBs are dropped rather than merely unused.
 func _build_rock_material(src_mesh: Mesh) -> ShaderMaterial:
 	var sm := ShaderMaterial.new()
 	sm.shader = load("res://shaders/asteroid.gdshader")
-	var base := src_mesh.surface_get_material(0)
-	if base is BaseMaterial3D:
-		var bm := base as BaseMaterial3D
-		if bm.albedo_texture:
-			sm.set_shader_parameter("albedo_tex", bm.albedo_texture)
+	const STANDALONE := "res://assets/textures/asteroid_albedo.png"
+	if ResourceLoader.exists(STANDALONE):
+		sm.set_shader_parameter("albedo_tex", load(STANDALONE))
+	else:
+		var base := src_mesh.surface_get_material(0)
+		if base is BaseMaterial3D and (base as BaseMaterial3D).albedo_texture:
+			sm.set_shader_parameter("albedo_tex", (base as BaseMaterial3D).albedo_texture)
 	return sm
 
 ## Belt: a thick ring of rocks around center in the XZ plane.
@@ -86,7 +97,11 @@ func _push_rock(pos: Vector3, rng: RandomNumberGenerator) -> void:
 	_rocks.append({
 		"pos": pos, "scale": _rand_scale(rng), "variant": rng.randi() % _meshes.size(),
 		"rot": Basis(Vector3(rng.randf_range(-1, 1), rng.randf_range(-1, 1),
-			rng.randf_range(-1, 1)).normalized(), rng.randf() * TAU)})
+			rng.randf_range(-1, 1)).normalized(), rng.randf() * TAU),
+		# INSTANCE_CUSTOM for the shader: mineral mix, brightness, crater seed,
+		# ice roll. Four meshes shared across ~1,700 rocks look like four rocks
+		# repeated without it.
+		"cd": Color(rng.randf(), rng.randf(), rng.randf(), rng.randf())})
 
 func _rand_scale(rng: RandomNumberGenerator) -> float:
 	# mostly small rocks, a few giants
@@ -124,6 +139,7 @@ func commit() -> void:
 		var variant: int = list[0].variant
 		var mm := MultiMesh.new()
 		mm.transform_format = MultiMesh.TRANSFORM_3D
+		mm.use_custom_data = true
 		mm.mesh = _meshes[variant]
 		mm.instance_count = list.size()
 		var mid := Vector3.ZERO
@@ -139,6 +155,7 @@ func commit() -> void:
 			var local: Vector3 = rk.pos - mid
 			var xf := Transform3D(rk.rot.scaled(Vector3.ONE * rk.scale), local)
 			mm.set_instance_transform(i, xf)
+			mm.set_instance_custom_data(i, rk.get("cd", Color(0.5, 0.5, 0.5, 0.5)))
 			var rad: float = rk.scale * 1.05
 			lo = lo.min(local - Vector3.ONE * rad)
 			hi = hi.max(local + Vector3.ONE * rad)
