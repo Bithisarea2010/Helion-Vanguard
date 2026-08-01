@@ -6,4 +6,10 @@ func _ready() -> void:
 	for arg in OS.get_cmdline_user_args():
 		if arg.begins_with("--mission="):
 			return
-	get_tree().change_scene_to_file.call_deferred("res://scenes/MainMenu.tscn")
+	SceneFlow.transition_to.call_deferred("res://scenes/MainMenu.tscn", {
+		"kind": "boot",
+		"eyebrow": "HELION COMMAND  //  COLD START",
+		"title": "VANGUARD SYSTEMS",
+		"subtitle": "Establishing a secure flight-deck link",
+		"detail": "Synchronising navigation, rendering and tactical services",
+	})

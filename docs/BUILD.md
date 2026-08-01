@@ -122,6 +122,7 @@ Godot --path . --resolution 1280x720 -- --mission=instant_action --autotest \
 | `--uncapped` | disable vsync and the FPS limit, to see real headroom |
 | `--preset=0..3` | force a quality preset |
 | `--nocamcycle` | hold one camera, for comparable captures |
+| `--cinematicreel` | self-driving third-person capture; cycles cinematic/orbit/chase only (never cockpit/photo) |
 | `--noast`, `--nodust`, `--notrails`, `--nohud` | subsystem isolation for profiling |
 | `--defaults` | **use for every A/B.** Ignore `settings.cfg` and never write it |
 | `--windowed` | 1280×720 window — Godot's own `--resolution` does NOT work here |
@@ -172,6 +173,24 @@ floor rather than an assumed one.
 | `--noftl`, `--noshield`, `--noarsenal`, `--notargeting` | disable one system |
 | `--nohaze` | disable the engine heat wash |
 | `--nodeep` | disable the deep-sky galaxy cards |
+
+### Regenerating the loading-screen gameplay reel
+
+The loading screen automatically uses
+`assets/loading/combat_reel.ogv` when that file exists. Capture from the real
+game with the dedicated no-person camera route, then encode a short muted
+Theora loop (the live loading UI owns the FTL soundscape):
+
+```sh
+Godot --write-movie /tmp/helion_reel.avi --fixed-fps 30 --path . -- \
+      --mission=instant_action --cinematicreel --nohud --defaults --windowed \
+      --quitafter=12
+```
+
+Trim away the title and debrief frames, then encode a short muted Theora/Ogg
+loop. The shipped cut is 5.60 seconds at 1280x720/30 fps. The static corridor
+wallpaper is always the instant first-frame fallback while the video decoder
+warms up.
 
 `[BENCH]` now also prints `acc=` (session accuracy), `fcs=` (the fire-control
 loop's rolling hit rate), `shots=`, `assist=` (servo position), `hostiles=` and

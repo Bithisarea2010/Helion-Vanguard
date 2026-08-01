@@ -221,9 +221,12 @@ func _notification(what: int) -> void:
 		if not is_inside_tree():
 			return
 		var tree := get_tree()
-		if tree and not tree.paused and is_instance_valid(tree.current_scene) \
-				and tree.current_scene.has_method("open_pause_menu"):
-			tree.current_scene.call("open_pause_menu")
+		if tree and not tree.paused and is_instance_valid(tree.current_scene):
+			var scene := tree.current_scene
+			if scene.has_method("loading_in_progress") and scene.call("loading_in_progress"):
+				return
+			if scene.has_method("open_pause_menu"):
+				scene.call("open_pause_menu")
 
 func prepare_shutdown() -> void:
 	if is_instance_valid(AudioMgr):
@@ -653,9 +656,13 @@ func record_mission(id: String, stats: Dictionary) -> void:
 func goto_menu(tab := "") -> void:
 	get_tree().paused = false
 	Input.mouse_mode = Input.MOUSE_MODE_VISIBLE
-	var err := get_tree().change_scene_to_file("res://scenes/MainMenu.tscn")
-	if err != OK:
-		push_error("Could not open main menu: %s" % error_string(err))
+	SceneFlow.transition_to("res://scenes/MainMenu.tscn", {
+		"kind": "return",
+		"eyebrow": "FLIGHT CONTROL  //  RECOVERY VECTOR",
+		"title": "RETURN TO VANGUARD",
+		"subtitle": "Decelerating into the Helion flight corridor",
+		"detail": "Restoring flight-deck telemetry",
+	})
 
 func start_mission(id: String) -> void:
 	if not MissionDefs.MISSIONS.has(id):
@@ -663,9 +670,19 @@ func start_mission(id: String) -> void:
 		id = "instant_action"
 	current_mission = id
 	get_tree().paused = false
-	var err := get_tree().change_scene_to_file("res://scenes/Battle.tscn")
-	if err != OK:
-		push_error("Could not open battle scene: %s" % error_string(err))
+	var md: Dictionary = MissionDefs.get_mission(id)
+	var sd: Dictionary = ShipDB.SHIPS[save.selected_ship]
+	SceneFlow.transition_to("res://scenes/Battle.tscn", {
+		"kind": "mission",
+		"mission_id": id,
+		"ship_id": save.selected_ship,
+		"eyebrow": "%s  //  %s" % [str(md.get("mode", "MISSION")).to_upper(),
+			str(sd.get("role", "VANGUARD")).to_upper()],
+		"title": str(md.get("title", "COMBAT INSERTION")),
+		"subtitle": "%s  •  %s" % [str(sd.get("label", "SF-7 VANGUARD")),
+			str(md.get("desc", "Helion combat operation"))],
+		"detail": "Spooling the FTL insertion corridor",
+	})
 
 # =================================================================== CAPABILITIES
 ## Advanced capabilities are gated by a master switch AND a per-system switch, so

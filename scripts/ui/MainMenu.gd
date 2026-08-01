@@ -8,13 +8,17 @@ var ui: CanvasLayer
 var content: Control          # right-side swap area
 var _t := 0.0
 var _sel_mission := "instant_action"
+var _initializing := true
 
 func _ready() -> void:
 	Input.mouse_mode = Input.MOUSE_MODE_VISIBLE
+	SceneFlow.report(0.08, "FLIGHT-DECK HANDSHAKE", "Authenticating Helion command channel")
+	await get_tree().process_frame
 	# A static menu gains nothing above 60 fps. Capping only this scene cuts GPU
 	# and CPU power on 120/144/165 Hz displays; Battle restores the user's cap.
 	var user_cap := int(Game.settings.fps_limit)
 	Engine.max_fps = mini(user_cap if user_cap > 0 else 60, 60)
+	SceneFlow.report(0.20, "STELLAR CARTOGRAPHY", "Reconstructing the Helion flight corridor")
 	env = SpaceEnv.new()
 	add_child(env)
 	env.build({
@@ -22,11 +26,17 @@ func _ready() -> void:
 		"planets": [{"pos": Vector3(-9000, 1500, -14000), "radius": 4200.0,
 			"col_a": Color(0.85, 0.5, 0.25), "col_b": Color(0.5, 0.22, 0.1), "atmo": Color(1.0, 0.6, 0.3)}],
 	})
+	await RenderingServer.frame_post_draw
+	SceneFlow.report(0.38, "DEEP-SPACE ARRAY", "Resolving high-energy navigation beacons")
 	var field := AsteroidField.new()
 	add_child(field)
+	await get_tree().process_frame
+	SceneFlow.report(0.52, "ASTEROID GRID", "Plotting safe flight-deck approach vectors")
 	field.populate_cluster(Vector3(60, -30, -220), 160.0, 40, 77)
 	field.populate_belt(Vector3(0, -100, -1500), 900.0, 260.0, 320, 78)
 	field.commit()
+	await get_tree().process_frame
+	SceneFlow.report(0.66, "OPTICAL LINK", "Calibrating cinematic tracking array")
 	cam = Camera3D.new()
 	cam.fov = 55
 	cam.far = 60000.0
@@ -45,18 +55,32 @@ func _ready() -> void:
 	rim.light_color = Color(0.45, 0.7, 1.0)
 	add_child(rim)
 	rim.position = Vector3(-9, 3, -6)
+	SceneFlow.report(0.78, "VANGUARD FRAME", "Loading selected hull and hangar materials")
 	_show_ship(Game.save.selected_ship)
+	await get_tree().process_frame
 	ui = CanvasLayer.new()
 	add_child(ui)
+	SceneFlow.report(0.88, "TACTICAL INTERFACE", "Bringing flight-deck controls online")
 	_build_ui()
 	Game.settings_changed.connect(_on_settings_changed)
 	AudioMgr.play_music("menu")
+	# SpaceEnv's sky and named-galaxy bakes are frame-driven. Keep the corridor
+	# visible while those first render passes settle instead of revealing a sky
+	# that visibly pops into existence behind the menu.
+	for i in 4:
+		await RenderingServer.frame_post_draw
+		SceneFlow.report(0.91 + float(i) * 0.02, "DEEP-SPACE ARRAY",
+			"Stabilising navigation layer %d / 4" % (i + 1))
+	await SceneFlow.finish()
+	_initializing = false
 
 func _on_settings_changed() -> void:
 	if env:
 		env.apply_preset()
 
 func _process(delta: float) -> void:
+	if _initializing or cam == null:
+		return
 	_t += delta
 	if display_ship:
 		display_ship.rotation.y += delta * 0.25

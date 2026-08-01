@@ -12,6 +12,25 @@ static var _live_muzzle_lights := 0
 static var _live_impact_marks := 0
 static var _live_arc_bolts := 0
 static var _live_bursts := 0
+## A bounded RING of reusable one-shot emitters serves every impact spark.
+##
+## Every hit used to allocate its own GPUParticles3D plus a
+## ParticleProcessMaterial, a gradient and a curve — a node, an upload and a
+## draw call each. With 1.2's fire control landing far more hits, a furball
+## carried 40-60 of them at once and draw calls went from ~147 (1.1) to ~209.
+##
+## The obvious fix — one persistent system fed by `emit_particle()` — was tried
+## first and DOES NOT WORK: with `emitting = false` the system is deactivated so
+## manual particles never simulate, and with `emitting = true, amount_ratio = 0`
+## nothing draws either. Both measured at zero lit pixels by
+## `tests/SparkProbe.tscn`. So the ring reuses whole nodes instead, which is the
+## same code path as the effect that already works — only bounded and
+## allocation-free. Per burst it writes a handful of uniforms and calls
+## `restart()`; nothing is created or freed.
+const SPARK_RING := 8
+const SPARK_AMOUNT := 20
+static var _spark_ring: Array[GPUParticles3D] = []
+static var _spark_next := 0
 const MAX_MUZZLE_LIGHTS := 8
 const MAX_IMPACT_MARKS := 56
 const MAX_ARC_BOLTS := 12
@@ -32,6 +51,8 @@ static func clear_caches() -> void:
 	_live_impact_marks = 0
 	_live_arc_bolts = 0
 	_live_bursts = 0
+	_spark_ring.clear()
+	_spark_next = 0
 	ShieldBubble.clear_cache()
 
 static func quad_mesh() -> QuadMesh:
@@ -151,6 +172,75 @@ static func _add_mat(_color: Color, softness := 2.4, core := 0.30) -> Material:
 	m.set_shader_parameter("core", core)
 	_mat_cache[key] = m
 	return m
+
+## Build (or rebuild after a scene change) the ring of spark emitters.
+static func _build_spark_ring(parent: Node) -> void:
+	_spark_ring.clear()
+	_spark_next = 0
+	for i in SPARK_RING:
+		var p := GPUParticles3D.new()
+		p.emitting = false
+		p.one_shot = true
+		p.explosiveness = 1.0
+		# world-space: the node can be moved to the next hit without dragging the
+		# particles of the previous one along with it
+		p.local_coords = false
+		p.amount = SPARK_AMOUNT
+		p.lifetime = 0.55
+		p.fixed_fps = 60
+		p.interpolate = true
+		var pm := ParticleProcessMaterial.new()
+		pm.gravity = Vector3.ZERO
+		pm.damping_min = 0.7
+		pm.damping_max = 1.3
+		var grad := Gradient.new()
+		grad.set_color(0, Color(1, 1, 1, 1))
+		grad.add_point(0.55, Color(1, 1, 1, 0.7))
+		grad.set_color(1, Color(1, 1, 1, 0))
+		var gt := GradientTexture1D.new()
+		gt.gradient = grad
+		pm.color_ramp = gt
+		var sc := CurveTexture.new()
+		var cur := Curve.new()
+		cur.add_point(Vector2(0, 1)); cur.add_point(Vector2(1, 0.05))
+		sc.curve = cur
+		pm.scale_curve = sc
+		p.process_material = pm
+		p.draw_pass_1 = quad_mesh()
+		p.material_override = _add_mat(Color(1, 1, 1))
+		p.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+		# world-space particles range over the whole battle, so the mesh-derived
+		# AABB would cull the lot the moment the node itself left frame
+		p.visibility_aabb = AABB(Vector3.ONE * -8000.0, Vector3.ONE * 16000.0)
+		parent.add_child(p)
+		_spark_ring.append(p)
+
+## A cone of sparks at `pos` around `normal`, taken from the ring.
+static func spark_burst(parent: Node, pos: Vector3, normal: Vector3, count: int,
+		tint: Color, speed_min: float, speed_max: float,
+		size_min: float, size_max: float, spread_deg := 58.0) -> void:
+	if count <= 0 or parent == null or not parent.is_inside_tree():
+		return
+	if _spark_ring.is_empty() or not is_instance_valid(_spark_ring[0]):
+		_build_spark_ring(parent)
+	var p: GPUParticles3D = _spark_ring[_spark_next % _spark_ring.size()]
+	_spark_next += 1
+	if not is_instance_valid(p):
+		return
+	var pm := p.process_material as ParticleProcessMaterial
+	pm.direction = normal
+	pm.spread = clampf(spread_deg, 0.0, 180.0)
+	pm.initial_velocity_min = speed_min
+	pm.initial_velocity_max = speed_max
+	pm.scale_min = size_min
+	pm.scale_max = size_max
+	# tints the whole ramp; far cheaper than rebuilding a GradientTexture1D
+	pm.color = tint
+	# scales how many of `amount` actually spawn, WITHOUT reallocating the
+	# particle buffer the way writing `amount` would
+	p.amount_ratio = clampf(float(count) / float(SPARK_AMOUNT), 0.05, 1.0)
+	p.global_position = pos
+	p.restart()
 
 static func _particles(parent: Node, pos: Vector3, amount: int, life: float,
 		vel_min: float, vel_max: float, scale_min: float, scale_max: float,
@@ -377,8 +467,7 @@ static func debris(parent: Node, pos: Vector3, count: int, s: float) -> void:
 
 static func impact(parent: Node, pos: Vector3, color: Color, big := false) -> void:
 	var n := int((8 if not big else 16) * float(Game.preset().particles))
-	_particles(parent, pos, n, 0.35, 6.0, 18.0, 0.15, 0.35,
-		Color(color.r, color.g, color.b, 1.0), Color(color.r, color.g, color.b, 0.0))
+	spark_burst(parent, pos, Vector3.UP, n, color, 6.0, 18.0, 0.15, 0.35, 180.0)
 
 static func _scar_texture() -> GradientTexture2D:
 	if _scar_tex == null:
@@ -463,10 +552,8 @@ static func surface_impact(fx_parent: Node, attach_to: Node3D, pos: Vector3,
 		return
 	var col := Color(0.76, 0.70, 0.58) if kind == "rock" else Color(1.0, 0.68, 0.26)
 	var count := int(clampf(5.0 + energy * 0.20, 5.0, 18.0) * float(Game.preset().particles))
-	_particles(fx_parent, pos, count, 0.42, 5.0, clampf(12.0 + energy * 0.25, 14.0, 34.0),
-		0.10, 0.30, Color(col.r, col.g, col.b, 1.0),
-		Color(col.r * 0.45, col.g * 0.30, col.b * 0.20, 0.0),
-		Vector3.ZERO, 58.0, normal, 0.8)
+	spark_burst(fx_parent, pos, normal, count, col,
+		5.0, clampf(12.0 + energy * 0.25, 14.0, 34.0), 0.10, 0.30)
 	if kind == "rock" and energy > 8.0 and _live_explosions < 20:
 		_smoke_puff(fx_parent, pos + normal * 0.05,
 			maxi(int(4 * float(Game.preset().particles)), 2), 1.15, 0.25, 0.75)
@@ -543,8 +630,8 @@ static func _arc_material(color: Color) -> StandardMaterial3D:
 	return m
 
 static func shield_hit(parent: Node, pos: Vector3) -> void:
-	_particles(parent, pos, 10, 0.4, 2.0, 8.0, 0.5, 1.2,
-		Color(0.4, 0.7, 1.0, 0.8), Color(0.2, 0.4, 1.0, 0.0))
+	spark_burst(parent, pos, Vector3.UP, 10, Color(0.4, 0.7, 1.0, 0.9),
+		2.0, 8.0, 0.5, 1.2, 180.0)
 
 ## Rocket motor exhaust smoke. World-space, so it lays a trail behind the
 ## missile instead of riding along with it.

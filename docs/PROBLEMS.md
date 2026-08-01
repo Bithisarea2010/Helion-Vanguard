@@ -297,13 +297,39 @@ still wrong or still worth knowing.
 
 ## Open
 
-22. **1.2 is ~10% slower than 1.1 when GPU-bound.** At the shipped default (High,
-    native, vsync) the two are identical — 58.9/58.7 vs 59.2/59.0 fps, p95
-    19.3 ms both — so there is no user-visible regression. At `--renderscale=2.0`
-    it is 33.7 vs 37.6 fps with baselines agreeing within 5%. No single subsystem
-    accounts for it: `--nohaze`, `--nodeep` and `--nocaps` each land inside noise.
-    It is the aggregate of three galaxy cards, the engine haze cones, and more
-    effects firing because the fire control lands more hits.
+22. **1.2 is ~5% slower than 1.1 when GPU-bound** (was ~10%; partly fixed).
+
+    At the shipped default (High, native, vsync) the two are identical — 58.9 vs
+    59.2 fps, p95 19.3 ms both — so there is no user-visible regression.
+
+    The concrete signal was DRAW CALLS: ~152-162 in 1.1 against 209 in 1.2.
+    Cause: every impact allocated its own `GPUParticles3D` plus a process
+    material, a gradient and a curve, and 1.2's fire control lands far more
+    hits, so a furball carried 40-60 of those at once. Replaced with a bounded
+    ring of eight reusable world-space emitters (`FX.spark_burst`). Bracketed at
+    `--renderscale=2.0`:
+
+    | build | fps | draw calls |
+    |---|---|---|
+    | v1.1 `825a709` | 36.06 / 36.67 | 152-162 |
+    | v1.2 before | ~32.2 | 209 |
+    | v1.2 with the ring | 34.52 | 156-166 |
+
+    Gap 14.4% -> 5.2%, draw calls back to parity.
+
+    **The residual ~5% is still open.** An attempt to isolate it produced three
+    baselines drifting 9% within a single batch, so that batch was discarded
+    rather than read as signal. Re-measure on a cold machine.
+
+    Two things that do NOT work, so nobody repeats them:
+    * **One persistent system fed by `emit_particle()` draws nothing.** With
+      `emitting = false` the system is deactivated and manual particles never
+      simulate; with `emitting = true, amount_ratio = 0` nothing draws either.
+      Both measured at zero lit pixels. `tests/SparkProbe.tscn` exists precisely
+      because this would otherwise have shipped as an "optimisation" that
+      silently deleted every impact spark in the game — the regression suite was
+      green throughout, because no assertion covered "are there pixels".
+    * Glow level trimming (see #20).
 
 23. **Session accuracy exceeds the band in short engagements.** The fire-control
     servo controls a *rolling* rate and holds it; the session-cumulative figure

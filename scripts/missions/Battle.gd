@@ -50,6 +50,8 @@ var score := 0
 var _autotest := false
 var _at_msl_t := 0.0
 var _at_cam_t := 14.0
+var _cinematic_reel := false
+var _cine_mode_idx := 0
 
 # ------------------------------------------------------------- capture harness
 # `-- --autotest --shotdir=<abs> --quitafter=<s> [--nocamcycle]`
@@ -63,6 +65,7 @@ var _bench_frames := 0
 var _bench_worst := 0.0
 var _bench_samples: Array[float] = []
 var _harness_quitting := false
+var _initializing := true
 
 func _ready() -> void:
 	# MainMenu deliberately caps itself at 60 fps; restore the gameplay limit
@@ -72,35 +75,50 @@ func _ready() -> void:
 	mission_id = Game.current_mission
 	mdef = MissionDefs.get_mission(mission_id)
 	process_mode = Node.PROCESS_MODE_PAUSABLE
+	SceneFlow.report(0.05, "MISSION PACKAGE", "Decrypting operation parameters")
+	await get_tree().process_frame
 	# world
+	SceneFlow.report(0.13, "STELLAR CARTOGRAPHY", "Baking the mission sky and solar lighting")
 	env = SpaceEnv.new()
 	add_child(env)
 	env.build(mdef.env)
+	await RenderingServer.frame_post_draw
+	SceneFlow.report(0.24, "COMBAT SIMULATION", "Charging the projectile and countermeasure lattice")
 	projectiles = Projectiles.new()
 	add_child(projectiles)
 	# Chain lightning and shotgun pellets each report several confirmations for
 	# one trigger pull, so hits are clamped to shots — "accuracy" above 100% is
 	# not a thing, and the fire-control servo reads this same number.
 	projectiles.player_hit_confirmed.connect(func(_t, _s): shots_hit = mini(shots_hit + 1, shots_fired))
+	SceneFlow.report(0.34, "ASTEROID GRID", "Streaming belt geometry and collision sectors")
 	field = AsteroidField.new()
 	add_child(field)
+	await get_tree().process_frame
+	SceneFlow.report(0.47, "NAVIGATION MESH", "Committing tactical obstacles and approach lanes")
 	_build_field()
+	await get_tree().process_frame
 	# player
+	SceneFlow.report(0.60, "VANGUARD FRAME", "Applying hull, loadout and engine signature")
 	player = PlayerShip.new()
 	add_child(player)
 	player.setup(Game.save.selected_ship, self)
 	player.global_position = Vector3.ZERO
 	player.died_final.connect(_on_player_died)
 	field.player = player
+	SceneFlow.report(0.69, "OPTICAL LINK", "Calibrating third-person combat camera")
 	cam_rig = CameraRig.new()
 	add_child(cam_rig)
 	cam_rig.setup(player)
+	await get_tree().process_frame
+	SceneFlow.report(0.77, "HOSTILE SIGNATURES", "Prewarming enemy hull and material telemetry")
 	_prewarm_enemy_hulls()
+	await get_tree().process_frame
 	if not "--nodust" in OS.get_cmdline_user_args():
 		var dust := SpaceDust.new()
 		add_child(dust)
 		dust.player = player
 	# UI
+	SceneFlow.report(0.86, "COCKPIT LINK", "Synchronising targeting, comms and flight recorder")
 	hud_layer = CanvasLayer.new()
 	add_child(hud_layer)
 	hud = HUD.new()
@@ -113,16 +131,29 @@ func _ready() -> void:
 	overlay_layer.layer = 10
 	add_child(overlay_layer)
 	overlay_layer.process_mode = Node.PROCESS_MODE_ALWAYS
+	SceneFlow.report(0.92, "MISSION DIRECTOR", "Authorising launch sequence")
 	_title_card()
 	_mission_start()
 	AudioMgr.play_music("combat")
-	capture_mouse()
 	Game.settings_changed.connect(_on_settings_changed)
 	_parse_harness_args()
+	# Keep the corridor over the first frame-driven HDR/deep-sky passes. The
+	# shader work happens on the render server; these checkpoints make the wait
+	# legible without pretending the tiny Battle.tscn resource is the workload.
+	for i in 3:
+		await RenderingServer.frame_post_draw
+		SceneFlow.report(0.94 + float(i) * 0.02, "LAUNCH CLEARANCE",
+			"Locking insertion vector %d / 3" % (i + 1))
+	await SceneFlow.finish()
+	_initializing = false
+	capture_mouse()
 
 func _on_settings_changed() -> void:
 	if env:
 		env.apply_preset()
+
+func loading_in_progress() -> bool:
+	return _initializing
 
 func _build_field() -> void:
 	match mission_id:
@@ -156,7 +187,7 @@ func release_mouse() -> void:
 
 func _notification(what: int) -> void:
 	if what == NOTIFICATION_APPLICATION_FOCUS_OUT:
-		if not get_tree().paused and not over:
+		if not _initializing and not get_tree().paused and not over:
 			open_pause_menu()
 	elif what == NOTIFICATION_WM_MOUSE_EXIT:
 		pass # captured mode keeps the pointer; nothing to do
@@ -170,6 +201,8 @@ func _unhandled_input(event: InputEvent) -> void:
 		get_viewport().set_input_as_handled()
 
 func _input(event: InputEvent) -> void:
+	if _initializing or cam_rig == null or hud == null:
+		return
 	if event.is_action_pressed("pause"):
 		if cam_rig.mode == CameraRig.Mode.PHOTO:
 			cam_rig.toggle_photo()
@@ -183,7 +216,7 @@ func _input(event: InputEvent) -> void:
 		get_viewport().set_input_as_handled()
 
 func _process(delta: float) -> void:
-	if over or get_tree().paused:
+	if _initializing or over or get_tree().paused:
 		return
 	mission_time += delta
 	_drain_spawn_queue()
@@ -207,6 +240,13 @@ func _parse_harness_args() -> void:
 	for arg in OS.get_cmdline_user_args():
 		if arg == "--autotest":
 			_autotest = true
+		elif arg == "--cinematicreel":
+			# Self-driving, HUD-free capture companion. Camera modes deliberately
+			# exclude COCKPIT/PHOTO so every frame stays third-person/no-person.
+			_autotest = true
+			_cinematic_reel = true
+			_cam_cycle = false
+			_at_cam_t = 0.6
 		elif arg == "--nocamcycle":
 			_cam_cycle = false
 		elif arg.begins_with("--shotdir="):
@@ -289,8 +329,19 @@ func _autotest_tick(delta: float) -> void:
 		return
 	_at_cam_t -= delta
 	if _at_cam_t <= 0.0:
-		_at_cam_t = 14.0
-		if _cam_cycle:
+		if _cinematic_reel:
+			_at_cam_t = 2.8
+			var reel_modes := [CameraRig.Mode.CINEMATIC, CameraRig.Mode.ORBIT,
+				CameraRig.Mode.CHASE, CameraRig.Mode.CINEMATIC]
+			cam_rig.mode = reel_modes[_cine_mode_idx % reel_modes.size()]
+			_cine_mode_idx += 1
+			if cam_rig.cockpit_model:
+				cam_rig.cockpit_model.visible = false
+			if player.model_root:
+				player.model_root.visible = player.alive
+		else:
+			_at_cam_t = 14.0
+		if _cam_cycle and not _cinematic_reel:
 			cam_rig.cycle()
 	# scripted photo-mode enter/exit self-test at ~26 s (real input events)
 	if mission_time > 26.0 and _shot_dir == "" and not has_meta("at_photo_done"):
@@ -655,7 +706,7 @@ func _on_player_died() -> void:
 	over = true
 	victory = false
 	release_mouse()
-	await get_tree().create_timer(2.0).timeout
+	await _flight_recorder_uplink(false, "Vanguard signal lost — sealing the recorder capsule")
 	_show_debrief(false)
 
 func mission_complete() -> void:
@@ -667,7 +718,7 @@ func mission_complete() -> void:
 	Game.record_mission(mission_id, stats)
 	Game.mission_ended.emit(true, stats)
 	release_mouse()
-	await get_tree().create_timer(1.6).timeout
+	await _flight_recorder_uplink(true, "Command confirms objective completion")
 	_show_debrief(true)
 
 func mission_failed(reason := "") -> void:
@@ -678,8 +729,36 @@ func mission_failed(reason := "") -> void:
 	if reason != "":
 		hud.comms("COMMAND", reason)
 	release_mouse()
-	await get_tree().create_timer(2.0).timeout
+	await _flight_recorder_uplink(false,
+		reason if reason != "" else "Mission telemetry marked incomplete")
 	_show_debrief(false)
+
+## Turn the old unexplained post-combat delay into an in-fiction waiting screen.
+## The recorder stages are short, deterministic and driven by the stats that
+## will appear on the debrief, so the player always knows what is happening.
+func _flight_recorder_uplink(win: bool, note: String) -> void:
+	var s := _stats_dict()
+	SceneFlow.begin({
+		"kind": "uplink",
+		"eyebrow": "FLIGHT RECORDER  //  SECURE UPLINK",
+		"title": "MISSION VERIFIED" if win else "MISSION INTERRUPTED",
+		"subtitle": mdef.title,
+		"detail": note,
+		"ship_id": Game.save.selected_ship,
+	})
+	SceneFlow.report(0.18, "RECORDER CAPSULE", "Sealing combat event stream")
+	AudioMgr.play_ui("radio", -8.0)
+	await get_tree().create_timer(0.34, true, false, true).timeout
+	SceneFlow.report(0.46, "WEAPONS TELEMETRY", "%d confirmed eliminations  •  %d shots" %
+		[int(s.kills), shots_fired])
+	AudioMgr.play_ui("ui_target", -10.0, 0.9)
+	await get_tree().create_timer(0.34, true, false, true).timeout
+	SceneFlow.report(0.74, "COMBAT ANALYSIS", "Accuracy %d%%  •  Score %d" %
+		[int(float(s.accuracy) * 100.0), int(s.score)])
+	AudioMgr.play_ui("radar_ping", -12.0, 1.08)
+	await get_tree().create_timer(0.34, true, false, true).timeout
+	SceneFlow.report(1.0, "UPLINK COMPLETE", "Debrief package authenticated")
+	await SceneFlow.finish()
 
 func _stats_dict() -> Dictionary:
 	var acc := 0.0
