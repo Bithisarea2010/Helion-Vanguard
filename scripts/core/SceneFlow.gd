@@ -7,7 +7,14 @@ extends CanvasLayer
 const WALLPAPER := "res://assets/loading/helion_corridor.png"
 const COMBAT_REEL := "res://assets/loading/combat_reel.ogv"
 const PROGRESS_SCRIPT := preload("res://scripts/ui/LoadingProgress.gd")
-const MIN_PRESENT_SECONDS := 0.75
+## Intentional presentation windows measured from begin(). Real loading may
+## take longer, but a fast machine still gets time to show the cinematic UI.
+const PRESENT_SECONDS := {
+	"boot": 8.0,
+	"mission": 9.0,
+	"return": 7.0,
+	"uplink": 7.5,
+}
 
 var _root: Control
 var _wallpaper: TextureRect
@@ -37,6 +44,8 @@ var _reported_progress := 0.0
 var _watchdog_serial := 0
 var _retry_path := ""
 var _retry_context: Dictionary = {}
+var _kind := "boot"
+var _minimum_present_seconds := 8.0
 var _time := 0.0
 var _parallax := Vector2.ZERO
 
@@ -56,6 +65,9 @@ func begin(context: Dictionary = {}) -> void:
 	_started_msec = Time.get_ticks_msec()
 	_last_stage = ""
 	_reported_progress = 0.0
+	_kind = str(context.get("kind", "boot"))
+	_minimum_present_seconds = clampf(float(context.get("min_present_seconds",
+		PRESENT_SECONDS.get(_kind, 8.0))), 7.0, 10.0)
 	_progress.call("reset")
 	_eyebrow.text = str(context.get("eyebrow", "HELION COMMAND  //  FTL INSERTION"))
 	_title.text = str(context.get("title", "VANGUARD SYSTEMS"))
@@ -133,12 +145,25 @@ func finish() -> void:
 	# timeout cannot enter a second flash/fade coroutine.
 	_finishing = true
 	_watchdog_serial += 1
-	# Preserve truthful caller-owned terminal copy such as UPLINK COMPLETE.
-	if _reported_progress < 0.999:
-		report(1.0, "LAUNCH CLEARANCE", "All systems green — insertion authorised")
 	var elapsed := float(Time.get_ticks_msec() - _started_msec) / 1000.0
-	if elapsed < MIN_PRESENT_SECONDS:
-		await get_tree().create_timer(MIN_PRESENT_SECONDS - elapsed, true, false, true).timeout
+	var remaining := maxf(0.0, _minimum_present_seconds - elapsed)
+	if remaining > 0.0:
+		var hold_stage := _hold_stage()
+		while remaining > 0.01 and _active and not _faulted:
+			var hold_detail := _hold_detail(remaining)
+			if _last_stage != hold_stage:
+				report(_reported_progress, hold_stage, hold_detail)
+			else:
+				# Countdown updates should not replay the stage-change tone.
+				_progress.call("set_progress", _reported_progress, hold_stage, hold_detail)
+			var slice := minf(0.25, remaining)
+			await get_tree().create_timer(slice, true, false, true).timeout
+			elapsed = float(Time.get_ticks_msec() - _started_msec) / 1000.0
+			remaining = maxf(0.0, _minimum_present_seconds - elapsed)
+	if _kind == "uplink":
+		report(1.0, "UPLINK COMPLETE", "Debrief package authenticated — channel released")
+	else:
+		report(1.0, "LAUNCH CLEARANCE", "All systems green — insertion authorised")
 	AudioMgr.play_ui("ftl_breach", -3.0)
 	AudioMgr.play_ui("ui_ready", -1.0, 1.04)
 	_flash.color = Color(0.78, 0.93, 1.0, 0.0)
@@ -160,6 +185,29 @@ func finish() -> void:
 	_finishing = false
 	_retry_path = ""
 	_retry_context.clear()
+
+func _hold_stage() -> String:
+	match _kind:
+		"mission":
+			return "INSERTION VECTOR"
+		"return":
+			return "FLIGHT-DECK APPROACH"
+		"uplink":
+			return "DEBRIEF CHANNEL"
+		_:
+			return "FTL WINDOW"
+
+func _hold_detail(remaining: float) -> String:
+	var countdown := "%.1f S" % remaining
+	match _kind:
+		"mission":
+			return "Combat insertion window opens in %s  //  FTL field interactive" % countdown
+		"return":
+			return "Flight-deck approach completes in %s  //  FTL field interactive" % countdown
+		"uplink":
+			return "Debrief channel opens in %s  //  Flight recorder secured" % countdown
+		_:
+			return "Cold-start corridor opens in %s  //  FTL field interactive" % countdown
 
 func _build_interface() -> void:
 	_root = Control.new()

@@ -4,7 +4,7 @@ extends Node
 signal settings_changed
 signal mission_ended(victory: bool, stats: Dictionary)
 
-const VERSION := "1.2.0"
+const VERSION := "1.2.1"
 const SETTINGS_PATH := "user://settings.cfg"
 const SAVE_PATH := "user://save.cfg"
 const MIN_RENDER_SCALE := 0.50

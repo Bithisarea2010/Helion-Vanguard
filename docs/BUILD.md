@@ -192,6 +192,16 @@ loop. The shipped cut is 5.60 seconds at 1280x720/30 fps. The static corridor
 wallpaper is always the instant first-frame fallback while the video decoder
 warms up.
 
+### Loading-screen presentation windows
+
+`SceneFlow` deliberately keeps the cinematic screen visible for a minimum of
+8 seconds at cold boot, 9 seconds for mission insertion, 7 seconds on return to
+the flight deck, and 7.5 seconds for the post-combat recorder uplink. These are
+total presentation windows measured from the beginning of the transition, not
+extra time added after loading. If initialization finishes early, the progress
+instrument holds below 100% and shows a truthful launch/debrief countdown; real
+loading that exceeds the minimum is never delayed further.
+
 `[BENCH]` now also prints `acc=` (session accuracy), `fcs=` (the fire-control
 loop's rolling hit rate), `shots=`, `assist=` (servo position), `hostiles=` and
 `stage=`.

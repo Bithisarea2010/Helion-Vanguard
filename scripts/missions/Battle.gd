@@ -757,7 +757,7 @@ func _flight_recorder_uplink(win: bool, note: String) -> void:
 		[int(float(s.accuracy) * 100.0), int(s.score)])
 	AudioMgr.play_ui("radar_ping", -12.0, 1.08)
 	await get_tree().create_timer(0.34, true, false, true).timeout
-	SceneFlow.report(1.0, "UPLINK COMPLETE", "Debrief package authenticated")
+	SceneFlow.report(0.96, "UPLINK AUTHENTICATION", "Finalising the debrief package")
 	await SceneFlow.finish()
 
 func _stats_dict() -> Dictionary:
