@@ -183,10 +183,21 @@ func _chase(delta: float) -> void:
 	global_transform = global_transform.interpolate_with(tr, 1.0 - exp(-lerpf(18.0, 9.0, smooth) * delta))
 	global_position += global_transform.basis * _shake_off()
 	var want_fov := base_fov + clampf(speed / ship.sdef.speed, 0.0, 2.2) * 9.0
-	cam.fov = lerpf(cam.fov, want_fov, 1.0 - exp(-4.0 * delta))
+	# The FTL drive owns the lens while it is engaged: the spool COMPRESSES the
+	# frame and the breach snaps it wide. Blending that through the speed term
+	# would cancel it out, because cruise speed is already at the clamp.
+	var fov_rate := 4.0
+	if ship.ftl and ship.ftl.engaged():
+		want_fov = base_fov + ship.ftl.fov_offset()
+		fov_rate = 9.0
+	cam.fov = lerpf(cam.fov, want_fov, 1.0 - exp(-fov_rate * delta))
 	# anti-clip: ease the lens in when a rock blocks the view. Snapping to the
 	# hit point (the old behaviour) is far more visible now that the standoff is
 	# long enough for something to actually get between ship and camera.
+	# Skipped in FTL: the hull is intangible there, so a rock the ship flies
+	# straight through must not drag the camera in with it.
+	if ship.ftl and ship.ftl.active():
+		return
 	var space := ship.get_world_3d().direct_space_state
 	var q := PhysicsRayQueryParameters3D.create(
 		ship.global_position + b * Vector3(0, _rise * 0.5, 0), global_position)
@@ -216,7 +227,10 @@ func _cockpit(delta: float) -> void:
 	if cockpit_model:
 		cockpit_model.global_transform = Transform3D(b, global_position + b * (vib + Vector3(0, -0.03, 0.08)))
 	# wide sim lens: the full dash + consoles fit the frame
-	cam.fov = lerpf(cam.fov, base_fov + 14.0 + (6.0 if ship.boost_on else 0.0), 1.0 - exp(-4.0 * delta))
+	var want := base_fov + 14.0 + (6.0 if ship.boost_on else 0.0)
+	if ship.ftl and ship.ftl.engaged():
+		want = base_fov + 14.0 + ship.ftl.fov_offset()
+	cam.fov = lerpf(cam.fov, want, 1.0 - exp(-4.0 * delta))
 	# animate the sim controls from live flight inputs
 	var k := 1.0 - exp(-10.0 * delta)
 	if _yoke:

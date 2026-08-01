@@ -36,6 +36,10 @@ func _ready() -> void:
 	await _test_repeatable_surfaces()
 	await _test_missile_single_damage()
 	await _test_settings_panel()
+	_test_capability_gate()
+	_test_extended_arsenal()
+	await _test_shield_matrix()
+	_test_targeting_servo()
 	print("[TEST] pass=%d fail=%d" % [_passed, _failed])
 	Game.prepare_shutdown()
 	await get_tree().create_timer(0.2).timeout
@@ -212,7 +216,33 @@ func _test_projectile_pool_and_hit() -> void:
 	await get_tree().physics_frame
 	_check(target.hull < 100.0, "projectile ray reaches target")
 	_check(pm._active.is_empty(), "hit projectile removed without index overrun")
-	_check(pm._free_pool.size() == Projectiles.POOL, "hit projectile slot returned to pool")
+	_check(pm.has_bullet_capacity(), "consumed projectile frees pool capacity")
+	_check(pm._mm.visible_instance_count == 0, "no tracer instances drawn when idle")
+	# --- pierce: a railgun round must survive and keep going ---------------
+	var second := Combatant.new()
+	second.team = Combatant.TEAM_HOSTILE
+	second.freeze = true
+	second.combat_setup(100.0, 0.0, 0.0, 0.0)
+	second.position = Vector3(0, 0, -12)
+	var shape2 := CollisionShape3D.new()
+	var sphere2 := SphereShape3D.new()
+	sphere2.radius = 1.0
+	shape2.shape = sphere2
+	second.add_child(shape2)
+	add_child(second)
+	target.combat_setup(100.0, 0.0, 0.0, 0.0)
+	await get_tree().physics_frame
+	var rail := weapon.duplicate()
+	rail.speed = 2000.0
+	rail.pierce = 3
+	rail.pierce_falloff = 0.8
+	pm.fire_bullet(shooter, Vector3.ZERO, Vector3(0, 0, -1), rail, 0, Vector3.ZERO)
+	await get_tree().physics_frame
+	await get_tree().physics_frame
+	_check(target.hull < 100.0, "pierce round damages the first hull")
+	_check(second.hull < 100.0, "pierce round carries through to the second hull")
+	_check(second.hull > target.hull, "pierce damage decays with each pass")
+	second.queue_free()
 
 func _test_repeatable_surfaces() -> void:
 	var field := AsteroidField.new()
@@ -251,6 +281,149 @@ func _test_missile_single_damage() -> void:
 	missile._detonate(true)
 	_check(_near(target.hull, 100.0), "direct missile target is not damaged again by splash")
 	await get_tree().process_frame
+
+# ============================================================ 1.2 capabilities
+func _test_capability_gate() -> void:
+	var original := Game.settings.duplicate(true)
+	Game.settings.advanced_caps = true
+	for s in ["ftl", "shield", "arsenal", "targeting"]:
+		Game.settings["cap_" + s] = true
+		_check(Game.cap(s), "capability %s enabled by its own switch" % s)
+	# the master switch must override every sub-switch
+	Game.settings.advanced_caps = false
+	for s in ["ftl", "shield", "arsenal", "targeting"]:
+		_check(not Game.cap(s), "master switch gates %s" % s)
+	Game.settings.advanced_caps = true
+	Game.settings.cap_ftl = false
+	_check(not Game.cap("ftl"), "sub-switch gates its own system")
+	# the band is a product promise, so a hand-edited profile cannot escape it
+	Game.settings.targeting_hit_rate = 0.4
+	Game._normalize_settings()
+	_check(_near(Game.targeting_setpoint(), 0.80), "hit-rate setpoint clamps up to 80%")
+	Game.settings.targeting_hit_rate = 0.99
+	Game._normalize_settings()
+	_check(_near(Game.targeting_setpoint(), 0.90), "hit-rate setpoint clamps down to 90%")
+	Game.settings = original
+	Game._normalize_settings()
+
+func _test_extended_arsenal() -> void:
+	var original := Game.settings.duplicate(true)
+	Game.settings.advanced_caps = true
+	Game.settings.cap_arsenal = true
+	var full := ShipDB.selectable_weapons()
+	Game.settings.cap_arsenal = false
+	var stock := ShipDB.selectable_weapons()
+	_check(full.size() > stock.size(), "extended arsenal adds weapons")
+	_check(stock.size() == 8, "stock arsenal is the eight 1.1 weapons")
+	for id in stock:
+		_check(not ShipDB.WEAPONS[id].get("advanced", false),
+			"stock list excludes advanced weapon %s" % id)
+	Game.settings.cap_arsenal = true
+	# each new weapon must bring a mechanic, not just a damage number
+	_check(int(ShipDB.WEAPONS.railgun.pierce) > 1, "railgun pierces")
+	_check(int(ShipDB.WEAPONS.arc.chain) > 1, "arc projector chains")
+	_check(int(ShipDB.WEAPONS.flak.pellets) > 1, "flak fires pellets")
+	_check(bool(ShipDB.WEAPONS.phase.bypass_shield), "phase disruptor bypasses shields")
+	_check(float(ShipDB.WEAPONS.repeater.bloom) > 0.0, "repeater blooms")
+	_check(float(ShipDB.WEAPONS.singularity.charge_gain) > 1.0, "singularity lance charges")
+	_check(int(ShipDB.MISSILES.cluster.cluster) > 1, "cluster munition splits")
+	_check(float(ShipDB.MISSILES.emp.emp_radius) > 0.0, "EMP has a burst radius")
+	_check(bool(ShipDB.MISSILES.mine.mine), "mine is a mine")
+	# a shield-bypassing round must reach hull through a live shield
+	var victim := Combatant.new()
+	victim.freeze = true
+	victim.combat_setup(100.0, 60.0, 0.0, 0.0)
+	add_child(victim)
+	victim.take_hit(20.0, Vector3(0, 0, -1), Vector3(0, 0, -1), 0.5, 0.0, 1.0)
+	_check(_near(victim.shield_front, 60.0), "bypass round leaves the shield untouched")
+	_check(victim.hull < 100.0, "bypass round damages hull through a live shield")
+	victim.queue_free()
+	Game.settings = original
+	Game._normalize_settings()
+
+func _test_shield_matrix() -> void:
+	var mesh := ShieldBubble.icosphere(2)
+	var arrays := mesh.surface_get_arrays(0)
+	var verts: PackedVector3Array = arrays[Mesh.ARRAY_VERTEX]
+	var cols: PackedColorArray = arrays[Mesh.ARRAY_COLOR]
+	# 20 icosahedron faces x 4^subdiv, three independent vertices each
+	_check(verts.size() == 20 * 16 * 3, "icosphere subdivides to the expected face count")
+	_check(cols.size() == verts.size(), "every vertex carries a barycentric coordinate")
+	var on_sphere := true
+	for v in verts:
+		if absf(v.length() - 1.0) > 0.001:
+			on_sphere = false
+			break
+	_check(on_sphere, "every icosphere vertex is projected onto the unit sphere")
+	_check(cols[0] != cols[1] and cols[1] != cols[2],
+		"the three vertices of a face carry different barycentric corners")
+	var host := Node3D.new()
+	add_child(host)
+	var bubble := ShieldBubble.attach(host, AABB(Vector3(-2, -1, -6), Vector3(4, 2, 12)),
+		Color(0.4, 0.7, 1.0))
+	_check(not bubble.visible, "an unhit shield is hidden, not merely transparent")
+	bubble.register_hit(host.global_position + Vector3(0, 0, -40), 0.8)
+	_check(bubble.visible, "a hit makes the matrix visible")
+	await get_tree().process_frame
+	_check(bubble._live > 0, "the impact ring is live after the hit")
+	host.queue_free()
+
+func _test_targeting_servo() -> void:
+	var fcs := TargetingComputer.new()
+	add_child(fcs)
+	fcs.enabled = true
+	# too accurate: the loop must scatter (assist falls, error appears)
+	fcs.assist = 0.5
+	for i in 60:
+		fcs.note_shot()
+		fcs._on_hit(null, false)
+	_check(fcs.assist < 0.5, "a 100% hit rate drives the assist down")
+	_check(fcs.error_radians() > 0.0, "an over-accurate pilot gets injected scatter")
+	_check(fcs.assist <= 0.02, "a sustained 100% rate saturates the scatter side")
+	# not accurate enough: the loop must guide
+	fcs.assist = 0.5
+	fcs._shots = 0.0
+	fcs._hits = 0.0
+	for i in 60:
+		fcs.note_shot()
+	_check(fcs.assist > 0.5, "a 0% hit rate drives the assist up")
+	_check(fcs.guidance() > 0.0, "an inaccurate pilot gets guided rounds")
+	# hits can never outnumber shots, whatever chain lightning reports
+	fcs._shots = 10.0
+	fcs._hits = 0.0
+	for i in 40:
+		fcs._on_hit(null, false)
+	_check(fcs._hits <= fcs._shots, "confirmed hits are clamped to shots fired")
+	# and it must actually SETTLE inside the band rather than oscillate on the
+	# rails: drive it with a shooter whose true hit rate depends on the assist
+	fcs.assist = 0.5
+	fcs._shots = 0.0
+	fcs._hits = 0.0
+	# seeded: a servo test driven by an unseeded RNG is a coin flip in CI
+	var plant := RandomNumberGenerator.new()
+	plant.seed = 20260801
+	var acc_sum := 0.0
+	var acc_n := 0
+	for i in 900:
+		fcs.note_shot()
+		# a plausible plant: more assist really does mean more hits
+		if plant.randf() < clampf(0.35 + fcs.assist * 0.62, 0.0, 1.0):
+			fcs._on_hit(null, false)
+		if i > 500:
+			acc_sum += fcs.hit_rate()
+			acc_n += 1
+	# The MEAN is the property that matters. The rolling estimate is built from a
+	# ~42-shot window, so its own sampling noise is about 5.5 points of standard
+	# deviation — asserting on the worst single sample would fail on nothing more
+	# than a two-sigma excursion, which is guaranteed to happen over 400 samples.
+	var mean_rate := acc_sum / maxf(float(acc_n), 1.0)
+	_check(absf(mean_rate - fcs.setpoint()) < 0.04,
+		"the loop holds the mean measured rate at the setpoint")
+	_check(mean_rate >= 0.80 and mean_rate <= 0.90,
+		"the settled loop sits inside the 80-90% band")
+	_check(fcs.assist > 0.02 and fcs.assist < 0.98,
+		"the settled loop sits off both rails")
+	fcs.queue_free()
 
 func _test_settings_panel() -> void:
 	var panel := SettingsPanel.new()

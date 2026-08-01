@@ -38,7 +38,64 @@ const WEAPONS := {
 		"speed": 0.0, "range": 1400.0, "heat": 26.0, "energy": 22.0, "spread": 0.0,
 		"pen": 0.55, "sh": 1.0, "hu": 1.2, "color": Color(0.55, 1.0, 0.75), "size": 0.6,
 		"sound": "lance", "desc": "Capital-grade lance. Melts anything, overheats fast."},
+
+	# ------------------------------------------------------ extended arsenal (1.2)
+	# Each of these exists for a MECHANIC the first eight do not have, so the
+	# loadout screen is a decision about how you want to fight rather than a
+	# damage-per-second ranking. Gated behind the Advanced Capabilities switch.
+	"railgun": {"label": "MK-IV Railgun", "kind": "bullet", "dmg": 62.0, "rof": 1.05,
+		"speed": 2200.0, "range": 3200.0, "heat": 13.0, "energy": 11.0, "spread": 0.02,
+		"pen": 1.0, "sh": 0.8, "hu": 1.45, "color": Color(0.80, 0.72, 1.0), "size": 3.2,
+		"sound": "railgun", "ammo": 90, "advanced": true,
+		"pierce": 4, "pierce_falloff": 0.72,
+		"desc": "Punches clean through four hulls. Damage decays with each pass."},
+	"arc": {"label": "Arc Projector", "kind": "bullet", "dmg": 17.0, "rof": 4.0,
+		"speed": 1400.0, "range": 950.0, "heat": 5.5, "energy": 5.2, "spread": 0.35,
+		"pen": 0.05, "sh": 1.9, "hu": 0.65, "color": Color(0.55, 0.85, 1.0), "size": 3.0,
+		"sound": "arc", "advanced": true,
+		"chain": 3, "chain_range": 160.0, "chain_falloff": 0.65,
+		"desc": "Lightning that jumps to three more contacts. Devastating on packs."},
+	"flak": {"label": "Flak Battery", "kind": "bullet", "dmg": 8.5, "rof": 1.7,
+		"speed": 720.0, "range": 900.0, "heat": 7.0, "energy": 0.0, "spread": 3.4,
+		"pen": 0.15, "sh": 0.75, "hu": 1.25, "color": Color(1.0, 0.72, 0.30), "size": 2.2,
+		"sound": "flak", "ammo": 240, "advanced": true, "pellets": 7,
+		"desc": "Seven-pellet cone. Murderous inside 400 m, useless past 700."},
+	"phase": {"label": "Phase Disruptor", "kind": "bullet", "dmg": 21.0, "rof": 4.6,
+		"speed": 840.0, "range": 1150.0, "heat": 7.5, "energy": 7.0, "spread": 0.45,
+		"pen": 0.5, "sh": 0.0, "hu": 1.0, "color": Color(0.85, 0.40, 1.0), "size": 3.0,
+		"sound": "phase", "advanced": true, "bypass_shield": true,
+		"desc": "Phases through shields entirely and bites the hull underneath."},
+	"repeater": {"label": "Scatter Repeater", "kind": "bullet", "dmg": 4.4, "rof": 22.0,
+		"speed": 1000.0, "range": 1150.0, "heat": 1.0, "energy": 0.6, "spread": 0.35,
+		"pen": 0.2, "sh": 0.8, "hu": 1.1, "color": Color(1.0, 0.95, 0.65), "size": 1.5,
+		"sound": "repeater", "ammo": 1600, "advanced": true,
+		"bloom": 2.6, "bloom_recover": 5.0,
+		"desc": "Hoses rounds, but the cone opens as you hold. Tap it."},
+	"singularity": {"label": "Singularity Lance", "kind": "beam", "dmg": 42.0, "rof": 0.0,
+		"speed": 0.0, "range": 1300.0, "heat": 21.0, "energy": 18.0, "spread": 0.0,
+		"pen": 0.75, "sh": 1.1, "hu": 1.25, "color": Color(0.95, 0.55, 1.0), "size": 0.5,
+		"sound": "singularity", "advanced": true, "charge_gain": 3.2, "charge_time": 2.4,
+		"desc": "Beam that keeps building. Held to full it out-damages anything."},
 }
+
+## Weapons available for a loadout, filtered by the Advanced Capabilities switch.
+static func selectable_weapons() -> Array:
+	var out: Array = []
+	var extended := Game.cap("arsenal")
+	for id in WEAPONS:
+		if WEAPONS[id].get("advanced", false) and not extended:
+			continue
+		out.append(id)
+	return out
+
+static func selectable_missiles() -> Array:
+	var out: Array = []
+	var extended := Game.cap("arsenal")
+	for id in MISSILES:
+		if MISSILES[id].get("advanced", false) and not extended:
+			continue
+		out.append(id)
+	return out
 
 # ============================================================ SECONDARY / MISSILES
 const MISSILES := {
@@ -62,6 +119,23 @@ const MISSILES := {
 		"turn": 0.0, "lock_time": 0.0, "lock_cone": 0.0, "range": 1500.0, "reload": 0.35,
 		"guidance": "none", "salvo": 2, "cm_resist": 1.0,
 		"desc": "Dumb-fire pods. Devastating up close, no tracking."},
+
+	# ------------------------------------------------------ extended arsenal (1.2)
+	"emp": {"label": "EMP Warhead", "dmg": 40.0, "speed": 290.0, "accel": 130.0,
+		"turn": 120.0, "lock_time": 1.4, "lock_cone": 26.0, "range": 2600.0, "reload": 4.0,
+		"guidance": "radar", "salvo": 1, "cm_resist": 0.5, "advanced": true,
+		"emp_radius": 220.0, "emp_time": 4.5, "shield_mult": 6.0,
+		"desc": "Strips shields in a 220 m bubble and blinds every seeker in it."},
+	"cluster": {"label": "Cluster Munition", "dmg": 55.0, "speed": 260.0, "accel": 110.0,
+		"turn": 95.0, "lock_time": 1.8, "lock_cone": 28.0, "range": 2800.0, "reload": 4.5,
+		"guidance": "radar", "salvo": 1, "cm_resist": 0.55, "advanced": true,
+		"cluster": 6, "cluster_dmg": 48.0,
+		"desc": "Splits into six submunitions on approach. Clears a formation."},
+	"mine": {"label": "Proximity Mines", "dmg": 190.0, "speed": 34.0, "accel": 0.0,
+		"turn": 0.0, "lock_time": 0.0, "lock_cone": 0.0, "range": 400.0, "reload": 1.1,
+		"guidance": "none", "salvo": 2, "cm_resist": 1.0, "advanced": true,
+		"mine": true, "mine_radius": 46.0, "mine_life": 26.0,
+		"desc": "Drop behind you and let the chase fly into it."},
 }
 
 # ============================================================ PLAYER SHIPS
@@ -126,6 +200,44 @@ const SHIPS := {
 		"muzzles_a": [Vector3(0.0, -0.14, -7.9)],
 		"muzzles_b": [Vector3(0.35, -0.3, -6.5), Vector3(-0.35, -0.3, -6.5)],
 		"thrusters": [Vector3(0.55, 0.04, 0), Vector3(-0.55, 0.04, 0)], "eye": Vector3(0, 0.82, -2.7),
+	},
+	# --------------------------------------------------------- 1.2 additions
+	"specter": {
+		"label": "SR-2 Specter", "role": "Stealth Interceptor",
+		"desc": "Faceted, cold and quiet. They shoot at you late, and by then you are past.",
+		"model": "res://assets/models/ship_specter.glb",
+		"speed": 148.0, "accel": 74.0, "turn": 1.32, "mass": 11.0,
+		"hull": 85.0, "armor": 0.15, "shield": 75.0, "shield_regen": 9.0,
+		"energy": 130.0, "energy_regen": 18.0, "heat_cap": 95.0, "cool": 17.0,
+		"boost_mult": 1.85, "boost_drain": 16.0,
+		"missile_cap": 6, "cm_count": 14,
+		# `stealth` shrinks the range at which the AI will pick you as a target.
+		# It is the one stat in the roster that changes how the fight STARTS
+		# rather than how it is won, which is what makes the hull worth flying.
+		"stealth": 0.55,
+		"default_primary": "pulse", "default_primary2": "phase", "default_missile": "heatseeker",
+		"paint": Color(0.16, 0.17, 0.20), "glow": Color(0.55, 0.30, 1.0),
+		"muzzles_a": [Vector3(0.30, -0.10, -7.6), Vector3(-0.30, -0.10, -7.6)],
+		"muzzles_b": [Vector3(2.60, -0.10, 1.0), Vector3(-2.60, -0.10, 1.0)],
+		"thrusters": [Vector3(0.55, 0.06, 0), Vector3(-0.55, 0.06, 0)],
+		"eye": Vector3(0, 0.66, -2.2),
+	},
+	"paladin": {
+		"label": "SA-11 Paladin", "role": "Assault Gunship",
+		"desc": "Four engines, six racks and a chin gun. It does not dodge; it arrives.",
+		"model": "res://assets/models/ship_paladin.glb",
+		"speed": 104.0, "accel": 46.0, "turn": 0.78, "mass": 24.0,
+		"hull": 240.0, "armor": 0.46, "shield": 165.0, "shield_regen": 7.0,
+		"energy": 160.0, "energy_regen": 15.0, "heat_cap": 175.0, "cool": 18.0,
+		"boost_mult": 1.55, "boost_drain": 15.0,
+		"missile_cap": 14, "cm_count": 10,
+		"default_primary": "repeater", "default_primary2": "flak", "default_missile": "cluster",
+		"paint": Color(0.52, 0.50, 0.30), "glow": Color(1.0, 0.55, 0.14),
+		"muzzles_a": [Vector3(0.28, -0.92, -6.8), Vector3(-0.28, -0.92, -6.8)],
+		"muzzles_b": [Vector3(4.05, -0.15, -3.4), Vector3(-4.05, -0.15, -3.4)],
+		"thrusters": [Vector3(1.05, 0.42, 0), Vector3(-1.05, 0.42, 0),
+			Vector3(1.05, -0.42, 0), Vector3(-1.05, -0.42, 0)],
+		"eye": Vector3(0, 1.05, -3.0),
 	},
 }
 

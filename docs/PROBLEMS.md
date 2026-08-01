@@ -245,3 +245,79 @@ Godot --path . --resolution 1280x720 -- --mission=instant_action --autotest --un
 15. **`space_sky.gdshader` is now near-dead code.** It renders for the two frames
     before the panorama bake replaces it. Worth either deleting or keeping
     deliberately as the low-preset path.
+
+---
+
+# 1.2 — the AAA pass (2026-08-01)
+
+Goals and full results are in `docs/GOALS_AAA.md`. This section is only what is
+still wrong or still worth knowing.
+
+## Traps found in 1.2 (read these before touching the same code)
+
+16. **A shader that reads the screen costs a full-frame copy, always.** The
+    engine heat haze started as a screen-space refraction. `hint_screen_texture`
+    makes Godot copy the whole colour buffer every frame, and that copy is
+    charged in full no matter how few pixels sample it — two small cones cost
+    **41% of the frame** (22.3 → 31.1 fps, same sitting, bracketed). Rewritten as
+    an additive wash with no screen read. If you want refraction anywhere in this
+    game, budget a full-screen blit for it first.
+
+17. **`Basis.scaled()` scales in the PARENT frame, not the local one.** Used to
+    apply the thrust-vectoring gimbal, `basis.scaled(Vector3(rad, length, rad))`
+    stretched every engine plume along the ship's UP axis instead of along its
+    own length — a several-hundred-metre vertical lens standing on the hull, with
+    the haze cone inheriting it as a dark spindle across the whole frame. Use
+    `basis * Basis.from_scale(v)` (right-multiply) for local scaling.
+
+18. **Assigning a freed object to a TYPED slot is itself an error.** Not reading
+    it — assigning it. `var t: Node3D = b.gtarget` and `fcs.target = target` both
+    threw "Trying to assign invalid previously freed instance" on the one frame
+    between a target dying and `_lock_update` clearing it: 300+ errors in a
+    16-second convoy run. `is_instance_valid()` inside the callee is too late.
+    Read into an **untyped** local, check, then narrow.
+
+19. **A lambda that captures a Node logs an error if that Node is freed first.**
+    The capture is validated before the body runs, so an `is_instance_valid`
+    guard inside the closure never gets the chance. Capture
+    `get_instance_id()` and resolve with `instance_from_id` — see `FX._free_by_id`.
+
+20. **Glow level trimming saves nothing.** Godot 4's glow cost is the fixed
+    downsample/upsample chain, not the number of weighted levels. Measured while
+    genuinely GPU-bound: max level 4 / 5 / 6 → 33.13 / 33.15 / 32.99 fps. The
+    2026-07-29 note that "glow is ~40%" is still true; it just cannot be reduced
+    this way. Do not spend another hour on it.
+
+21. **`--uncapped` had been silently broken.** `Battle._ready()` re-applies video
+    settings when a mission loads, which put vsync back on. Every "uncapped"
+    number measured between that change and this one was really a 60 fps vsync
+    cap. Now latched in `Game._force_uncapped`. Note that on this Metal build
+    vsync cannot actually be disabled at all — to profile, load the GPU with
+    `--renderscale=2.0` so the frame lands below 60.
+
+## Open
+
+22. **1.2 is ~10% slower than 1.1 when GPU-bound.** At the shipped default (High,
+    native, vsync) the two are identical — 58.9/58.7 vs 59.2/59.0 fps, p95
+    19.3 ms both — so there is no user-visible regression. At `--renderscale=2.0`
+    it is 33.7 vs 37.6 fps with baselines agreeing within 5%. No single subsystem
+    accounts for it: `--nohaze`, `--nodeep` and `--nocaps` each land inside noise.
+    It is the aggregate of three galaxy cards, the engine haze cones, and more
+    effects firing because the fire control lands more hits.
+
+23. **Session accuracy exceeds the band in short engagements.** The fire-control
+    servo controls a *rolling* rate and holds it; the session-cumulative figure
+    only converges once ~150 rounds have been fired. Missions where the autotest
+    bot fires 170–280 rounds land at 0.864–0.894; missions where it fires 78–92
+    read 0.924–0.962. Fixable by shrinking `WINDOW` or by seeding the loop from
+    the previous mission, neither of which was tried.
+
+24. **The Leviathan is the heaviest hull in the game** at 47k triangles after the
+    detail pass (existing capitals are 24–34k). It is one ship per mission and
+    Godot's automatic mesh LOD handles distance, but it is the first thing to cut
+    if a mission ever needs several capitals at once.
+
+25. **`--nocaps` is not a full 1.1 restoration.** It gates the four capability
+    systems, but the new hulls, the new mission, the deep-sky cards and the
+    engine changes are unconditional. To compare against real 1.1, use a git
+    worktree at `825a709` — that is how every number above was measured.

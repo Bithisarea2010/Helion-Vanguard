@@ -63,6 +63,14 @@ func _load_sounds() -> void:
 func has_sound(sound: String) -> bool:
 	return _sounds.has(sound)
 
+## Raw stream for callers that own their own player (looping engine/FTL beds).
+## Returns a duplicate so a caller setting `loop_mode` cannot corrupt the shared
+## one-shot copy — that bug once made every explosion loop forever.
+func stream(sound: String) -> AudioStream:
+	if not _sounds.has(sound):
+		return null
+	return (_sounds[sound] as AudioStream).duplicate()
+
 func apply_volumes() -> void:
 	var s: Dictionary = Game.settings
 	var levels := {"Master": float(s.vol_master), "Music": float(s.vol_music),

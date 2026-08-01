@@ -50,6 +50,13 @@ var _aggression := 1.0
 var _model_root: Node3D
 var _avoid_timer := 0.0
 var _avoid_push := Vector3.ZERO
+var _emp_t := 0.0                   # seconds of EMP soft-kill remaining
+## Retreat is bounded — see `_decide()`. `_retreat_t` runs while disengaging,
+## `_retreat_cool` blocks another retreat for a while afterwards.
+const RETREAT_TIME := 7.0
+const RETREAT_COOLDOWN := 14.0
+var _retreat_t := 0.0
+var _retreat_cool := 0.0
 
 func _init() -> void:
 	team = TEAM_HOSTILE
@@ -106,6 +113,9 @@ func _load_model() -> void:
 	sock.position = Vector3(0, 0, (aabb.position.z + aabb.size.z) * edef.scale * 0.9)
 	var tcol := Color(1.0, 0.25, 0.12) if team == TEAM_HOSTILE else Color(0.35, 0.7, 1.0)
 	EngineTrail.attach(battle, sock, tcol, 0.45 * edef.scale, self)
+	# hostile shields are hot orange, friendly ones the fleet blue
+	setup_shield_visual(AABB(aabb.position * edef.scale, aabb.size * edef.scale),
+		Color(1.0, 0.42, 0.20) if team == TEAM_HOSTILE else Color(0.35, 0.68, 1.0))
 
 func consume_fire_cost(_e: float, _h: float) -> bool:
 	return true
@@ -121,6 +131,9 @@ func _physics_process(delta: float) -> void:
 	_cm_cd -= delta
 	_jink_t -= delta
 	_aim_refresh -= delta
+	_emp_t = maxf(0.0, _emp_t - delta)
+	_retreat_t = maxf(0.0, _retreat_t - delta)
+	_retreat_cool = maxf(0.0, _retreat_cool - delta)
 	if _spiraling:
 		# out of control: thrust + tumble, then blow
 		_spiral_t -= delta
@@ -142,9 +155,14 @@ func _decide() -> void:
 	if state == S.EVADE or state == S.BREAK:
 		if _state_t > 0.0:
 			return
-	# retreat check
-	if hull_frac() < (1.0 - edef.brave) * 0.6:
+	# Retreat check. Hull does not regenerate, so the old rule ("run until hull is
+	# back above 55%") meant a damaged fighter ran forever — and because every
+	# mission gates its next stage on `hostile_fighters_alive() == 0`, one fleeing
+	# Razor could stall a mission permanently (the autotest bot sat at 1 hostile
+	# for 13 s doing nothing). A retreat is now a disengage, not an exit.
+	if hull_frac() < (1.0 - edef.brave) * 0.6 and _retreat_cool <= 0.0 and state != S.RETREAT:
 		state = S.RETREAT
+		_retreat_t = RETREAT_TIME
 		_release_token()
 		return
 	if escort and is_instance_valid(escort) and ("alive" not in escort or escort.alive):
@@ -183,6 +201,16 @@ func _pick_target() -> Node3D:
 		# prefer the player slightly
 		if c.is_in_group("player"):
 			d *= 0.55
+			# A stealth hull is acquired later and, once there is anything else on
+			# the scope, shot at less. This is the Specter's whole reason to
+			# exist: it changes how the engagement STARTS rather than how it is
+			# won, which no other stat in the roster does.
+			var st: float = float(c.sdef.get("stealth", 0.0)) if "sdef" in c else 0.0
+			if st > 0.0:
+				var reach := 2600.0 * (1.0 - st * 0.62)
+				if global_position.distance_squared_to(c.global_position) > reach * reach:
+					continue
+				d *= 1.0 + st * 1.7
 		if d < best_d:
 			best_d = d
 			best = c
@@ -206,6 +234,19 @@ func _start_break() -> void:
 	var vert := global_transform.basis.y * randf_range(-0.6, 1.0)
 	_break_dir = (side + vert).normalized()
 	_release_token()
+
+## EMP soft-kill: guns and seekers go down for a few seconds and the ship runs.
+## Reversible on purpose — a permanent disable would just be a slow kill.
+func apply_emp(seconds: float) -> void:
+	if not alive or seconds <= 0.0:
+		return
+	_emp_t = maxf(_emp_t, seconds)
+	state = S.EVADE
+	_state_t = maxf(_state_t, seconds)
+	_msl_cd = maxf(_msl_cd, seconds + 2.0)
+	FX.arc_bolt(battle, global_position,
+		global_position + Vector3(randf_range(-6, 6), randf_range(-6, 6), randf_range(-6, 6)),
+		Color(0.6, 0.85, 1.0))
 
 func ai_missile_warning(_m: Node) -> void:
 	if not alive:
@@ -286,8 +327,13 @@ func _steer_and_fire(delta: float) -> void:
 			if target and is_instance_valid(target):
 				desired = (global_position - target.global_position).normalized()
 			throttle = 1.0
-			if hull_frac() > 0.55:
-				state = S.PATROL
+			# out of the fight long enough, or far enough away to have broken
+			# contact — either way, come back around and finish it
+			if _retreat_t <= 0.0 or (target and is_instance_valid(target)
+					and global_position.distance_to(target.global_position) > 3200.0):
+				_retreat_t = 0.0
+				_retreat_cool = RETREAT_COOLDOWN
+				state = S.PURSUE
 	# asteroid avoidance
 	desired = _avoid(desired, delta)
 	# rotate toward desired
@@ -309,6 +355,9 @@ func _steer_and_fire(delta: float) -> void:
 	# slight assist damping
 	var lateral := linear_velocity - (-global_transform.basis.z) * linear_velocity.dot(-global_transform.basis.z)
 	linear_velocity -= lateral * (1.0 - exp(-1.2 * delta))
+	# an EMP'd ship still flies — it just cannot shoot
+	if _emp_t > 0.0:
+		want_fire = false
 	weapons.process_fire(delta, want_fire, (_aim_point - global_position).normalized() if want_fire else -global_transform.basis.z)
 
 func _refresh_aim() -> void:

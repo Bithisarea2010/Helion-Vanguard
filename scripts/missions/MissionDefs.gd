@@ -91,6 +91,25 @@ const MISSIONS := {
 		"env": {"neb_a": Color(0.05, 0.15, 0.25), "neb_b": Color(0.1, 0.1, 0.3), "neb_c": Color(0.1, 0.2, 0.2),
 			"planets": []},
 	},
+	"fleet_action": {
+		"title": "IRONHAMMER", "mode": "Fleet Action",
+		"desc": "The first full fleet engagement: hold the Leviathan against a VEX dreadnought and its screen.",
+		"briefing": [
+			"The supercarrier Leviathan is the only reason this sector is still ours.",
+			"VEX are bringing a Sovereign-class dreadnought and a destroyer screen.",
+			"Talon frigates will hold the flanks. Break the screen, then gut the Sovereign:",
+			"engines first, then the capacitor bank, then the reactor. Do not let the Leviathan burn.",
+		],
+		"env": {"neb_a": Color(0.10, 0.06, 0.26), "neb_b": Color(0.04, 0.16, 0.32),
+			"neb_c": Color(0.34, 0.10, 0.06), "neb_i": 1.15,
+			"sun_dir": Vector3(-0.55, -0.18, 0.72),
+			"planets": [{"pos": Vector3(-13000, 1500, -21000), "radius": 6200.0,
+				"col_a": Color(0.42, 0.56, 0.78), "col_b": Color(0.16, 0.26, 0.46),
+				"atmo": Color(0.45, 0.72, 1.0), "cities": 0.55, "water": 0.4},
+				{"pos": Vector3(17000, 4200, 8000), "radius": 2100.0, "rocky": 1.0,
+				"col_a": Color(0.52, 0.48, 0.44), "col_b": Color(0.28, 0.26, 0.24),
+				"atmo": Color(0.5, 0.6, 0.8), "atmo_strength": 0.35}]},
+	},
 	"main": {
 		"title": "OPERATION SUNFALL", "mode": "Campaign",
 		"desc": "The full strike: escort, ambush, corvette duel — then burn the VEX Bastion.",
@@ -109,7 +128,7 @@ const MISSIONS := {
 }
 
 const ORDER := ["training", "instant_action", "patrol", "convoy", "station_defence",
-	"capital_strike", "survival", "arena", "main"]
+	"capital_strike", "fleet_action", "survival", "arena", "main"]
 
 static func get_mission(id: String) -> Dictionary:
 	return MISSIONS.get(id, MISSIONS.instant_action)

@@ -467,6 +467,111 @@ write_wav("boost", norm(reverb(sat(mix(
 write_wav("thruster", norm(lp_fft(noise(0.34), 850) * env_adsr(0.34, 0.04, 0.14), 0.4))
 
 
+# =========================================================== 1.2 additions
+# Same construction rule as every other sound here: transient (what the
+# mechanism does) + body (what leaves it) + tail (what the space does about it).
+
+# --- lightspeed drive -------------------------------------------------------
+# Spool: a rising harmonic stack over a broadband charge. The pitch ramp is the
+# only cue the pilot has that the ring is nearly ready, so it has to stay
+# audible under a full combat mix — hence a harmonic stack, not a single tone.
+SD = 1.8
+_ramp = np.linspace(0.0, 1.0, int(SR * SD))
+sp_h = mix(*[sine(sweep(90 * k, 520 * k, SD, 1.6), SD) * (0.5 / k) for k in (1, 2, 3, 5)])
+sp_air = bp_fft(noise(SD), 400, 6000) * _ramp ** 2 * 0.35
+sp_tick = crackle(SD, density=26.0, lo=2500, hi=9000) * _ramp ** 3 * 0.5
+write_wav("ftl_spool", norm(reverb(sat(mix(sp_h, sp_air, sp_tick), 1.5),
+                                   0.26, rt60=1.4), 0.80), max_dur=2.4)
+
+# Breach: the loudest one-shot in the game. Sub impact, ripping downsweep and a
+# wide tail, so it reads as something happening to space rather than to a gun.
+BR = 1.9
+write_wav("ftl_breach", norm(reverb(sat(mix(
+    sub_thump(180, BR, k=3, f_end=0.22),
+    lp_fft(noise(BR), 3000) * env_adsr(BR, 0.008, 0.9),
+    sine(sweep(1800, 60, 0.7, 0.5), 0.7) * env_exp(0.7, 5) * 0.6,
+    crackle(0.5, density=140.0, lo=1800, hi=11000) * env_exp(0.5, 7) * 0.5), 1.9),
+    0.36, rt60=2.4, hi=3000), 0.95), max_dur=2.6)
+
+# Cruise bed: 4 s, seamless. Two resonant duct tones over filtered rumble with
+# slow beating, so it never sits still under a long jump.
+CD = 4.0
+_tc = t_axis(CD)
+cr = mix(lp_fft(noise(CD), 420) * 0.55,
+         resonate(noise(CD), 128.0, q=14.0, gain=0.50),
+         resonate(noise(CD), 311.0, q=22.0, gain=0.30),
+         sine(62.0, CD) * 0.22)
+cr = cr * (1.0 + 0.10 * np.sin(2 * np.pi * 0.42 * _tc)
+           + 0.06 * np.sin(2 * np.pi * 1.13 * _tc))
+write_wav("ftl_cruise", norm(seamless(sat(cr, 1.5), 0.4), 0.55), max_dur=None)
+
+XD = 1.3
+write_wav("ftl_exit", norm(reverb(sat(mix(
+    lp_fft(noise(XD), 2200) * env_adsr(XD, 0.01, 0.8),
+    sine(sweep(420, 70, XD, 0.6), XD) * env_exp(XD, 3.0) * 0.6,
+    sub_thump(120, 0.7, k=5)), 1.6), 0.30, rt60=1.6), 0.82), max_dur=2.0)
+
+# --- shield matrix ----------------------------------------------------------
+write_wav("shield_down", norm(reverb(sat(mix(
+    sine(sweep(900, 120, 0.7, 0.6), 0.7) * env_exp(0.7, 4) * 0.7,
+    bp_fft(noise(0.55), 600, 5200) * env_exp(0.55, 6) * 0.5,
+    crackle(0.6, density=70.0, lo=900, hi=6000) * env_exp(0.6, 5) * 0.6), 1.7),
+    0.30, rt60=1.1), 0.80))
+
+# --- extended arsenal -------------------------------------------------------
+# railgun: capacitor snap, then the crack of something leaving at 2.2 km/s
+write_wav("railgun", norm(reverb(sat(mix(
+    hp_fft(noise(0.02), 3000) * env_exp(0.02, 20),
+    sine(sweep(180, 55, 0.35, 0.5), 0.35) * env_exp(0.35, 7) * 0.8,
+    bp_fft(noise(0.5), 700, 9000) * env_exp(0.5, 9) * 0.45,
+    resonate(noise(0.4), 1400.0, q=18.0, gain=0.35)), 2.3),
+    0.24, rt60=0.9, hi=5000), 0.94))
+
+# arc projector: dense crackle over a buzzing carrier
+write_wav("arc", norm(reverb(sat(mix(
+    crackle(0.30, density=260.0, lo=1500, hi=12000) * env_exp(0.30, 6) * 0.9,
+    square(sweep(900, 300, 0.22, 0.5), 0.22) * env_exp(0.22, 9) * 0.35,
+    resonate(noise(0.3), 2600.0, q=26.0, gain=0.40)), 2.0),
+    0.22, rt60=0.6, hi=9000), 0.86))
+
+# flak: hollow breech thump plus shell rattle
+write_wav("flak", norm(reverb(sat(mix(
+    sine(sweep(220, 70, 0.26, 0.5), 0.26) * env_exp(0.26, 8) * 0.9,
+    lp_fft(noise(0.3), 2600) * env_exp(0.3, 8) * 0.55,
+    crackle(0.34, density=110.0, lo=800, hi=5200) * env_exp(0.34, 6) * 0.4), 2.1),
+    0.26, rt60=0.8, hi=4000), 0.90))
+
+# phase disruptor: two slightly detuned sweeps beating against each other, the
+# cheapest way to make something sound like it is not quite in this space
+write_wav("phase", norm(reverb(mix(
+    sine(sweep(1500, 480, 0.24, 0.6), 0.24) * env_exp(0.24, 7) * 0.5,
+    sine(sweep(1512, 486, 0.24, 0.6), 0.24) * env_exp(0.24, 7) * 0.5,
+    hp_fft(noise(0.2), 5000) * env_exp(0.2, 12) * 0.3),
+    0.30, rt60=0.9, hi=11000), 0.80))
+
+# scatter repeater: short and dry, because it fires 22 times a second
+write_wav("repeater", norm(reverb(sat(mix(
+    hp_fft(noise(0.012), 2600) * env_exp(0.012, 18) * 0.9,
+    sine(sweep(760, 220, 0.07, 0.5), 0.07) * env_exp(0.07, 12) * 0.6,
+    bp_fft(noise(0.09), 900, 6000) * env_exp(0.09, 12) * 0.3), 2.2),
+    0.12, rt60=0.3), 0.82))
+
+# singularity lance: a hum that RISES, so holding the trigger sounds like charge
+SG = 0.9
+sg = mix(sine(sweep(70, 130, SG, 0.8), SG) * 0.6,
+         saw(sweep(140, 260, SG, 0.8), SG) * 0.25,
+         resonate(noise(SG), 520.0, q=30.0, gain=0.30)) * env_adsr(SG, 0.12, 0.3)
+write_wav("singularity", norm(reverb(lp_fft(sat(sg, 1.5), 2400),
+                                     0.30, rt60=1.3, hi=3000), 0.80))
+
+# EMP: everything electrical in a 220 m bubble failing at once
+write_wav("emp", norm(reverb(sat(mix(
+    sine(sweep(2200, 90, 0.45, 0.7), 0.45) * env_exp(0.45, 5) * 0.7,
+    crackle(0.7, density=180.0, lo=700, hi=9000) * env_exp(0.7, 4) * 0.7,
+    sub_thump(90, 0.6, k=5) * 0.8), 1.8),
+    0.34, rt60=1.6, hi=6000), 0.92), max_dur=2.4)
+
+
 # =========================================================== music
 def chord_pad(root_hz, semis, dur, detune=1.007, cutoff=900):
     out = np.zeros(int(SR * dur))

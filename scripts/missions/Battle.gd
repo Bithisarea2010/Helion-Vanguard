@@ -35,6 +35,9 @@ var _haulers_alive := 0
 var _capitals: Array = []
 var _bastion: CapitalShip = null
 var _carrier: CapitalShip = null
+var _leviathan: CapitalShip = null
+var _sovereign: CapitalShip = null
+var _escorts: Array = []
 var _turret_line: Array = []
 var _train_step := 0
 var _train_flag := false
@@ -75,7 +78,10 @@ func _ready() -> void:
 	env.build(mdef.env)
 	projectiles = Projectiles.new()
 	add_child(projectiles)
-	projectiles.player_hit_confirmed.connect(func(_t, _s): shots_hit += 1)
+	# Chain lightning and shotgun pellets each report several confirmations for
+	# one trigger pull, so hits are clamped to shots — "accuracy" above 100% is
+	# not a thing, and the fire-control servo reads this same number.
+	projectiles.player_hit_confirmed.connect(func(_t, _s): shots_hit = mini(shots_hit + 1, shots_fired))
 	field = AsteroidField.new()
 	add_child(field)
 	_build_field()
@@ -228,10 +234,19 @@ func _harness_tick(delta: float) -> void:
 	if _bench_t >= 1.0:
 		_bench_samples.sort()
 		var p95: float = _bench_samples[mini(int(_bench_samples.size() * 0.95), _bench_samples.size() - 1)]
-		print("[BENCH] t=%.1f fps=%.1f p95=%.2fms worst=%.2fms cpu=%.2fms phys=%.2fms objects=%d prims=%d drawcalls=%d vram=%.1fMB nodes=%d" % [
+		var acc := 0.0
+		if shots_fired > 0:
+			acc = float(shots_hit) / float(shots_fired)
+		var fcs_assist := -1.0
+		var fcs_rate := -1.0
+		if player and is_instance_valid(player) and player.fcs:
+			fcs_assist = player.fcs.assist
+			fcs_rate = player.fcs.hit_rate()
+		print("[BENCH] t=%.1f fps=%.1f p95=%.2fms worst=%.2fms cpu=%.2fms phys=%.2fms acc=%.3f fcs=%.3f shots=%d assist=%.2f hostiles=%d stage=%d objects=%d prims=%d drawcalls=%d vram=%.1fMB nodes=%d" % [
 			mission_time, float(_bench_frames) / _bench_t, p95 * 1000.0, _bench_worst * 1000.0,
 			Performance.get_monitor(Performance.TIME_PROCESS) * 1000.0,
 			Performance.get_monitor(Performance.TIME_PHYSICS_PROCESS) * 1000.0,
+			acc, fcs_rate, shots_fired, fcs_assist, hostile_fighters_alive(), stage,
 			RenderingServer.get_rendering_info(RenderingServer.RENDERING_INFO_TOTAL_OBJECTS_IN_FRAME),
 			RenderingServer.get_rendering_info(RenderingServer.RENDERING_INFO_TOTAL_PRIMITIVES_IN_FRAME),
 			RenderingServer.get_rendering_info(RenderingServer.RENDERING_INFO_TOTAL_DRAW_CALLS_IN_FRAME),
@@ -302,10 +317,15 @@ func _autotest_tick(delta: float) -> void:
 	var best: Node3D = null
 	var bd := INF
 	for h in hostiles:
+		if not is_instance_valid(h):
+			continue
 		var d: float = player.global_position.distance_squared_to(h.global_position)
 		if d < bd:
 			bd = d
 			best = h
+	if best == null:
+		Input.action_release("fire_primary")
+		return
 	if player.target != best:
 		player.set_target(best)
 	var cam := get_viewport().get_camera_3d()
@@ -315,16 +335,33 @@ func _autotest_tick(delta: float) -> void:
 	var vp := get_viewport().get_visible_rect().size
 	if not cam.is_position_behind(lead):
 		var sp := cam.unproject_position(lead)
-		player.mouse_offset = ((sp - vp * 0.5) / (vp.y * 0.35)).limit_length(1.0)
+		player.steer_to(((sp - vp * 0.5) / (vp.y * 0.35)).limit_length(1.0))
 	else:
-		player.mouse_offset = Vector2(0.9, 0)
+		player.steer_to(Vector2(0.9, 0))
 	var dist := player.global_position.distance_to(best.global_position)
 	if dist > 350.0:
 		Input.action_press("thrust_forward")
 	else:
 		Input.action_release("thrust_forward")
-	var aim_ok := (-player.global_transform.basis.z).angle_to((lead - player.global_position).normalized()) < deg_to_rad(6.0)
-	if aim_ok and dist < 1300.0:
+	# Close the distance instead of loitering, but never run the cell dry: boost
+	# both drains the energy the guns need and cuts the turn rate by 45%, so a bot
+	# that boosts on every approach ends up unable to shoot OR turn.
+	if dist > 1200.0 and player.energy > player.sdef.energy * 0.5:
+		Input.action_press("boost")
+	else:
+		Input.action_release("boost")
+	# The gate opens with the fire-control assist: a 6 deg boresight tolerance was
+	# right for unguided rounds, but with smart munitions fitted the bot should
+	# take the shot the computer can actually finish.
+	# Capped deliberately: a tolerance that keeps growing with the assist is
+	# positive feedback — the bot takes worse and worse shots exactly as the loop
+	# is trying to raise the hit rate, and the two fight each other.
+	var tol := 7.0
+	if player.fcs and player.fcs.enabled:
+		tol += 5.0 * player.fcs.assist
+	var aim_ok := (-player.global_transform.basis.z).angle_to(
+		(lead - player.global_position).normalized()) < deg_to_rad(tol)
+	if aim_ok and dist < player.weapons.current_range():
 		Input.action_press("fire_primary")
 	else:
 		Input.action_release("fire_primary")
@@ -339,6 +376,13 @@ func _autotest_tick(delta: float) -> void:
 
 
 # =================================================================== TARGET LISTS
+## Force the next query to rebuild. A ship that dies inside the 80 ms cache
+## window leaves a freed object in the array, and every consumer that walks it
+## without an `is_instance_valid` guard then throws. Kills are rare compared to
+## queries, so invalidating on death is far cheaper than validating on read.
+func invalidate_target_cache() -> void:
+	_target_cache_stamp = -10.0
+
 func _refresh_target_cache() -> void:
 	# HUD, turrets, missiles and every fighter used to rebuild the same scene
 	# group arrays independently. An 80 ms cache is below targeting reaction
@@ -495,6 +539,7 @@ var _streak := 0
 var _streak_t := -99.0
 
 func on_kill(victim: Node, killer: Node) -> void:
+	invalidate_target_cache()
 	if "team" in victim and victim.team == Combatant.TEAM_HOSTILE:
 		if killer == player or (killer != null and is_instance_valid(killer) and killer is Node and (killer as Node).is_in_group("player")):
 			kills += 1
@@ -512,6 +557,13 @@ func on_kill(victim: Node, killer: Node) -> void:
 		hud.kill_feed("%s destroyed" % (victim.display_name if "display_name" in victim else "Hostile"))
 	elif "display_name" in victim:
 		hud.kill_feed("%s LOST" % victim.display_name)
+
+## One trigger pull by the player, whatever it launched. The fire-control servo
+## counts trigger pulls, not projectiles, so a seven-pellet flak burst is one
+## sample rather than seven.
+func note_shot(_weapon_id: String, _projectiles: int) -> void:
+	if player and is_instance_valid(player) and player.fcs:
+		player.fcs.note_shot(1)
 
 func on_subsystem_destroyed(ship: Node, sub) -> void:
 	hud.kill_feed("%s — %s destroyed" % [ship.display_name, sub.display_name])
@@ -729,6 +781,18 @@ func _mission_start() -> void:
 			_spawn_arena_targets()
 			hud.comms("RANGE CONTROL", "Range is hot. V cycles weapon groups; right mouse fires missiles.")
 			hud.set_objective("Free fire exercise", "Destroy targets at will — Esc to leave")
+		"fleet_action":
+			_leviathan = spawn_capital("leviathan", Vector3(0, -140, 900), Combatant.TEAM_FRIEND, 0.0)
+			_leviathan.velocity_hint = Vector3.ZERO
+			for i in 2:
+				var f := spawn_capital("talon", Vector3(-700 + i * 1400, -40, 260),
+					Combatant.TEAM_FRIEND, 0.12 * (1 if i == 0 else -1))
+				_escorts.append(f)
+			spawn_wave(["razor", "razor", "jackal"], Vector3(400, 120, -2600))
+			hud.comms("LEVIATHAN ACTUAL", "Vanguard, you are the screen. Anything that gets past you lands on my deck.")
+			hud.set_objective("Break the VEX screen", "Destroyers and fighters inbound")
+			_wave_no = 0
+			_spawn_cd = 12.0
 		"main":
 			_carrier = spawn_capital("carrier", Vector3(150, -60, 500), Combatant.TEAM_FRIEND, 0.0)
 			hud.comms("SOLACE ACTUAL", "Vanguard flight, you are clear to launch. Nav point in the belt.")
@@ -744,6 +808,7 @@ func _director_tick(delta: float) -> void:
 		"convoy": _dir_convoy(delta)
 		"station_defence": _dir_station()
 		"capital_strike": _dir_capital_strike()
+		"fleet_action": _dir_fleet_action(delta)
 		"survival": _dir_survival()
 		"arena": pass
 		"main": _dir_main(delta)
@@ -853,6 +918,54 @@ func _dir_capital_strike() -> void:
 	if stage_t > 8.0 and _capitals_alive() == 0 and hostile_fighters_alive() == 0:
 		hud.comms("COMMAND", "Both Krakens broken. The picket line is open.")
 		mission_complete()
+
+# ------------------------------------------------------------- fleet action
+## Three escalating stages built around the new capital line: a destroyer screen,
+## then the Sovereign's approach, then taking it apart subsystem by subsystem.
+## Losing the Leviathan is an instant fail, which is what makes the screening job
+## on stage 0 matter rather than being a warm-up.
+func _dir_fleet_action(_delta: float) -> void:
+	if _leviathan == null or not is_instance_valid(_leviathan) or not _leviathan.alive:
+		mission_failed("The Leviathan is gone. Eleven thousand hands with her.")
+		return
+	match stage:
+		0:
+			if _spawn_cd <= 0.0 and _wave_no < 2:
+				_wave_no += 1
+				_spawn_cd = 34.0
+				var w := spawn_capital("warden",
+					Vector3(randf_range(-1400, 1400), randf_range(-200, 300), -3600),
+					Combatant.TEAM_HOSTILE, randf_range(-0.4, 0.4))
+				spawn_wave(["stinger", "jackal", "razor"],
+					w.global_position + Vector3(0, 120, 500))
+				hud.comms("LEVIATHAN ACTUAL", "Warden destroyer on the scope, bearing marked. Break it.")
+				hud.set_objective("Break the VEX screen", "Destroyer %d of 2" % _wave_no)
+			if _wave_no >= 2 and stage_t > 12.0 and _capitals_alive() == 0 \
+					and hostile_fighters_alive() == 0:
+				_advance(1)
+				_sovereign = spawn_capital("sovereign", Vector3(300, 60, -6200),
+					Combatant.TEAM_HOSTILE, 0.05)
+				spawn_wave(["brute", "jackal", "jackal", "razor"], Vector3(300, 60, -5400))
+				hud.comms("LEVIATHAN ACTUAL", "Screen is down — and there she is. Sovereign, closing.")
+				hud.comms("COMMAND", "Kill her engines first. A dreadnought that cannot close is a target range.")
+				hud.set_objective("Disable the Sovereign", "Destroy all three engine blocks",
+					Vector3(300, 60, -6200))
+		1:
+			if _sovereign and is_instance_valid(_sovereign) and _sovereign.subs_alive("engine") == 0:
+				_advance(2)
+				hud.comms("COMMAND", "She's dead in the water. Capacitor bank amidships — that spinal gun still works.")
+				hud.set_objective("Silence the spinal mass driver", "Capacitor bank, ventral hull")
+		2:
+			if _sovereign and is_instance_valid(_sovereign) and _sovereign.subs_alive("launcher") == 0:
+				_advance(3)
+				hud.comms("LEVIATHAN ACTUAL", "Spinal gun is cold. Finish her — reactor, underside, aft of centre.")
+				hud.set_objective("DESTROY THE REACTOR", "Ventral hull, aft of amidships")
+		3:
+			if _sovereign == null or not is_instance_valid(_sovereign) or not _sovereign.alive:
+				_advance(4)
+				score += 3000
+				hud.comms("LEVIATHAN ACTUAL", "Sovereign is breaking up. Deck's yours whenever you want it, Vanguard.")
+				mission_complete()
 
 func _dir_survival() -> void:
 	if _spawn_cd <= 0.0 and hostile_fighters_alive() <= 1:

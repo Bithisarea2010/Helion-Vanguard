@@ -101,6 +101,7 @@ func _draw() -> void:
 			draw_rect(Rect2(Vector2(inset, inset), vp - Vector2(inset * 2, inset * 2)),
 				Color(0.9, 0.05, 0.02, vig * (0.22 - 0.06 * i)), false, 16.0)
 	_draw_crosshair(vp)
+	_draw_ftl(vp, f, bf)
 	_draw_target_elements(vp, f, bf)
 	_draw_offscreen_and_markers(vp)
 	_draw_bars(vp, f, bf)
@@ -118,11 +119,14 @@ func _draw_crosshair(vp: Vector2) -> void:
 	var col := Styles.CYAN
 	if player.overheated:
 		col = Styles.RED
-	# center reticle
-	draw_arc(c, 14.0, 0, TAU, 32, col, 1.5, true)
+	# the reticle opens with recoil bloom, so the Scatter Repeater's growing cone
+	# is something you can see rather than something you infer from misses
+	var bloom: float = player.weapons.last_spread_mult if player.weapons else 1.0
+	var r := 14.0 * bloom
+	draw_arc(c, r, 0, TAU, 32, col, 1.5, true)
 	for a in [0.0, PI * 0.5, PI, PI * 1.5]:
 		var d := Vector2(cos(a), sin(a))
-		draw_line(c + d * 18.0, c + d * 26.0, col, 1.5, true)
+		draw_line(c + d * (r + 4.0), c + d * (r + 12.0), col, 1.5, true)
 	# boresight dot at screen center
 	draw_circle(vp * 0.5, 2.0, Color(col.r, col.g, col.b, 0.5))
 	# hit marker
@@ -132,6 +136,33 @@ func _draw_crosshair(vp: Vector2) -> void:
 		for a in [PI * 0.25, PI * 0.75, PI * 1.25, PI * 1.75]:
 			var d := Vector2(cos(a), sin(a))
 			draw_line(c + d * 8.0, c + d * 16.0, hc, 2.0, true)
+
+# ------------------------------------------------------------- FTL drive
+## Charge ring around the reticle while spooling, a banner while cruising, and a
+## quiet availability prompt otherwise. Everything here is drawn only when the
+## drive is actually fitted, so a 1.1-configuration HUD is unchanged.
+func _draw_ftl(vp: Vector2, f: Font, bf: Font) -> void:
+	var d: FTLDrive = player.ftl
+	if d == null:
+		return
+	var c := vp * 0.5
+	match d.phase:
+		FTLDrive.Phase.SPOOL:
+			var rr := 46.0 - 12.0 * d.charge
+			draw_arc(c, rr, -PI / 2.0, -PI / 2.0 + TAU * d.charge, 48,
+				Color(0.55, 0.85, 1.0, 0.9), 3.0, true)
+			draw_arc(c, rr, 0, TAU, 48, Color(0.3, 0.55, 0.8, 0.22), 1.2, true)
+			_centered(f, d.status_text(), vp, vp.y * 0.62, 17, Color(0.6, 0.88, 1.0))
+		FTLDrive.Phase.BREACH, FTLDrive.Phase.CRUISE:
+			_centered(f, "▶ LIGHTSPEED", vp, vp.y * 0.20, 22, Color(0.75, 0.92, 1.0))
+			_centered(bf, "weapons offline — release to fall back", vp,
+				vp.y * 0.20 + 24.0, 13, Styles.DIM)
+		FTLDrive.Phase.FALLBACK:
+			_centered(f, "FALLBACK", vp, vp.y * 0.20, 18, Styles.ORANGE)
+
+func _centered(font: Font, text: String, vp: Vector2, y: float, sz: int, col: Color) -> void:
+	var w := font.get_string_size(text, HORIZONTAL_ALIGNMENT_LEFT, -1, sz).x
+	draw_string(font, Vector2((vp.x - w) * 0.5, y), text, HORIZONTAL_ALIGNMENT_LEFT, -1, sz, col)
 
 # ------------------------------------------------------------- target UI
 func _draw_target_elements(vp: Vector2, f: Font, bf: Font) -> void:
@@ -258,6 +289,22 @@ func _draw_bars(vp: Vector2, f: Font, bf: Font) -> void:
 	draw_string(f, Vector2(rx, y - 118), "%s  ×%d" % [mdef.label, player.missiles_left],
 		HORIZONTAL_ALIGNMENT_LEFT, -1, 14, Color(0.8, 0.9, 1.0))
 	draw_string(bf, Vector2(rx, y - 138), "FLARES ×%d" % player.cm_left, HORIZONTAL_ALIGNMENT_LEFT, -1, 13, Styles.DIM)
+	# --- advanced capability readouts, only when fitted -------------------
+	var cap_y := y - 158.0
+	if player.fcs:
+		var rate: float = player.fcs.hit_rate()
+		var in_band: bool = rate >= 0.79 and rate <= 0.91
+		var fcol := Styles.GREEN if in_band else Styles.ORANGE
+		if not player.fcs.enabled:
+			fcol = Styles.DIM
+		draw_string(bf, Vector2(rx, cap_y),
+			"FCS %s  %d%%" % ["ON" if player.fcs.enabled else "OFF", int(round(rate * 100.0))],
+			HORIZONTAL_ALIGNMENT_LEFT, -1, 13, fcol)
+		cap_y -= 18.0
+	if player.ftl and player.ftl.phase == FTLDrive.Phase.IDLE:
+		var ready: bool = player.energy >= FTLDrive.MIN_ENERGY
+		draw_string(bf, Vector2(rx, cap_y), "FTL %s" % ("READY" if ready else "CHARGING"),
+			HORIZONTAL_ALIGNMENT_LEFT, -1, 13, Styles.CYAN if ready else Styles.DIM)
 	# flight state (left, above bars)
 	var st := ""
 	if not player.flight_assist:
@@ -330,6 +377,11 @@ func _draw_warnings(vp: Vector2, f: Font) -> void:
 		var txt := "⚠ MISSILE INBOUND — G FOR FLARES"
 		var w := f.get_string_size(txt, HORIZONTAL_ALIGNMENT_LEFT, -1, 18).x
 		draw_string(f, Vector2((vp.x - w) / 2.0, y), txt, HORIZONTAL_ALIGNMENT_LEFT, -1, 18, Styles.RED)
+	# the guns going quiet needs an explanation, or it reads as a bug
+	if player.fcs:
+		var reason := player.fcs.inhibit_reason()
+		if reason != "":
+			_centered(f, reason, vp, y - 26.0, 15, Styles.ORANGE)
 	if player.overheated and fmod(_warn_blink, 1.2) < 0.7:
 		var txt2 := "WEAPONS OVERHEAT"
 		var w2 := f.get_string_size(txt2, HORIZONTAL_ALIGNMENT_LEFT, -1, 16).x

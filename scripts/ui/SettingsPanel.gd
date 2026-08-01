@@ -72,6 +72,7 @@ func _ready() -> void:
 	tabs.add_child(_video_tab())
 	tabs.add_child(_audio_tab())
 	tabs.add_child(_game_tab())
+	tabs.add_child(_capabilities_tab())
 	tabs.add_child(_controls_tab())
 	vb.add_child(tabs)
 
@@ -421,6 +422,58 @@ func _game_tab() -> Control:
 		Game.settings.difficulty = i
 		_mark())
 	_row(vb, "Difficulty", "Adjusts enemy accuracy, reaction, aggression, group size and countermeasures.", diff)
+	return pair[0]
+
+# ------------------------------------------------------------- capabilities
+## The master switch is deliberately its own control at the top of the tab: with
+## it off the ship is exactly the 1.1 fighter, which is the only way to judge
+## what the new systems actually change.
+func _capabilities_tab() -> Control:
+	var pair := _scroll_tab("CAPABILITIES")
+	var vb: VBoxContainer = pair[1]
+	_section(vb, "ADVANCED CAPABILITIES",
+		"Next-generation prototype systems. Turn the master switch off to fly the ship exactly as it shipped in 1.1. Changes apply when the next mission loads.")
+
+	var sub_rows: Array[Control] = []
+	var master := CheckButton.new()
+	master.text = "Enabled"
+	master.button_pressed = bool(Game.settings.advanced_caps)
+	master.toggled.connect(func(on):
+		Game.settings.advanced_caps = on
+		_mark()
+		for r in sub_rows:
+			r.modulate = Color(1, 1, 1, 1.0 if on else 0.42))
+	_row(vb, "Master switch", "Gates every system below at once.", master)
+
+	for cfg in [
+			["cap_ftl", "Lightspeed drive", "Hold the FTL key to spool a warp tunnel. Weapons go offline and the hull becomes intangible while cruising. Needs clear space to engage."],
+			["cap_shield", "Icosahedral shield matrix", "A geodesic field that stays invisible until it is hit, then lights the hemisphere facing the impact."],
+			["cap_arsenal", "Extended arsenal", "Railgun, arc projector, flak, phase disruptor, scatter repeater and singularity lance, plus EMP, cluster and mine warheads. Cycle primaries in flight."],
+			["cap_targeting", "Adaptive targeting computer", "Closed-loop fire control that holds your hit rate at the band below, scattering when you are too accurate and guiding rounds when you are not accurate enough."]]:
+		var key: String = cfg[0]
+		var cb := CheckButton.new()
+		cb.text = "Enabled"
+		cb.button_pressed = bool(Game.settings[key])
+		cb.toggled.connect(func(on):
+			Game.settings[key] = on
+			_mark())
+		var before := vb.get_child_count()
+		_row(vb, cfg[1], cfg[2], cb)
+		sub_rows.append(vb.get_child(before) as Control)
+
+	_section(vb, "FIRE CONTROL BAND",
+		"The targeting computer servos your measured rolling hit rate to this value. It is clamped to 80-90% by design.")
+	var band := _labeled_slider(0.80, 0.90, Game.targeting_setpoint(), 0.01, "%", 100.0)
+	var band_slider := band.get_meta("slider") as HSlider
+	band_slider.value_changed.connect(func(v):
+		Game.settings.targeting_hit_rate = v
+		_update_labeled_slider(band, v, "%", 100.0)
+		_mark())
+	_row(vb, "Target hit rate", "Applies immediately; the loop takes a few seconds of sustained fire to settle.", band)
+
+	var enabled_now: bool = bool(Game.settings.advanced_caps)
+	for r in sub_rows:
+		r.modulate = Color(1, 1, 1, 1.0 if enabled_now else 0.42)
 	return pair[0]
 
 func _labeled_slider(minimum: float, maximum: float, value: float, step: float,

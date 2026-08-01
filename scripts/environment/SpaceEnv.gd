@@ -5,6 +5,30 @@ extends Node3D
 var world_env: WorldEnvironment
 var sun_light: DirectionalLight3D
 var sun_visual: MeshInstance3D
+var deep_sky: DeepSky
+
+## Named deep-sky objects every mission gets unless it overrides them.
+##
+## Andromeda is the hero: 26 deg across, inclined 77 deg, at a bearing that puts
+## it high and off to port from the usual launch heading, so it is something the
+## player finds by looking around rather than something parked on the crosshair.
+## The two companions exist for depth — a sky with exactly one galaxy in it reads
+## as a decal.
+const DEFAULT_DEEP_SKY := [
+	{"dir": Vector3(-0.52, 0.34, -0.78), "angular_deg": 26.0, "res": 2048,
+		"inclination": 77.0, "position_angle": 38.0, "winding": 2.4,
+		"brightness": 1.0, "gain": 1.0},
+	# a face-on grand-design spiral, much smaller and further away
+	{"dir": Vector3(0.72, 0.12, -0.68), "angular_deg": 7.0, "res": 1024,
+		"inclination": 22.0, "position_angle": -14.0, "winding": 3.1,
+		"brightness": 0.62, "gain": 0.85,
+		"core": Color(1.0, 0.90, 0.72), "arm": Color(0.66, 0.80, 1.0)},
+	# an edge-on lenticular, almost a sliver
+	{"dir": Vector3(0.18, -0.42, 0.88), "angular_deg": 5.0, "res": 1024,
+		"inclination": 86.0, "position_angle": 62.0, "winding": 1.8,
+		"brightness": 0.5, "gain": 0.7,
+		"core": Color(1.0, 0.82, 0.60), "arm": Color(0.85, 0.86, 0.95)},
+]
 
 func build(cfg: Dictionary) -> void:
 	# ---- environment / sky
@@ -94,6 +118,11 @@ func build(cfg: Dictionary) -> void:
 	# ---- planets
 	for pl in cfg.get("planets", []):
 		_add_planet(pl, -sun_dir, cfg.get("sun_color", Color(1.0, 0.93, 0.82)))
+	# ---- deep-sky objects that need more angular resolution than the panorama
+	if not "--nodeep" in OS.get_cmdline_user_args():
+		deep_sky = DeepSky.new()
+		add_child(deep_sky)
+		deep_sky.build.call_deferred(cfg.get("deep_sky", DEFAULT_DEEP_SKY))
 	# bake the sky to a static panorama (huge GPU saving, cooler laptops)
 	_bake_sky.call_deferred(env, cfg, -sun_dir, sun_col)
 

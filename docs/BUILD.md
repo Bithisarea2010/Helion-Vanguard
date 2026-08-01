@@ -159,3 +159,62 @@ against a number written down on a previous day is worthless.
 VRAM and node count once a second. `tests/PerfFloor.tscn` measures the
 empty-scene ceiling on the machine so battle numbers can be read against a real
 floor rather than an assumed one.
+
+---
+
+## 1.2 additions
+
+### New harness flags
+
+| flag | effect |
+|---|---|
+| `--nocaps` | disable all four Advanced Capabilities (FTL, shield, arsenal, targeting) |
+| `--noftl`, `--noshield`, `--noarsenal`, `--notargeting` | disable one system |
+| `--nohaze` | disable the engine heat wash |
+| `--nodeep` | disable the deep-sky galaxy cards |
+
+`[BENCH]` now also prints `acc=` (session accuracy), `fcs=` (the fire-control
+loop's rolling hit rate), `shots=`, `assist=` (servo position), `hostiles=` and
+`stage=`.
+
+**Vsync cannot be disabled on this Metal build**, so `--uncapped` alone will not
+get you above 60 fps. To profile, put the GPU under real load:
+
+```sh
+Godot --path . -- --mission=instant_action --autotest --defaults --windowed \
+      --uncapped --renderscale=2.0 --nocamcycle --quitafter=20
+```
+
+To compare against 1.1, use a worktree rather than `--nocaps` (which only gates
+the capability systems):
+
+```sh
+git worktree add /tmp/hv_base 825a709
+```
+
+### Regenerating the 1.2 fleet
+
+`blender_src/fleet_v2.py` builds the supercarrier, dreadnought, destroyer,
+frigate and the two new fighters. It execs `shipgen.py` into its own globals, so
+it runs standalone:
+
+```sh
+BLENDER="/Applications/További programok Boldi/Fejlesztés/Blender.app/Contents/MacOS/Blender"
+"$BLENDER" --background --python blender_src/fleet_v2.py -- /tmp/hv_fleet
+cp /tmp/hv_fleet/*.glb assets/models_original/
+"$BLENDER" --background --python blender_src/detail_pass.py -- /tmp/hv_models \
+    capital_leviathan capital_sovereign capital_warden capital_talon \
+    ship_specter ship_paladin
+cp /tmp/hv_models/*.glb assets/models/
+Godot --headless --path . --import      # REQUIRED after any new class_name
+```
+
+Capital hulls use `big_finish()` (a single-segment bevel) rather than `finish()`.
+The default two-segment bevel is right for a 16 m fighter but put the Leviathan's
+base mesh at 47k triangles before the detail pass had even run.
+
+### Audio
+
+`tools/gen_audio.py` gained twelve sounds: `ftl_spool`, `ftl_breach`,
+`ftl_cruise` (looping, seamless), `ftl_exit`, `shield_down`, `railgun`, `arc`,
+`flak`, `phase`, `repeater`, `singularity`, `emp`. Same command as before.

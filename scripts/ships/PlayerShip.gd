@@ -16,6 +16,9 @@ var loadout: Dictionary
 var battle: Node = null
 var weapons: WeaponSystem
 var cam_rig: Node = null
+# advanced capabilities (1.2) — each may be null when the switch is off
+var ftl: FTLDrive = null
+var fcs: TargetingComputer = null
 
 # flight
 var flight_assist := true
@@ -84,6 +87,7 @@ func setup(id: String, batl: Node) -> void:
 	add_to_group("player")
 	_load_model()
 	_setup_weapons()
+	_setup_capabilities()
 	body_entered.connect(_on_body_entered)
 	# continuous engine loop, pitch/volume follow throttle
 	_engine_snd = AudioStreamPlayer.new()
@@ -98,6 +102,8 @@ func setup(id: String, batl: Node) -> void:
 	_engine_snd.play()
 
 func shutdown_audio() -> void:
+	if is_instance_valid(ftl):
+		ftl.shutdown()
 	if is_instance_valid(_engine_snd):
 		_engine_snd.stop()
 		_engine_snd.stream = null
@@ -151,8 +157,13 @@ func _add_thrusters(aabb: AABB) -> void:
 	var offs: Array = sdef.get("thrusters", [Vector3(0.8, 0, 0), Vector3(-0.8, 0, 0)])
 	var glow: Color = loadout.glow
 	var rad: float = clampf(aabb.size.x * 0.09, 0.28, 0.75)
+	# heat haze is a screen-sampling pass, so only the ship the camera is welded
+	# to gets it, and only where there is budget for it
+	var haze: bool = int(Game.settings.preset) >= 2
 	for o in offs:
 		var plume := ExhaustPlume.create(self, Vector3(o.x, o.y, rear_z), glow, rad, 5.2)
+		if haze:
+			plume.enable_haze()
 		_plumes.append(plume)
 		# sleek ribbon "jet stripe" behind each engine
 		_trails.append(EngineTrail.attach(battle, plume, glow, 0.42, self))
@@ -167,6 +178,19 @@ func _setup_weapons() -> void:
 	for v in sdef.get("muzzles_b", [Vector3(3.5, -1.0, 0.0), Vector3(-3.5, -1.0, 0.0)]):
 		mb.append(v)
 	weapons.setup(self, battle.projectiles, loadout.primary, loadout.primary2, ma, mb)
+
+## Advanced capabilities are opt-in per system, so each block builds only when
+## its own switch is on. Nothing else in the ship assumes they exist.
+func _setup_capabilities() -> void:
+	if Game.cap("ftl"):
+		ftl = FTLDrive.new()
+		add_child(ftl)
+		ftl.setup(self)
+	if Game.cap("targeting"):
+		fcs = TargetingComputer.new()
+		add_child(fcs)
+		fcs.setup(self, battle.projectiles)
+	setup_shield_visual(model_aabb, loadout.glow)
 
 # ============================================================= INPUT + FLIGHT
 func _unhandled_input(event: InputEvent) -> void:
@@ -272,9 +296,17 @@ func _flight(delta: float) -> void:
 			linear_velocity = linear_velocity.normalized() * sdef.speed * sdef.boost_mult * 1.3
 	# thruster fx intensity: idle glow at zero throttle, full cone under power
 	var plume_power := clampf(0.18 + absf(thrust) * 0.82, 0.0, 1.0)
+	var plume_boost := boost_on
+	if ftl and ftl.engaged():
+		# the coil feeds the mains: spooling ramps the plume, cruising pins it
+		plume_power = maxf(plume_power, 0.45 + 0.55 * ftl.charge)
+		plume_boost = plume_boost or ftl.active()
+	# thrust vectoring: the nozzles gimbal into the turn instead of the whole
+	# plume staying rigidly on the ship's axis
 	for pl in _plumes:
 		if is_instance_valid(pl):
-			pl.set_power(plume_power, boost_on)
+			pl.set_vector(-_cmd.x * 0.16, _cmd.y * 0.16)
+			pl.set_power(plume_power, plume_boost)
 	for etr in _trails:
 		if is_instance_valid(etr):
 			etr.boost_gain = lerpf(etr.boost_gain, 1.8 if boost_on else 1.0, 1.0 - exp(-6.0 * delta))
@@ -300,24 +332,75 @@ func aim_direction() -> Vector3:
 		var dir: Vector3 = (to - global_position).normalized()
 		# soft aim assist
 		if Game.settings.aim_assist and target and is_instance_valid(target) and "alive" in target and target.alive:
+			# A capital SUBSYSTEM is a valid target and has `alive`, but it is a
+			# StaticBody3D with no `get_velocity` — targeting a Kraken's engine
+			# pod with aim assist on threw here on every frame.
+			var tvel: Vector3 = target.get_velocity() \
+				if target.has_method("get_velocity") else Vector3.ZERO
 			var lead := Projectiles.lead_point(global_position, linear_velocity,
-				target.global_position, target.get_velocity(),
+				target.global_position, tvel,
 				target.accel_estimate if "accel_estimate" in target else Vector3.ZERO,
 				weapons.current_speed())
 			var ld := (lead - global_position).normalized()
 			if dir.angle_to(ld) < deg_to_rad(3.5):
 				dir = dir.slerp(ld, 0.65)
+		# the fire-control loop gets the last word: it takes the pilot's own aim
+		# and applies whatever correction (or scatter) the hit-rate servo wants
+		# same freed-instance trap as _weapons_input: passing a target that died
+		# this frame into a typed parameter is an error before the callee runs
+		if fcs:
+			dir = fcs.aim(dir, target if is_instance_valid(target) else null,
+				weapons.current_speed())
 		return dir
 	return -global_transform.basis.z
+
+## Drive the virtual flight cursor from code (autotest bot, scripted sequences).
+##
+## Writing `mouse_offset` directly no longer works: since the control-smoothing
+## rewrite `_flight()` re-derives `mouse_offset` from `_cursor_raw` every physics
+## tick, and `_cursor_raw` only ever grows from real mouse motion. An external
+## write was therefore being lerped ~46% of the way back to zero every single
+## tick, which is why the autotest bot could no longer point its nose at anything
+## and spent whole benchmark runs flying past targets without firing.
+func steer_to(offset: Vector2) -> void:
+	_cursor_raw = offset.limit_length(1.0)
+	mouse_offset = _cursor_raw
 
 func crosshair_screen_pos() -> Vector2:
 	var vp := get_viewport().get_visible_rect().size
 	return vp * 0.5 + mouse_offset * vp.y * 0.35
 
 func _weapons_input(delta: float) -> void:
-	weapons.process_fire(delta, Input.is_action_pressed("fire_primary") and Input.mouse_mode == Input.MOUSE_MODE_CAPTURED, aim_direction())
+	# hand the smart-round settings to the guns before they fire this frame.
+	#
+	# `target` is cleared by `_lock_update`, but a target that dies THIS frame
+	# leaves a freed instance in it until then, and assigning a freed object into
+	# another typed Node3D slot is itself an error in Godot 4 — 300+ of them in a
+	# sixteen-second convoy run before this guard.
+	var live_target: Node3D = target if is_instance_valid(target) else null
+	if fcs:
+		fcs.target = live_target
+		weapons.guide_rate = fcs.guidance()
+		weapons.guide_target = live_target
+	# the tunnel is not a firing position: guns and racks are offline in FTL
+	var ftl_lock: bool = ftl != null and ftl.blocks_weapons()
+	var want_fire: bool = not ftl_lock and Input.is_action_pressed("fire_primary") \
+		and Input.mouse_mode == Input.MOUSE_MODE_CAPTURED
+	# the computer holds the trigger when a rock (or a wingman) is in the way
+	if want_fire and fcs and fcs.inhibited():
+		want_fire = false
+	weapons.process_fire(delta, want_fire, aim_direction())
 	_msl_cd = maxf(0.0, _msl_cd - delta)
 	_cm_cd = maxf(0.0, _cm_cd - delta)
+	if Input.is_action_just_pressed("cycle_primary") and Game.cap("arsenal"):
+		var picked := weapons.cycle_primary()
+		loadout.primary = picked
+		AudioMgr.play_ui("ui_click")
+	if Input.is_action_just_pressed("targeting_computer") and fcs:
+		fcs.enabled = not fcs.enabled
+		AudioMgr.play_ui("ui_ready" if fcs.enabled else "ui_deny", -6.0)
+	if ftl_lock:
+		return
 	if Input.is_action_just_pressed("fire_secondary"):
 		_fire_missile()
 	if Input.is_action_just_pressed("countermeasure") and cm_left > 0 and _cm_cd <= 0.0:

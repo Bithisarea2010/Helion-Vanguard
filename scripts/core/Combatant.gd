@@ -26,6 +26,14 @@ var radar_size := 1.0               # HUD blip scale
 var subsystems: Array = []          # Subsystem nodes register here
 var is_capital := false
 var velocity_hint := Vector3.ZERO   # for aim prediction on frozen bodies
+var shield_vis: ShieldBubble = null # icosahedral matrix; null when disabled
+
+## Give this ship a visible shield matrix. Safe to call on ships with no shield —
+## it simply does nothing, so callers do not have to special-case drones.
+func setup_shield_visual(bounds: AABB, color := Color(0.35, 0.68, 1.0)) -> void:
+	if shield_max <= 0.0 or not Game.cap("shield"):
+		return
+	shield_vis = ShieldBubble.attach(self, bounds, color)
 
 func combat_setup(hp: float, sh: float, sh_regen: float, arm: float) -> void:
 	hull = hp; hull_max = hp
@@ -71,6 +79,13 @@ func take_hit(dmg: float, pos: Vector3, dir: Vector3, pen := 0.2,
 		if from_front: shield_front = sh
 		else: shield_rear = sh
 		shield_state_changed.emit(shield_front, shield_rear)
+		# `absorbed == 0` means a shield-bypassing round (sh_mult 0) went straight
+		# through — the matrix must not light up for a hit it never stopped
+		if absorbed > 0.001 and shield_vis and is_instance_valid(shield_vis):
+			if sh <= 0.0:
+				shield_vis.collapse()
+			else:
+				shield_vis.register_hit(pos, shield_frac())
 	_shield_cd = shield_delay
 	if remaining > 0.01:
 		# armor: angle + penetration model

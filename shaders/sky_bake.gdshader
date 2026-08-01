@@ -124,8 +124,15 @@ void fragment() {
 	neb *= dust_mask;
 
 	// --- stars ---------------------------------------------------------------
-	float t1; float t2; float t3; float t4;
-	float b1; float b2; float b3; float b4;
+	// Seven magnitude layers, not four. The eye reads star DENSITY as depth, and
+	// three faint layers below the old floor are what turn a scattering of dots
+	// into a sky you cannot count. They cost nothing at runtime: this whole
+	// shader is paid for once, in the panorama bake.
+	float t1; float t2; float t3; float t4; float t5; float t6; float t7;
+	float b1; float b2; float b3; float b4; float b5; float b6; float b7;
+	float s0 = star_layer(d, 1500.0, 0.9955, t5, b5);   // unresolved dust of stars
+	float s0b = star_layer(d, 1050.0, 0.9962, t6, b6);
+	float s0c = star_layer(d, 820.0, 0.9968, t7, b7);
 	float s1 = star_layer(d, 620.0, 0.9975, t1, b1);
 	float s2 = star_layer(d, 300.0, 0.9968, t2, b2);
 	float s3 = star_layer(d, 130.0, 0.9982, t3, b3);
@@ -135,9 +142,18 @@ void fragment() {
 	vec3 sc2 = mix(vec3(0.78, 0.86, 1.0), vec3(1.0, 0.80, 0.60), t2);
 	vec3 sc3 = mix(vec3(0.85, 0.92, 1.0), vec3(1.0, 0.72, 0.48), t3);
 	vec3 sc4 = mix(vec3(0.90, 0.95, 1.0), vec3(1.0, 0.68, 0.42), t4);
+	// the faint field skews red: most stars in any real sky are K and M dwarfs
+	vec3 sc5 = mix(vec3(0.80, 0.84, 0.98), vec3(1.0, 0.78, 0.58), t5 * 0.7 + 0.3);
+	vec3 sc6 = mix(vec3(0.82, 0.86, 0.98), vec3(1.0, 0.76, 0.56), t6 * 0.7 + 0.3);
+	vec3 sc7 = mix(vec3(0.84, 0.88, 1.0), vec3(1.0, 0.74, 0.54), t7 * 0.7 + 0.3);
 	// the galactic band is crowded with unresolved stars
 	float crowd = 0.55 + 1.9 * band;
 	vec3 stars = (s1 * sc1 * 0.8 + s2 * sc2 * 1.2 + s3 * sc3 * 2.0) * crowd;
+	stars += (s0 * sc5 * 0.30 + s0b * sc6 * 0.40 + s0c * sc7 * 0.52) * crowd;
+	// and a genuinely unresolvable component: the summed light of everything too
+	// faint to be its own point, concentrated hard into the plane of the galaxy
+	float milk = pow(fbm(d * 26.0 + vec3(77.0), 3), 2.4) * band_tight;
+	stars += vec3(0.85, 0.88, 0.98) * milk * 0.11;
 	// rare bright stars get a diffraction cross
 	if (s4 > 0.0) {
 		vec3 sp = d * 58.0;
@@ -148,14 +164,14 @@ void fragment() {
 	}
 	stars *= star_brightness * dust_mask;
 
-	// --- two distant galaxies ------------------------------------------------
-	vec3 g_dir = normalize(vec3(-0.62, 0.44, 0.65));
-	float g_ang = acos(clamp(dot(d, g_dir), -1.0, 1.0));
-	float galaxy = exp(-g_ang * 52.0) * 0.55 + exp(-g_ang * 150.0) * 1.1;
-	vec3 g_dir2 = normalize(vec3(0.74, -0.30, -0.60));
-	float g_ang2 = acos(clamp(dot(d, g_dir2), -1.0, 1.0));
-	galaxy += exp(-g_ang2 * 95.0) * 0.4;
-	vec3 galaxies = mix(vec3(0.85, 0.88, 1.0), vec3(1.0, 0.92, 0.78), 0.4) * galaxy;
+	// --- distant galaxy cluster ----------------------------------------------
+	// The two hand-placed exponential blobs that used to live here are gone:
+	// named galaxies are now real objects with their own high-resolution bakes
+	// (see scripts/environment/DeepSky.gd), and painting a second, blurrier copy
+	// of the same idea into the panorama only fought them. What remains is the
+	// faint, genuinely unresolvable background of everything else out there.
+	float far_field = pow(fbm(d * 9.0 + vec3(131.0), 4), 5.0) * (1.0 - band);
+	vec3 galaxies = vec3(0.80, 0.84, 1.0) * far_field * 0.30;
 
 	// --- the local sun -------------------------------------------------------
 	vec3 sdn = normalize(sun_dir);

@@ -17,6 +17,29 @@ const CAPS := {
 		"sub_hp": {"shieldgen": 300.0, "radar": 350.0, "launcher": 380.0, "hangar": 500.0,
 			"command": 600.0, "reactor": 900.0},
 		"radar": 8.0, "score": 5000, "shield_pool": 2600.0},
+
+	# ------------------------------------------------------- 1.2 fleet expansion
+	"leviathan": {"model": "res://assets/models/capital_leviathan.glb", "hull": 16000.0,
+		"shield": 2600.0, "regen": 40.0, "turret_wpn": "e_turret",
+		"name": "ANV Leviathan Supercarrier",
+		"sub_hp": {"engine": 900.0, "reactor": 1400.0, "command": 800.0,
+			"radar": 500.0, "hangar": 1100.0, "shieldgen": 700.0},
+		"radar": 10.0, "score": 0, "shield_pool": 3400.0},
+	"sovereign": {"model": "res://assets/models/capital_sovereign.glb", "hull": 7000.0,
+		"shield": 1600.0, "regen": 26.0, "turret_wpn": "e_flak",
+		"name": "VEX Sovereign Dreadnought",
+		"sub_hp": {"engine": 620.0, "reactor": 1100.0, "launcher": 640.0, "radar": 420.0},
+		"radar": 8.0, "score": 4000, "shield_pool": 1900.0},
+	"warden": {"model": "res://assets/models/capital_warden.glb", "hull": 3200.0,
+		"shield": 900.0, "regen": 20.0, "turret_wpn": "e_turret",
+		"name": "VEX Warden Destroyer",
+		"sub_hp": {"engine": 380.0, "launcher": 420.0, "radar": 280.0},
+		"radar": 5.0, "score": 1800, "shield_pool": 0.0},
+	"talon": {"model": "res://assets/models/capital_talon.glb", "hull": 1400.0,
+		"shield": 600.0, "regen": 22.0, "turret_wpn": "e_turret",
+		"name": "ANV Talon Frigate",
+		"sub_hp": {"engine": 240.0},
+		"radar": 3.5, "score": 700, "shield_pool": 0.0},
 }
 
 var cap_id := "kraken"

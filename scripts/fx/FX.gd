@@ -10,8 +10,15 @@ static var _quad_mesh: QuadMesh = null
 static var _scar_tex: GradientTexture2D = null
 static var _live_muzzle_lights := 0
 static var _live_impact_marks := 0
+static var _live_arc_bolts := 0
+static var _live_bursts := 0
 const MAX_MUZZLE_LIGHTS := 8
 const MAX_IMPACT_MARKS := 56
+const MAX_ARC_BOLTS := 12
+const MAX_BURSTS := 44
+## Beyond this, a spark burst is a couple of sub-pixel dots. The hit still
+## registers fully — damage, sound, hit marker and scorch mark are unaffected.
+const IMPACT_FX_RANGE := 1100.0
 
 static func clear_caches() -> void:
 	_mat_cache.clear()
@@ -23,6 +30,9 @@ static func clear_caches() -> void:
 	_live_explosions = 0
 	_live_muzzle_lights = 0
 	_live_impact_marks = 0
+	_live_arc_bolts = 0
+	_live_bursts = 0
+	ShieldBubble.clear_cache()
 
 static func quad_mesh() -> QuadMesh:
 	if _quad_mesh == null:
@@ -146,6 +156,13 @@ static func _particles(parent: Node, pos: Vector3, amount: int, life: float,
 		vel_min: float, vel_max: float, scale_min: float, scale_max: float,
 		color_a: Color, color_b: Color, gravity := Vector3.ZERO,
 		spread := 180.0, dir := Vector3.UP, damping := 0.0) -> GPUParticles3D:
+	# Every burst is a node plus a ParticleProcessMaterial plus a gradient and a
+	# curve — allocated, uploaded and freed. At eight hits a second that adds up,
+	# and in a furball with a capital ship taking fire it is unbounded. The cap
+	# only bites during bursts nobody can resolve individually anyway.
+	if _live_bursts >= MAX_BURSTS:
+		return null
+	_live_bursts += 1
 	var p := GPUParticles3D.new()
 	p.amount = maxi(amount, 1)
 	p.lifetime = life
@@ -182,10 +199,22 @@ static func _particles(parent: Node, pos: Vector3, amount: int, life: float,
 	parent.add_child(p)
 	p.global_position = pos
 	p.emitting = true
-	var t := parent.get_tree().create_timer(life * 2.0 + 0.5)
+	# Capture the instance ID, not the node. A lambda that closes over a Node
+	# which is freed before it fires makes the engine log "Lambda capture at
+	# index 0 was freed" on every single call — `is_instance_valid` inside the
+	# body is too late, because the capture is validated before the body runs.
+	var pid := p.get_instance_id()
+	var t := parent.get_tree().create_timer(life * 2.0 + 0.5, true, false, true)
 	t.timeout.connect(func():
-		if is_instance_valid(p): p.queue_free())
+		_live_bursts = maxi(_live_bursts - 1, 0)
+		_free_by_id(pid))
 	return p
+
+## Free a node by instance id. Returns silently if it is already gone.
+static func _free_by_id(id: int) -> void:
+	var node := instance_from_id(id)
+	if node is Node and is_instance_valid(node):
+		(node as Node).queue_free()
 
 ## kind: 0 small (fighter hit), 1 medium (fighter death), 2 large (bomber/corvette), 3 huge (base)
 ##
@@ -303,9 +332,9 @@ static func _smoke_puff(parent: Node, pos: Vector3, amount: int, life: float,
 	parent.add_child(p)
 	p.global_position = pos
 	p.emitting = true
-	var t := parent.get_tree().create_timer(life * 2.0 + 0.5)
-	t.timeout.connect(func():
-		if is_instance_valid(p): p.queue_free())
+	var pid := p.get_instance_id()
+	var t := parent.get_tree().create_timer(life * 2.0 + 0.5, true, false, true)
+	t.timeout.connect(func(): _free_by_id(pid))
 
 static func debris(parent: Node, pos: Vector3, count: int, s: float) -> void:
 	var life: float = Game.preset().debris
@@ -342,9 +371,9 @@ static func debris(parent: Node, pos: Vector3, count: int, s: float) -> void:
 		var tw := parent.get_tree().create_tween()
 		tw.tween_property(mat, "emission_energy_multiplier", 0.0, minf(chunk_life * 0.7, 2.5)) \
 			.set_trans(Tween.TRANS_EXPO).set_ease(Tween.EASE_OUT)
-		var t := parent.get_tree().create_timer(chunk_life)
-		t.timeout.connect(func():
-			if is_instance_valid(rb): rb.queue_free())
+		var rbid := rb.get_instance_id()
+		var t := parent.get_tree().create_timer(chunk_life, true, false, true)
+		t.timeout.connect(func(): _free_by_id(rbid))
 
 static func impact(parent: Node, pos: Vector3, color: Color, big := false) -> void:
 	var n := int((8 if not big else 16) * float(Game.preset().particles))
@@ -410,10 +439,10 @@ static func surface_scar(parent: Node3D, pos: Vector3, normal: Vector3,
 	var fade := tree.create_tween()
 	fade.tween_interval(maxf(life - 1.5, 0.1))
 	fade.tween_property(mi, "transparency", 1.0, 1.5)
+	var mid := mi.get_instance_id()
 	tree.create_timer(life + 0.1, true, false, true).timeout.connect(func():
 		_live_impact_marks = maxi(_live_impact_marks - 1, 0)
-		if is_instance_valid(mi):
-			mi.queue_free())
+		_free_by_id(mid))
 
 ## Sparks/dust + a persistent mark for any repeatable surface hit.
 static func surface_impact(fx_parent: Node, attach_to: Node3D, pos: Vector3,
@@ -421,6 +450,17 @@ static func surface_impact(fx_parent: Node, attach_to: Node3D, pos: Vector3,
 	if normal.length_squared() < 0.01:
 		normal = Vector3.UP
 	normal = normal.normalized()
+	# A hit a kilometre away is a few sub-pixel sparks, but it costs the same
+	# node, material, gradient and curve as one on the canopy. Damage, sound,
+	# the hit marker and the scorch mark are all unaffected.
+	var cam := fx_parent.get_viewport().get_camera_3d() if fx_parent.is_inside_tree() else null
+	if cam and cam.global_position.distance_squared_to(pos) \
+			> IMPACT_FX_RANGE * IMPACT_FX_RANGE:
+		if make_mark and attach_to and is_instance_valid(attach_to):
+			surface_scar(attach_to, pos, normal, kind,
+				clampf(0.35 + sqrt(maxf(energy, 0.0)) * 0.08, 0.4, 1.5),
+				11.0 if kind == "rock" else 8.0)
+		return
 	var col := Color(0.76, 0.70, 0.58) if kind == "rock" else Color(1.0, 0.68, 0.26)
 	var count := int(clampf(5.0 + energy * 0.20, 5.0, 18.0) * float(Game.preset().particles))
 	_particles(fx_parent, pos, count, 0.42, 5.0, clampf(12.0 + energy * 0.25, 14.0, 34.0),
@@ -434,6 +474,73 @@ static func surface_impact(fx_parent: Node, attach_to: Node3D, pos: Vector3,
 		surface_scar(attach_to, pos, normal, kind,
 			clampf(0.35 + sqrt(maxf(energy, 0.0)) * 0.08, 0.4, 1.5),
 			11.0 if kind == "rock" else 8.0)
+
+## Arc Projector chain jump: a jagged additive bolt between two points.
+##
+## Built as one thin box per segment rather than an ImmediateMesh — three or four
+## boxes with a shared material is a single batched draw, and the whole thing
+## lives for 0.12 s, so the allocation never accumulates.
+static func arc_bolt(parent: Node, from: Vector3, to: Vector3, color: Color) -> void:
+	if _live_arc_bolts >= MAX_ARC_BOLTS:
+		return
+	_live_arc_bolts += 1
+	var root := Node3D.new()
+	parent.add_child(root)
+	var m := _arc_material(color)
+	var segs := 4
+	var prev := from
+	var span := (to - from)
+	var side := span.cross(Vector3.UP)
+	if side.length_squared() < 0.01:
+		side = span.cross(Vector3.RIGHT)
+	side = side.normalized()
+	var up := span.normalized().cross(side)
+	for i in range(1, segs + 1):
+		var t := float(i) / float(segs)
+		var pt := from + span * t
+		if i < segs:
+			# jitter scaled by the span so a 20 m jump and a 150 m jump both
+			# look like lightning rather than like a straight wire
+			var j := span.length() * 0.08
+			pt += side * randf_range(-j, j) + up * randf_range(-j, j)
+		var mi := MeshInstance3D.new()
+		var bm := BoxMesh.new()
+		var seg_len := prev.distance_to(pt)
+		bm.size = Vector3(0.35, 0.35, maxf(seg_len, 0.01))
+		mi.mesh = bm
+		mi.material_override = m
+		mi.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+		root.add_child(mi)
+		var mid := (prev + pt) * 0.5
+		var dir := (pt - prev)
+		if dir.length_squared() > 0.0001:
+			mi.global_transform = Transform3D(
+				Basis.looking_at(dir.normalized(),
+					Vector3.UP if absf(dir.normalized().dot(Vector3.UP)) < 0.99 else Vector3.RIGHT),
+				mid)
+		prev = pt
+	var tree := parent.get_tree()
+	var tw := tree.create_tween()
+	tw.tween_property(root, "scale", Vector3(0.15, 0.15, 1.0), 0.12)
+	var rid := root.get_instance_id()
+	tree.create_timer(0.14, true, false, true).timeout.connect(func():
+		_live_arc_bolts = maxi(_live_arc_bolts - 1, 0)
+		_free_by_id(rid))
+
+static func _arc_material(color: Color) -> StandardMaterial3D:
+	var key := "arc_" + color.to_html()
+	if _mat_cache.has(key):
+		return _mat_cache[key]
+	var m := StandardMaterial3D.new()
+	m.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+	m.blend_mode = BaseMaterial3D.BLEND_MODE_ADD
+	m.albedo_color = color
+	m.emission_enabled = true
+	m.emission = color
+	m.emission_energy_multiplier = 6.0
+	m.disable_receive_shadows = true
+	_mat_cache[key] = m
+	return m
 
 static func shield_hit(parent: Node, pos: Vector3) -> void:
 	_particles(parent, pos, 10, 0.4, 2.0, 8.0, 0.5, 1.2,
@@ -513,10 +620,10 @@ static func muzzle_flash(parent: Node, pos: Vector3, color: Color) -> void:
 	_live_muzzle_lights += 1
 	var tw := parent.get_tree().create_tween()
 	tw.tween_property(l, "light_energy", 0.0, 0.08)
+	var lid := l.get_instance_id()
 	parent.get_tree().create_timer(0.10, true, false, true).timeout.connect(func():
 		_live_muzzle_lights = maxi(_live_muzzle_lights - 1, 0)
-		if is_instance_valid(l):
-			l.queue_free())
+		_free_by_id(lid))
 
 ## Continuous licking fire (wrecks, missile exhausts). Cheap: 30 fps sim.
 static func fire_emitter(parent: Node3D, offset: Vector3, size := 1.0,

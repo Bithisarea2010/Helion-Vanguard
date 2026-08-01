@@ -54,6 +54,15 @@ SHIPS = [
     ("capital_carrier", 300, 20, 16, 14, 1.0),
     ("base_bastion",    340, 22, 18, 16, 1.0),
     ("turret",           26,  2, 2, 2, 1.0),
+    # 1.2 fleet expansion (blender_src/fleet_v2.py). The capitals already carry a
+    # lot of built structure, so their greeble budget buys surface noise on the
+    # big flat armour panels rather than silhouette.
+    ("capital_leviathan", 300, 20, 16, 15, 1.0),
+    ("capital_sovereign", 240, 16, 13, 12, 1.0),
+    ("capital_warden",    150, 11,  9,  8, 1.0),
+    ("capital_talon",      95,  7,  5,  5, 1.0),
+    ("ship_specter",       95,  6,  4,  4, 1.0),
+    ("ship_paladin",      150, 11,  8,  7, 1.0),
 ]
 
 AO_RAYS = 24

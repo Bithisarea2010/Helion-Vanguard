@@ -18,6 +18,7 @@ var _light: OmniLight3D = null
 var _flicker := 0.0
 var _ignored_rids: Array[RID] = []
 var _detonated := false
+var _split := false
 
 static func launch(battle: Node, from: Vector3, dir: Vector3, inherit_vel: Vector3,
 		def: Dictionary, tgt: Node3D, own_team: int, own: Node3D) -> Missile:
@@ -27,8 +28,15 @@ static func launch(battle: Node, from: Vector3, dir: Vector3, inherit_vel: Vecto
 	m.shooter = own
 	m.target = tgt
 	m.speed_max = def.speed
-	m.vel = dir * maxf(def.speed * 0.35, 60.0) + inherit_vel
-	m._ttl = def.range / def.speed * 2.2
+	if def.get("mine", false):
+		# a mine is DROPPED, not launched: it should hang roughly where the ship
+		# was, which means inheriting velocity and adding almost nothing
+		m.vel = inherit_vel + dir * 10.0
+		m._ttl = float(def.get("mine_life", 25.0))
+		m._arm_t = 1.1
+	else:
+		m.vel = dir * maxf(def.speed * 0.35, 60.0) + inherit_vel
+		m._ttl = def.range / def.speed * 2.2
 	m._battle = battle
 	battle.add_child(m)
 	m.add_to_group("missiles")
@@ -133,6 +141,26 @@ func _physics_process(delta: float) -> void:
 	if _ttl <= 0.0:
 		_detonate(false)
 		return
+	# --- proximity mine: trip on anything hostile that comes close ---------
+	if mdef.get("mine", false):
+		vel *= exp(-0.9 * delta)          # settle to a drift
+		global_position += vel * delta
+		if _armed and _battle:
+			var r: float = float(mdef.get("mine_radius", 45.0))
+			var pool: Array = _battle.hostile_targets() \
+				if team == Combatant.TEAM_FRIEND else _battle.friendly_targets()
+			for c in pool:
+				if is_instance_valid(c) and global_position.distance_squared_to(
+						c.global_position) < r * r:
+					_detonate(false)
+					return
+		return
+	# --- cluster munition: split on approach -------------------------------
+	if not _split and int(mdef.get("cluster", 0)) > 0 and _armed \
+			and target and is_instance_valid(target) \
+			and global_position.distance_to(target.global_position) < 260.0:
+		_split_cluster()
+		return
 	# --- countermeasure seduction ---
 	if _battle and target and is_instance_valid(target) and not (target is Flare):
 		for fl in _battle.flares:
@@ -199,10 +227,67 @@ func _physics_process(delta: float) -> void:
 	if vel.length() > 1.0:
 		look_at(global_position + vel.normalized(), Vector3.UP if absf(vel.normalized().dot(Vector3.UP)) < 0.99 else Vector3.RIGHT)
 
+## Cluster bus: shed the submunitions and vanish. Each child is a plain missile
+## with the cluster flag stripped, so nothing here can recurse.
+func _split_cluster() -> void:
+	_split = true
+	var n := int(mdef.get("cluster", 6))
+	var sub := mdef.duplicate()
+	sub.erase("cluster")
+	sub["dmg"] = float(mdef.get("cluster_dmg", 45.0))
+	sub["guidance"] = "heat"
+	sub["turn"] = 190.0
+	sub["accel"] = 220.0
+	sub["speed"] = float(mdef.speed) * 1.25
+	sub["range"] = 500.0
+	sub["salvo"] = 1
+	var fwd := vel.normalized() if vel.length() > 1.0 else -global_transform.basis.z
+	var side := fwd.cross(Vector3.UP)
+	if side.length_squared() < 0.01:
+		side = fwd.cross(Vector3.RIGHT)
+	side = side.normalized()
+	var up := fwd.cross(side).normalized()
+	for i in n:
+		var a := TAU * float(i) / float(n)
+		var spray := (fwd + (side * cos(a) + up * sin(a)) * 0.34).normalized()
+		Missile.launch(_battle, global_position + spray * 3.0, spray, vel * 0.6,
+			sub, target, team, shooter)
+	FX.fireball(_battle, global_position, 5.0, 0.20, 0.6, 2.0)
+	AudioMgr.play_3d("missile_launch", global_position, -2.0)
+	queue_free()
+
+## EMP burst: strips shields in a bubble and blinds every seeker inside it.
+func _emp_burst() -> void:
+	var radius: float = float(mdef.get("emp_radius", 200.0))
+	var secs: float = float(mdef.get("emp_time", 4.0))
+	var mult: float = float(mdef.get("shield_mult", 5.0))
+	var pool: Array = _battle.hostile_targets() \
+		if team == Combatant.TEAM_FRIEND else _battle.friendly_targets()
+	for c in pool:
+		if not is_instance_valid(c) or ("alive" in c and not c.alive):
+			continue
+		var d: float = global_position.distance_to(c.global_position)
+		if d > radius:
+			continue
+		var falloff := clampf(1.0 - d / radius, 0.15, 1.0)
+		c.take_hit(float(mdef.dmg) * falloff, c.global_position, -vel.normalized(),
+			0.0, mult, 0.15, shooter, vel.normalized())
+		if c.has_method("apply_emp"):
+			c.apply_emp(secs * falloff)
+	FX.shockwave(_battle, global_position, radius * 0.9, Color(0.45, 0.75, 1.0))
+	for i in 3:
+		var a := TAU * float(i) / 3.0
+		FX.arc_bolt(_battle, global_position,
+			global_position + Vector3(cos(a), 0.4, sin(a)) * radius * 0.55,
+			Color(0.55, 0.85, 1.0))
+	AudioMgr.play_3d("emp", global_position, 2.0, 1.0, 2400.0)
+
 func _detonate(direct: bool, already_hit: Node = null) -> void:
 	if _detonated:
 		return
 	_detonated = true
+	if mdef.get("emp_radius", 0.0) > 0.0 and _armed and _battle:
+		_emp_burst()
 	var direct_target: Node = already_hit
 	if direct and target and is_instance_valid(target) and target.has_method("take_hit"):
 		direct_target = target

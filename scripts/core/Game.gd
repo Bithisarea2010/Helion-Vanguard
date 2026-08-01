@@ -4,7 +4,7 @@ extends Node
 signal settings_changed
 signal mission_ended(victory: bool, stats: Dictionary)
 
-const VERSION := "1.1.0"
+const VERSION := "1.2.0"
 const SETTINGS_PATH := "user://settings.cfg"
 const SAVE_PATH := "user://save.cfg"
 const MIN_RENDER_SCALE := 0.50
@@ -43,6 +43,10 @@ const DEFAULT_BINDINGS := {
 	"pitch_down": [{"t": "jaxis", "a": JOY_AXIS_LEFT_Y, "v": -1.0}],
 	"yaw_left": [{"t": "jaxis", "a": JOY_AXIS_LEFT_X, "v": -1.0}],
 	"yaw_right": [{"t": "jaxis", "a": JOY_AXIS_LEFT_X, "v": 1.0}],
+	# --- advanced capabilities (1.2) ---
+	"ftl_drive": [{"t": "key", "c": KEY_L}, {"t": "jbtn", "b": JOY_BUTTON_RIGHT_STICK}],
+	"targeting_computer": [{"t": "key", "c": KEY_K}],
+	"cycle_primary": [{"t": "key", "c": KEY_F}],
 }
 
 const ACTION_LABELS := {
@@ -57,6 +61,9 @@ const ACTION_LABELS := {
 	"tactical_map": "Tactical map", "flight_assist": "Toggle flight assist",
 	"look_around": "Look around (hold, cockpit)",
 	"photo_mode": "Photo mode", "pause": "Pause",
+	"ftl_drive": "Lightspeed drive (hold to charge)",
+	"targeting_computer": "Targeting computer on/off",
+	"cycle_primary": "Cycle primary weapon",
 }
 
 # ------------------------------------------------------------------ settings
@@ -78,6 +85,15 @@ const SETTINGS_DEFAULTS := {
 	"vol_master": 0.9, "vol_music": 0.7, "vol_sfx": 1.0, "vol_ui": 0.9,
 	"difficulty": 1,                # 0 easy 1 normal 2 hard
 	"momentum_mode": false,         # flight assist off by default? no: assist on
+	# --- advanced capabilities (1.2) -------------------------------------
+	# One master switch plus per-system toggles. The master switch gates all
+	# four systems at once so the game can be played exactly as 1.1 shipped.
+	"advanced_caps": true,
+	"cap_ftl": true,                # lightspeed drive
+	"cap_shield": true,             # icosahedral shield matrix
+	"cap_arsenal": true,            # extended weapon rack
+	"cap_targeting": true,          # adaptive targeting computer
+	"targeting_hit_rate": 0.85,     # servo setpoint, clamped to the 0.80-0.90 band
 	"bindings": {},                 # action -> serialized override list
 }
 var settings: Dictionary = SETTINGS_DEFAULTS.duplicate(true)
@@ -117,6 +133,13 @@ var save := {
 
 var current_mission := "instant_action"
 var _hermetic := false          # --defaults: ignore and never write settings.cfg
+## `--uncapped` must survive every later `apply_video_settings()`.
+##
+## It used to be applied once in `_ready()`, but `Battle._ready()` re-applies the
+## video settings when a mission loads — which put vsync straight back on. Every
+## "uncapped" benchmark this project ran after that change silently measured a
+## 60 fps vsync cap instead of real headroom.
+var _force_uncapped := false
 var _settings_dirty := false
 var _save_dirty := false
 var battle_stats := {}
@@ -134,6 +157,8 @@ func _enter_tree() -> void:
 	# later run, and an A/B series measures whatever the previous run left
 	# behind. This invalidated a whole benchmark batch before it was noticed.
 	_hermetic = "--defaults" in OS.get_cmdline_user_args()
+	_force_uncapped = "--uncapped" in OS.get_cmdline_user_args()
+	_caps_forced_off = "--nocaps" in OS.get_cmdline_user_args()
 	if not _hermetic:
 		_load_settings()
 	_load_save()
@@ -147,11 +172,7 @@ func _ready() -> void:
 	apply_preset()
 	# automated testing hook:  godot -- --mission=instant_action
 	for arg in OS.get_cmdline_user_args():
-		if arg == "--uncapped":
-			# profiling: remove the vsync ceiling so [BENCH] shows real headroom
-			DisplayServer.window_set_vsync_mode(DisplayServer.VSYNC_DISABLED)
-			Engine.max_fps = 0
-		elif arg == "--windowed":
+		if arg == "--windowed":
 			# Godot's own --resolution is USELESS here: apply_video_settings()
 			# runs first and forces MODE_FULLSCREEN, so every benchmark this
 			# project has ever run measured the same native 2880x1800 buffer.
@@ -173,6 +194,17 @@ func _ready() -> void:
 			var mid := arg.get_slice("=", 1)
 			if MissionDefs.MISSIONS.has(mid):
 				start_mission.call_deferred(mid)
+		elif arg.begins_with("--quitafter="):
+			# Last-resort watchdog, in the AUTOLOAD rather than in Battle.
+			# Battle owns the precise one, but if Battle itself fails to compile
+			# — which is exactly what happens when a new `class_name` script has
+			# not been re-imported yet — that timer is never created and the run
+			# hangs until the harness times out. Twice this cost five minutes.
+			var deadline := float(arg.get_slice("=", 1)) + 45.0
+			get_tree().create_timer(deadline, true, false, true).timeout.connect(func():
+				print("[BENCH] autoload watchdog fired after %.0fs" % deadline)
+				prepare_shutdown()
+				get_tree().quit(2))
 
 func _notification(what: int) -> void:
 	if what == NOTIFICATION_WM_CLOSE_REQUEST or what == NOTIFICATION_EXIT_TREE:
@@ -377,6 +409,12 @@ func _normalize_settings() -> void:
 		settings[key] = clampf(_as_float(settings.get(key), d[key]), 0.0, 1.0)
 	settings.difficulty = clampi(_as_int(settings.get("difficulty"), d.difficulty), 0, 2)
 	settings.momentum_mode = bool(settings.get("momentum_mode", d.momentum_mode))
+	for key in ["advanced_caps", "cap_ftl", "cap_shield", "cap_arsenal", "cap_targeting"]:
+		settings[key] = bool(settings.get(key, d[key]))
+	# The band is the product promise, so it is enforced here rather than in the
+	# UI — a hand-edited settings.cfg cannot push the servo outside 80-90%.
+	settings.targeting_hit_rate = clampf(_as_float(settings.get("targeting_hit_rate"),
+		d.targeting_hit_rate), 0.80, 0.90)
 	settings.bindings = _sanitize_bindings(settings.get("bindings", {}))
 	if settings != before:
 		_settings_dirty = true
@@ -464,10 +502,15 @@ func apply_video_settings() -> void:
 		_:
 			if win.mode != Window.MODE_FULLSCREEN:
 				win.mode = Window.MODE_FULLSCREEN
-	var vsync_modes := [
-		DisplayServer.VSYNC_DISABLED, DisplayServer.VSYNC_ENABLED, DisplayServer.VSYNC_ADAPTIVE]
-	DisplayServer.window_set_vsync_mode(vsync_modes[int(settings.vsync_mode)])
-	Engine.max_fps = int(settings.fps_limit)
+	if _force_uncapped:
+		# profiling: remove the vsync ceiling so [BENCH] shows real headroom
+		DisplayServer.window_set_vsync_mode(DisplayServer.VSYNC_DISABLED)
+		Engine.max_fps = 0
+	else:
+		var vsync_modes := [
+			DisplayServer.VSYNC_DISABLED, DisplayServer.VSYNC_ENABLED, DisplayServer.VSYNC_ADAPTIVE]
+		DisplayServer.window_set_vsync_mode(vsync_modes[int(settings.vsync_mode)])
+		Engine.max_fps = int(settings.fps_limit)
 	var vp := get_viewport()
 	vp.scaling_3d_scale = clampf(settings.resolution_scale, MIN_RENDER_SCALE, MAX_RENDER_SCALE)
 	var scaling_modes := [
@@ -585,12 +628,20 @@ func record_mission(id: String, stats: Dictionary) -> void:
 		save.missions_done[id] = stats
 	# unlock progression
 	if id == "main" and stats.get("victory", false):
-		for s in ["raptor", "hammer"]:
+		for s in ["raptor", "hammer", "paladin"]:
 			if not s in save.unlocked_ships:
 				save.unlocked_ships.append(s)
 	if id == "instant_action" and stats.get("victory", false):
 		if not "raptor" in save.unlocked_ships:
 			save.unlocked_ships.append("raptor")
+	# the fleet action is where the new hulls are earned
+	if id == "fleet_action" and stats.get("victory", false):
+		for s in ["specter", "paladin"]:
+			if not s in save.unlocked_ships:
+				save.unlocked_ships.append(s)
+	if id == "capital_strike" and stats.get("victory", false):
+		if not "specter" in save.unlocked_ships:
+			save.unlocked_ships.append("specter")
 	if stats.get("victory", false) and not "hammer" in save.unlocked_ships \
 			and save.missions_done.size() >= 3:
 		save.unlocked_ships.append("hammer")
@@ -615,6 +666,26 @@ func start_mission(id: String) -> void:
 	var err := get_tree().change_scene_to_file("res://scenes/Battle.tscn")
 	if err != OK:
 		push_error("Could not open battle scene: %s" % error_string(err))
+
+# =================================================================== CAPABILITIES
+## Advanced capabilities are gated by a master switch AND a per-system switch, so
+## `cap("ftl")` is the only thing gameplay code should ever ask. `--nocaps` forces
+## everything off for A/B profiling without touching the saved profile.
+func cap(system: String) -> bool:
+	if _caps_forced_off or ("--no" + system) in OS.get_cmdline_user_args():
+		return false
+	if not bool(settings.get("advanced_caps", true)):
+		return false
+	return bool(settings.get("cap_" + system, true))
+
+var _caps_forced_off := false
+
+func set_capability(system: String, on: bool) -> void:
+	settings["cap_" + system] = on
+	mark_settings_dirty()
+
+func targeting_setpoint() -> float:
+	return clampf(float(settings.get("targeting_hit_rate", 0.85)), 0.80, 0.90)
 
 func difficulty_scale() -> Dictionary:
 	match int(settings.difficulty):
