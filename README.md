@@ -57,7 +57,7 @@ Helion Vanguard is an original, performance-conscious space-combat game built wi
   </tr>
   <tr>
     <td width="50%"><img src="docs/media/combat-pursuit.png" alt="Pursuing an enemy fighter"></td>
-    <td width="50%"><img src="docs/media/combat-belt.png" alt="Flying through the asteroid belt"></td>
+    <td width="50%"><img src="docs/media/combat-belt.png?raw=1" alt="Flying through the asteroid belt"></td>
   </tr>
   <tr>
     <td align="center"><sub><b>PURSUE</b> — lead the target through a three-dimensional battlespace</sub></td>
