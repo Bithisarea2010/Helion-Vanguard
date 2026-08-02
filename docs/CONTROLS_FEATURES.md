@@ -61,8 +61,11 @@ guns/missiles and pops flares through the actual input actions).
   with target acceleration estimate).
 - Environments: procedural nebula sky, planets/moons, sun with halo,
   1300–2000-rock asteroid belts (MultiMesh chunks + physics pool).
-- Audio: 40 synthesised SFX + 2 music loops; engine loop follows throttle;
-  bus mixer (Master/Music/SFX/UI) with sliders.
+- Audio: 40 synthesised SFX plus a six-track randomized MP3 playlist; engine
+  loop follows throttle; bus mixer (Master/Music/SFX/UI) with sliders.
+- Background music can be enabled or disabled directly from the first menu;
+  enabled tracks use a no-immediate-repeat shuffle bag and crossfade between
+  songs during menu, mission and debrief flow.
 - Settings persist across launches (`user://settings.cfg` in
   `~/Library/Application Support/HelionVanguard/`).
 - Save/progression: mission best scores, ship unlocks, per-ship loadouts.

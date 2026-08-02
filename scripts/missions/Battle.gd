@@ -134,7 +134,7 @@ func _ready() -> void:
 	SceneFlow.report(0.92, "MISSION DIRECTOR", "Authorising launch sequence")
 	_title_card()
 	_mission_start()
-	AudioMgr.play_music("combat")
+	AudioMgr.ensure_background_music()
 	Game.settings_changed.connect(_on_settings_changed)
 	_parse_harness_args()
 	# Keep the corridor over the first frame-driven HDR/deep-sky passes. The
@@ -814,7 +814,7 @@ func _show_debrief(win: bool) -> void:
 	vb.add_child(menu)
 	overlay_layer.add_child(root)
 	_debrief_panel = root
-	AudioMgr.play_music("menu" if win else "combat", 2.0)
+	AudioMgr.ensure_background_music(2.0)
 	AudioMgr.play_ui("mission_win" if win else "mission_fail")
 
 # =================================================================== DIRECTOR

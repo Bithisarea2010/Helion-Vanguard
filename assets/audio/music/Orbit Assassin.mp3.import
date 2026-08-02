@@ -1,0 +1,19 @@
+[remap]
+
+importer="mp3"
+type="AudioStreamMP3"
+uid="uid://bl3i8vml8137p"
+path="res://.godot/imported/Orbit Assassin.mp3-dc8db3ba58c487bf02a7006b93457233.mp3str"
+
+[deps]
+
+source_file="res://assets/audio/music/Orbit Assassin.mp3"
+dest_files=["res://.godot/imported/Orbit Assassin.mp3-dc8db3ba58c487bf02a7006b93457233.mp3str"]
+
+[params]
+
+loop=false
+loop_offset=0
+bpm=0
+beat_count=0
+bar_beats=4

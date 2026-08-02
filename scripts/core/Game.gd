@@ -4,7 +4,7 @@ extends Node
 signal settings_changed
 signal mission_ended(victory: bool, stats: Dictionary)
 
-const VERSION := "1.2.1"
+const VERSION := "1.2.2"
 const SETTINGS_PATH := "user://settings.cfg"
 const SAVE_PATH := "user://save.cfg"
 const MIN_RENDER_SCALE := 0.50
@@ -83,6 +83,7 @@ const SETTINGS_DEFAULTS := {
 	"camera_shake": 1.0,
 	"cam_distance": 1.0,            # chase-cam standoff multiplier, 0.7 .. 1.8
 	"vol_master": 0.9, "vol_music": 0.7, "vol_sfx": 1.0, "vol_ui": 0.9,
+	"music_enabled": true,
 	"difficulty": 1,                # 0 easy 1 normal 2 hard
 	"momentum_mode": false,         # flight assist off by default? no: assist on
 	# --- advanced capabilities (1.2) -------------------------------------
@@ -410,6 +411,7 @@ func _normalize_settings() -> void:
 	settings.cam_distance = clampf(_as_float(settings.get("cam_distance"), d.cam_distance), 0.6, 2.0)
 	for key in ["vol_master", "vol_music", "vol_sfx", "vol_ui"]:
 		settings[key] = clampf(_as_float(settings.get(key), d[key]), 0.0, 1.0)
+	settings.music_enabled = bool(settings.get("music_enabled", d.music_enabled))
 	settings.difficulty = clampi(_as_int(settings.get("difficulty"), d.difficulty), 0, 2)
 	settings.momentum_mode = bool(settings.get("momentum_mode", d.momentum_mode))
 	for key in ["advanced_caps", "cap_ftl", "cap_shield", "cap_arsenal", "cap_targeting"]:
