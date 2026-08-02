@@ -6,6 +6,38 @@ asset pipeline. Optimised for Apple Silicon.
 
 ![icon](assets/icons/icon.png)
 
+## About
+
+Helion Vanguard is a fast, colourful third-person space-combat game for
+macOS, built from the ground up for Apple Silicon. Take control of one of
+four original starfighters and fight through cinematic dogfights in a dense
+asteroid belt, where momentum, positioning and weapon choice matter as much
+as raw firepower.
+
+The game combines accessible arcade controls with deeper flight-assist and
+targeting systems. Aim with a mouse or trackpad, boost through the battle,
+match an enemy’s velocity, switch between weapon groups, lock guided
+missiles, and deploy countermeasure flares when the threat warning starts to
+scream. Flight assist can be disabled for pilots who prefer full inertial
+control, while remappable keyboard, mouse, trackpad and gamepad bindings let
+you shape the cockpit around your own play style.
+
+Jump straight into a dogfight with Instant Action, learn the fundamentals in
+the Flight Academy, or play through nine missions culminating in Operation
+Sunfall, a 15–20 minute campaign strike. Between sorties, visit the Hangar to
+select your ship, configure weapons and missiles, and customise its paint and
+engine glow. Four distinct craft support different approaches: the agile
+SF-3 Wasp interceptor, versatile SF-7 Vanguard assault fighter, armoured SG-9
+Hammer gunship and missile-heavy SM-5 Raptor strike craft.
+
+Helion Vanguard is an original Godot 4.7 project created with procedural
+asset tools, Blender, custom shaders and an entirely code-driven gameplay
+foundation. The repository includes the game source, original models, audio,
+missions, shader work, build documentation and licensing information. It is
+also a practical example of building a polished, performance-conscious
+desktop game around a procedural content pipeline, with render-scale,
+fullscreen and quality controls designed for modern Mac hardware.
+
 ## Playing
 
 Double-click **Helion Vanguard.app**. The game opens to the main menu:
