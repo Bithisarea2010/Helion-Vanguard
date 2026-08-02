@@ -1,0 +1,6 @@
+.godot/
+dist/
+build/
+.DS_Store
+shots/
+*.zip
