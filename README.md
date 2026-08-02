@@ -1,116 +1,200 @@
-# HELION VANGUARD
+<div align="center">
 
-**Fast, colourful third-person space combat for macOS.**
-An original game built with Godot 4.7, Blender and a fully procedural
-asset pipeline. Optimised for Apple Silicon.
+<img src="assets/icons/icon.png" width="112" alt="Helion Vanguard icon">
 
-![icon](assets/icons/icon.png)
-
-## About
-
-Helion Vanguard is a fast, colourful third-person space-combat game for
-macOS, built from the ground up for Apple Silicon. Take control of one of
-four original starfighters and fight through cinematic dogfights in a dense
-asteroid belt, where momentum, positioning and weapon choice matter as much
-as raw firepower.
-
-The game combines accessible arcade controls with deeper flight-assist and
-targeting systems. Aim with a mouse or trackpad, boost through the battle,
-match an enemy’s velocity, switch between weapon groups, lock guided
-missiles, and deploy countermeasure flares when the threat warning starts to
-scream. Flight assist can be disabled for pilots who prefer full inertial
-control, while remappable keyboard, mouse, trackpad and gamepad bindings let
-you shape the cockpit around your own play style.
-
-Jump straight into a dogfight with Instant Action, learn the fundamentals in
-the Flight Academy, or play through nine missions culminating in Operation
-Sunfall, a 15–20 minute campaign strike. Between sorties, visit the Hangar to
-select your ship, configure weapons and missiles, and customise its paint and
-engine glow. Four distinct craft support different approaches: the agile
-SF-3 Wasp interceptor, versatile SF-7 Vanguard assault fighter, armoured SG-9
-Hammer gunship and missile-heavy SM-5 Raptor strike craft.
-
-Helion Vanguard is an original Godot 4.7 project created with procedural
-asset tools, Blender, custom shaders and an entirely code-driven gameplay
-foundation. The repository includes the game source, original models, audio,
-missions, shader work, build documentation and licensing information. It is
-also a practical example of building a polished, performance-conscious
-desktop game around a procedural content pipeline, with render-scale,
-fullscreen and quality controls designed for modern Mac hardware.
-
-## Playing
-
-Double-click **Helion Vanguard.app**. The game opens to the main menu:
-
-- **INSTANT ACTION** — straight into a dogfight in the asteroid belt.
-- **MISSIONS** — nine playable operations, from the Flight Academy tutorial
-  to the 15–20 minute campaign strike *Operation Sunfall*.
-- **HANGAR** — choose between four ships, change weapons, missiles,
-  paint and engine glow.
-- **SETTINGS** — video (fullscreen/windowed, render scale, presets),
-  audio, gameplay and complete control remapping.
-
-### Default controls
-
-| Input | Action |
-|---|---|
-| Mouse / trackpad | Aim — the ship follows the cursor |
-| W / S | Forward thrust / brake & reverse |
-| A / D | Strafe left / right |
-| Q / E | Roll |
-| Space / Left Ctrl | Move up / down |
-| Left Shift | Boost |
-| Left mouse | Fire primary weapons |
-| Right mouse | Fire missile (needs lock for guided types) |
-| R | Cycle hostile targets |
-| T | Target under crosshair |
-| X | Match target velocity |
-| G | Countermeasure flares |
-| V | Weapon group (A / B / linked) |
-| C | Camera: chase → cockpit → orbit → cinematic |
-| B | Tactical map |
-| M | Toggle flight assist (momentum mode) |
-| P | Photo mode |
-| Esc | Pause |
-
-Gamepads are supported (left stick pitch/yaw, right stick strafe,
-triggers thrust, shoulder buttons fire). Every binding can be changed in
-Settings → Controls.
-
-### The ships
-
-| Ship | Role | Character |
-|---|---|---|
-| SF-3 Wasp | Interceptor | fastest, most agile, fragile |
-| SF-7 Vanguard | Assault fighter | the balanced all-rounder |
-| SG-9 Hammer | Heavy gunship | slow, armoured, brutal broadside |
-| SM-5 Raptor | Strike craft | 18 missiles and a long-range lock |
-
-## Project layout
-
-```
-project.godot          Godot 4.7 project (open with the Godot editor)
-export_presets.cfg     macOS export preset
-scenes/                scene stubs (all content is built in code)
-scripts/               all GDScript source
-shaders/               sky, planet shaders (original)
-assets/                models (GLB), audio (WAV), fonts, icons, textures
-blender_src/           Blender generator scripts + saved .blend sources
-tools/                 audio synth + icon generator (Python)
-docs/                  build notes, controls, performance, limitations
+```text
+██╗  ██╗███████╗██╗     ██╗ ██████╗ ███╗   ██╗
+██║  ██║██╔════╝██║     ██║██╔═══██╗████╗  ██║
+███████║█████╗  ██║     ██║██║   ██║██╔██╗ ██║
+██╔══██║██╔══╝  ██║     ██║██║   ██║██║╚██╗██║
+██║  ██║███████╗███████╗██║╚██████╔╝██║ ╚████║
+╚═╝  ╚═╝╚══════╝╚══════╝╚═╝ ╚═════╝ ╚═╝  ╚═══╝
+                  V A N G U A R D
+        ── FLY HARD · STRIKE FIRST · SURVIVE ──
 ```
 
-## Building from source
+### Fast, colourful third-person space combat for macOS
 
-See [docs/BUILD.md](docs/BUILD.md). Short version:
+Pilot four purpose-built starfighters, master a deep combat sandbox and lead the charge across nine handcrafted operations.
+
+[![Release](https://img.shields.io/github/v/release/Bithisarea2010/Helion-Vanguard?style=for-the-badge&color=ff9d2e&label=DOWNLOAD)](https://github.com/Bithisarea2010/Helion-Vanguard/releases/latest)
+[![Godot](https://img.shields.io/badge/Godot-4.7-478CBF?style=for-the-badge&logo=godot-engine&logoColor=white)](https://godotengine.org/)
+[![Platform](https://img.shields.io/badge/macOS-Apple%20Silicon-111827?style=for-the-badge&logo=apple&logoColor=white)](https://github.com/Bithisarea2010/Helion-Vanguard/releases/latest)
+[![License](https://img.shields.io/github/license/Bithisarea2010/Helion-Vanguard?style=for-the-badge&color=35c2ff)](LICENSE)
+
+[Download for macOS](https://github.com/Bithisarea2010/Helion-Vanguard/releases/latest) · [Controls](#flight-controls) · [Build from source](#build-from-source) · [Documentation](#engineering-notes)
+
+</div>
+
+![A Helion Vanguard starfighter approaching a sunlit world](assets/loading/helion_corridor.png)
+
+> **The belt is alive. Your target is moving. Your reactor is hot.**
+> Break formation, acquire lock and turn the void into a battlefield.
+
+## Enter the battlespace
+
+Helion Vanguard is an original, performance-conscious space-combat game built with Godot 4.7, Blender and a procedural asset pipeline. Its controls are immediately readable, but the combat model leaves room to grow: directional shields, heat and energy management, target-leading, velocity matching, countermeasures, missile locks and optional momentum flight all matter once the sky fills with hostiles.
+
+- **Instant Action** — launch directly into an asteroid-belt dogfight.
+- **Nine operations** — progress from Flight Academy to the 15–20 minute campaign strike *Operation Sunfall*.
+- **Four player ships** — choose agility, versatility, armor or long-range missile dominance.
+- **Advanced capabilities** — lightspeed drive, geodesic shield impacts, adaptive targeting and an expanded arsenal.
+- **Layered combat systems** — directional shields, armor penetration, ricochets, heat, energy, ammunition and flares.
+- **Living battlefields** — enemy formations, coordinated attack runs, destructible capital-ship subsystems and dense procedural asteroid belts.
+- **Full pilot setup** — remappable keyboard, mouse, trackpad and gamepad controls; fullscreen, render-scale and quality options.
+- **Photo and tactical modes** — frame the battle or step back and read the entire engagement.
+
+## Combat gallery
+
+<table>
+  <tr>
+    <td width="50%"><img src="docs/media/combat-lock.png" alt="Target lock during Instant Action"></td>
+    <td width="50%"><img src="docs/media/combat-kill.png" alt="Dogfight kill in an asteroid field"></td>
+  </tr>
+  <tr>
+    <td align="center"><sub><b>ACQUIRE</b> — read velocity, shields and hull state</sub></td>
+    <td align="center"><sub><b>ENGAGE</b> — guns, missiles, heat and energy in motion</sub></td>
+  </tr>
+  <tr>
+    <td width="50%"><img src="docs/media/combat-pursuit.png" alt="Pursuing an enemy fighter"></td>
+    <td width="50%"><img src="docs/media/combat-belt.png" alt="Flying through the asteroid belt"></td>
+  </tr>
+  <tr>
+    <td align="center"><sub><b>PURSUE</b> — lead the target through a three-dimensional battlespace</sub></td>
+    <td align="center"><sub><b>SURVIVE</b> — fight among moons, nebulae and thousands of rocks</sub></td>
+  </tr>
+</table>
+
+<div align="center">
+
+### Fleet intelligence
+
+</div>
+
+<table>
+  <tr>
+    <td width="33%"><img src="assets/loading/helion_plate_leviathan.jpg" alt="Leviathan supercarrier"></td>
+    <td width="33%"><img src="assets/loading/helion_plate_sovereign.jpg" alt="Sovereign dreadnought"></td>
+    <td width="33%"><img src="assets/loading/helion_plate_paladin.jpg" alt="Paladin gunship"></td>
+  </tr>
+  <tr>
+    <td align="center"><b>LEVIATHAN</b><br><sub>Supercarrier</sub></td>
+    <td align="center"><b>SOVEREIGN</b><br><sub>Dreadnought</sub></td>
+    <td align="center"><b>PALADIN</b><br><sub>Gunship</sub></td>
+  </tr>
+</table>
+
+## Choose your fighter
+
+| Craft | Role | Combat identity |
+|:--|:--|:--|
+| **SF-3 Wasp** | Interceptor | Fastest and most agile; lethal in skilled hands, unforgiving under fire. |
+| **SF-7 Vanguard** | Assault fighter | Balanced speed, durability and firepower—the fleet's dependable all-rounder. |
+| **SG-9 Hammer** | Heavy gunship | Slow, armored and built to deliver a brutal broadside. |
+| **SM-5 Raptor** | Strike craft | Eighteen missiles and long-range locks for deliberate stand-off attacks. |
+
+Configure weapons, missiles, paint and engine glow in the Hangar. Eight primary weapon families and five missile classes support everything from precision railgun passes to saturation attacks.
+
+## Download and play
+
+1. Open the [latest GitHub release](https://github.com/Bithisarea2010/Helion-Vanguard/releases/latest).
+2. Download **`Helion-Vanguard-macOS-v1.2.1.zip`**.
+3. Extract the ZIP and open **Helion Vanguard.app**.
+4. If macOS blocks the first launch, Control-click the app and choose **Open**.
+
+The current build is ad-hoc signed but not Apple-notarized. See [the build guide](docs/BUILD.md#code-signing-status) for Gatekeeper details and checksum information in the release notes.
+
+## Flight controls
+
+| Input | Action | Input | Action |
+|:--|:--|:--|:--|
+| Mouse / trackpad | Aim | **W / S** | Thrust / brake and reverse |
+| **A / D** | Strafe | **Q / E** | Roll |
+| **Space / Left Ctrl** | Move up / down | **Left Shift** | Boost |
+| Left mouse | Fire primary | Right mouse | Fire missile |
+| **R / T** | Cycle / crosshair target | **X** | Match target velocity |
+| **G** | Countermeasure flares | **V** | Weapon group |
+| **C** | Cycle camera | **B** | Tactical map |
+| **M** | Toggle flight assist | **P** | Photo mode |
+| **Esc** | Pause | Gamepad | Fully mapped |
+
+Every binding can be changed under **Settings → Controls**. The game releases mouse capture automatically in menus, when paused and when focus is lost.
+
+## Built as a complete pipeline
+
+```text
+       BLENDER GENERATORS                 GODOT 4.7
+  ┌────────────────────────┐       ┌─────────────────────────┐
+  │ ships · fleets · props │──────▶│ scenes · AI · missions │
+  │ greebles · vertex AO   │       │ combat · HUD · shaders │
+  └────────────────────────┘       └────────────┬────────────┘
+                                                │
+  ┌────────────────────────┐                    ▼
+  │ Python audio synthesis │──────▶  macOS application + ZIP
+  │ icon and asset tooling │          verified release build
+  └────────────────────────┘
+```
+
+The repository includes the gameplay source, procedural Blender generators, original models, synthesized audio, shaders, mission logic, test hooks and performance documentation. Scene stubs stay small because much of the game is assembled in code.
+
+<details>
+<summary><b>Repository map</b></summary>
+
+```text
+project.godot          Godot 4.7 project entry point
+scenes/                Scene stubs and test scenes
+scripts/               GDScript gameplay, UI, AI and systems
+shaders/               Hull, sky, planet and effects shaders
+assets/                Models, audio, fonts, icons and textures
+blender_src/           Procedural generators and Blender sources
+tools/                 Audio synthesis and icon generation
+tests/                 Runtime and deterministic effect probes
+docs/                  Build, controls, performance and audit notes
+```
+
+</details>
+
+## Build from source
+
+Requirements: **Godot 4.7 stable**, macOS 11 or newer, and the matching Godot export templates.
 
 ```sh
-godot --headless --path . --import
-godot --headless --path . --export-release "macOS" "build/Helion Vanguard.zip"
+/Applications/Godot.app/Contents/MacOS/Godot --headless --path . --import
+mkdir -p build
+/Applications/Godot.app/Contents/MacOS/Godot --headless --path . \
+  --export-release "macOS" "build/Helion Vanguard.zip"
 ```
 
-## Licences
+For signing, installation, asset regeneration and the automated combat harness, read [docs/BUILD.md](docs/BUILD.md).
 
-All code, models, audio and missions are original. Third-party items:
-one CC0 texture set (Poly Haven) and two SIL-OFL fonts.
-Details in [LICENSES.md](LICENSES.md) and [assets/manifest.json](assets/manifest.json).
+## Engineering notes
+
+| Document | What it covers |
+|:--|:--|
+| [Build guide](docs/BUILD.md) | Export, signing, automated runs and asset regeneration |
+| [Controls and features](docs/CONTROLS_FEATURES.md) | Tested controls, game systems and macOS behavior |
+| [Performance](docs/PERFORMANCE.md) | Rendering presets, measurements and optimization notes |
+| [120-fix ledger](docs/FIXES_120.md) | Concrete quality and stabilization work |
+| [Limitations](docs/LIMITATIONS.md) | Current boundaries and known constraints |
+| [Licenses and attribution](LICENSES.md) | Original work and third-party notices |
+
+## License
+
+The repository includes an [MIT license](LICENSE). Third-party fonts and CC0 texture sources remain under their respective licenses and are documented in [LICENSES.md](LICENSES.md) and [`assets/manifest.json`](assets/manifest.json).
+
+---
+
+<div align="center">
+
+```text
+         .       *        .       +       .
+    *        ────────[ HELION CONTROL ]────────
+         VECTOR LOCKED  ·  WEAPONS FREE
+    .        +        *       .        *
+```
+
+**Built with Godot, Blender, procedural tools and an unreasonable affection for glowing engines.**
+
+[Download v1.2.1](https://github.com/Bithisarea2010/Helion-Vanguard/releases/latest) · [Report an issue](https://github.com/Bithisarea2010/Helion-Vanguard/issues)
+
+</div>
