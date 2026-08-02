@@ -1,6 +1,17 @@
 <div align="center">
 
-<img src="docs/media/helion-banner.svg" width="100%" alt="Helion Vanguard — fly hard, strike first, survive">
+<img src="assets/icons/icon.png" width="112" alt="Helion Vanguard icon">
+
+```text
+██╗  ██╗███████╗██╗     ██╗ ██████╗ ███╗   ██╗
+██║  ██║██╔════╝██║     ██║██╔═══██╗████╗  ██║
+███████║█████╗  ██║     ██║██║   ██║██╔██╗ ██║
+██╔══██║██╔══╝  ██║     ██║██║   ██║██║╚██╗██║
+██║  ██║███████╗███████╗██║╚██████╔╝██║ ╚████║
+╚═╝  ╚═╝╚══════╝╚══════╝╚═╝ ╚═════╝ ╚═╝  ╚═══╝
+                  V A N G U A R D
+        ── FLY HARD · STRIKE FIRST · SURVIVE ──
+```
 
 ### Fast, colourful third-person space combat for macOS
 
@@ -12,24 +23,6 @@ Pilot four purpose-built starfighters, master a deep combat sandbox and lead the
 [![License](https://img.shields.io/github/license/Bithisarea2010/Helion-Vanguard?style=for-the-badge&color=35c2ff)](LICENSE)
 
 [Download for macOS](https://github.com/Bithisarea2010/Helion-Vanguard/releases/latest) · [Controls](#flight-controls) · [Build from source](#build-from-source) · [Documentation](#engineering-notes)
-
-<details>
-<summary><b>▸ OPEN HELION CONTROL TRANSMISSION</b></summary>
-
-<br>
-
-<pre>
-██╗  ██╗███████╗██╗     ██╗ ██████╗ ███╗   ██╗
-██║  ██║██╔════╝██║     ██║██╔═══██╗████╗  ██║
-███████║█████╗  ██║     ██║██║   ██║██╔██╗ ██║
-██╔══██║██╔══╝  ██║     ██║██║   ██║██║╚██╗██║
-██║  ██║███████╗███████╗██║╚██████╔╝██║ ╚████║
-╚═╝  ╚═╝╚══════╝╚══════╝╚═╝ ╚═════╝ ╚═╝  ╚═══╝
-                  V A N G U A R D
-        ── FLY HARD · STRIKE FIRST · SURVIVE ──
-</pre>
-
-</details>
 
 </div>
 
