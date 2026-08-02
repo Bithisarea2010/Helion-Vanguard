@@ -37,7 +37,7 @@ Helion Vanguard is an original, performance-conscious space-combat game built wi
 
 - **Instant Action** — launch directly into an asteroid-belt dogfight.
 - **Nine operations** — progress from Flight Academy to the 15–20 minute campaign strike *Operation Sunfall*.
-- **Four player ships** — choose agility, versatility, armor or long-range missile dominance.
+- **Six unlocked player ships** — choose agility, versatility, armor, stealth or long-range missile dominance from the first launch.
 - **Advanced capabilities** — lightspeed drive, geodesic shield impacts, adaptive targeting and an expanded arsenal.
 - **Layered combat systems** — directional shields, armor penetration, ricochets, heat, energy, ammunition and flares.
 - **Living battlefields** — enemy formations, coordinated attack runs, destructible capital-ship subsystems and dense procedural asteroid belts.
@@ -92,13 +92,15 @@ Helion Vanguard is an original, performance-conscious space-combat game built wi
 | **SF-7 Vanguard** | Assault fighter | Balanced speed, durability and firepower—the fleet's dependable all-rounder. |
 | **SG-9 Hammer** | Heavy gunship | Slow, armored and built to deliver a brutal broadside. |
 | **SM-5 Raptor** | Strike craft | Eighteen missiles and long-range locks for deliberate stand-off attacks. |
+| **SR-2 Specter** | Stealth interceptor | Fast, low-signature hunter that delays enemy target acquisition. |
+| **SA-11 Paladin** | Assault gunship | Four engines, heavy armor and six racks for direct fleet assaults. |
 
-Configure weapons, missiles, paint and engine glow in the Hangar. Eight primary weapon families and five missile classes support everything from precision railgun passes to saturation attacks.
+All six craft are immediately available. Configure weapons, ordnance, paint and engine glow in the Hangar. Fourteen primary weapon systems and eight ordnance classes support everything from precision railgun passes to saturation attacks.
 
 ## Download and play
 
 1. Open the [latest GitHub release](https://github.com/Bithisarea2010/Helion-Vanguard/releases/latest).
-2. Download **`Helion-Vanguard-macOS-v1.2.1.zip`**.
+2. Download the latest **Helion Vanguard macOS ZIP**.
 3. Extract the ZIP and open **Helion Vanguard.app**.
 4. If macOS blocks the first launch, Control-click the app and choose **Open**.
 
@@ -135,7 +137,7 @@ Every binding can be changed under **Settings → Controls**. The game releases 
   └────────────────────────┘
 ```
 
-The repository includes the gameplay source, procedural Blender generators, original models, synthesized audio, shaders, mission logic, test hooks and performance documentation. Scene stubs stay small because much of the game is assembled in code.
+The repository includes the gameplay source, procedural Blender generators, original models, synthesized sound effects and loops, the documented project-owner-supplied playlist, shaders, mission logic, test hooks and performance documentation. Scene stubs stay small because much of the game is assembled in code.
 
 <details>
 <summary><b>Repository map</b></summary>
@@ -195,6 +197,6 @@ The repository includes an [MIT license](LICENSE). Third-party fonts and CC0 tex
 
 **Built with Godot, Blender, procedural tools and an unreasonable affection for glowing engines.**
 
-[Download v1.2.1](https://github.com/Bithisarea2010/Helion-Vanguard/releases/latest) · [Report an issue](https://github.com/Bithisarea2010/Helion-Vanguard/issues)
+[Download latest release](https://github.com/Bithisarea2010/Helion-Vanguard/releases/latest) · [Report an issue](https://github.com/Bithisarea2010/Helion-Vanguard/issues)
 
 </div>

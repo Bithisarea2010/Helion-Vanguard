@@ -1,0 +1,19 @@
+[remap]
+
+importer="mp3"
+type="AudioStreamMP3"
+uid="uid://d3xe6n0ymgf37"
+path="res://.godot/imported/Frontier Combat Drive.mp3-72763b50b5f83b88ded5dc11514f41ad.mp3str"
+
+[deps]
+
+source_file="res://assets/audio/music/Frontier Combat Drive.mp3"
+dest_files=["res://.godot/imported/Frontier Combat Drive.mp3-72763b50b5f83b88ded5dc11514f41ad.mp3str"]
+
+[params]
+
+loop=false
+loop_offset=0
+bpm=0
+beat_count=0
+bar_beats=4

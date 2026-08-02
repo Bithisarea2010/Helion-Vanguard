@@ -67,10 +67,13 @@ Godot --path . -- --mission=survival --autotest
     `write_wav` trims the tail (`DEFAULT_SFX_MAX`, overridden per sound).
     Without that a 0.2 s laser shipped as a 2.5 s file of mostly silence and a
     big explosion held one of the 32 positional voices for twelve seconds.
-  * looping assets (`engine_loop`, both music tracks) go through `seamless()`,
+  * looping assets (`engine_loop`, the original music loops) go through `seamless()`,
     which crossfades the tail into the head. Noise layers never line up at a
     loop boundary, so without it the engine ticks once per cycle. Music is
     stereo; **3D sounds must stay mono** — `AudioStreamPlayer3D` pans them.
+- The optional background playlist is stored under `assets/audio/music/` as
+  six project-owner-supplied MP3 files. It is controlled directly from the
+  first menu and rotates through a no-immediate-repeat shuffle bag.
 - Icon: `python3 tools/gen_icon.py`, then `iconutil` (see tools file).
 
 ---

@@ -4,7 +4,7 @@ extends Node
 signal settings_changed
 signal mission_ended(victory: bool, stats: Dictionary)
 
-const VERSION := "1.2.1"
+const VERSION := "1.2.3"
 const SETTINGS_PATH := "user://settings.cfg"
 const SAVE_PATH := "user://save.cfg"
 const MIN_RENDER_SCALE := 0.50
@@ -83,6 +83,7 @@ const SETTINGS_DEFAULTS := {
 	"camera_shake": 1.0,
 	"cam_distance": 1.0,            # chase-cam standoff multiplier, 0.7 .. 1.8
 	"vol_master": 0.9, "vol_music": 0.7, "vol_sfx": 1.0, "vol_ui": 0.9,
+	"music_enabled": true,
 	"difficulty": 1,                # 0 easy 1 normal 2 hard
 	"momentum_mode": false,         # flight assist off by default? no: assist on
 	# --- advanced capabilities (1.2) -------------------------------------
@@ -124,7 +125,7 @@ const PRESETS := [
 # ------------------------------------------------------------------ save data
 var save := {
 	"selected_ship": "vanguard",
-	"unlocked_ships": ["vanguard", "wasp"],
+	"unlocked_ships": ["wasp", "vanguard", "hammer", "raptor", "specter", "paladin"],
 	"credits": 0,
 	"missions_done": {},            # id -> best stats dict
 	"loadouts": {},                 # ship_id -> {primary, secondary, missile, paint, glow}
@@ -410,6 +411,7 @@ func _normalize_settings() -> void:
 	settings.cam_distance = clampf(_as_float(settings.get("cam_distance"), d.cam_distance), 0.6, 2.0)
 	for key in ["vol_master", "vol_music", "vol_sfx", "vol_ui"]:
 		settings[key] = clampf(_as_float(settings.get(key), d[key]), 0.0, 1.0)
+	settings.music_enabled = bool(settings.get("music_enabled", d.music_enabled))
 	settings.difficulty = clampi(_as_int(settings.get("difficulty"), d.difficulty), 0, 2)
 	settings.momentum_mode = bool(settings.get("momentum_mode", d.momentum_mode))
 	for key in ["advanced_caps", "cap_ftl", "cap_shield", "cap_arsenal", "cap_targeting"]:
@@ -578,11 +580,9 @@ func _normalize_save() -> void:
 	var before := save.duplicate(true)
 	if not save.get("selected_ship", "") in ShipDB.SHIPS:
 		save.selected_ship = "vanguard"
-	if not save.get("unlocked_ships", []) is Array:
-		save.unlocked_ships = ["vanguard", "wasp"]
-	save.unlocked_ships = save.unlocked_ships.filter(func(id): return id in ShipDB.SHIPS)
-	if not "vanguard" in save.unlocked_ships:
-		save.unlocked_ships.append("vanguard")
+	# Every flyable hull is available immediately. Rebuilding this list from
+	# ShipDB also migrates old profiles and automatically includes future ships.
+	save.unlocked_ships = ShipDB.SHIPS.keys()
 	if not save.get("missions_done", {}) is Dictionary:
 		save.missions_done = {}
 	else:
@@ -629,25 +629,6 @@ func record_mission(id: String, stats: Dictionary) -> void:
 	var prev: Dictionary = save.missions_done.get(id, {})
 	if prev.is_empty() or int(stats.get("score", 0)) > int(prev.get("score", 0)):
 		save.missions_done[id] = stats
-	# unlock progression
-	if id == "main" and stats.get("victory", false):
-		for s in ["raptor", "hammer", "paladin"]:
-			if not s in save.unlocked_ships:
-				save.unlocked_ships.append(s)
-	if id == "instant_action" and stats.get("victory", false):
-		if not "raptor" in save.unlocked_ships:
-			save.unlocked_ships.append("raptor")
-	# the fleet action is where the new hulls are earned
-	if id == "fleet_action" and stats.get("victory", false):
-		for s in ["specter", "paladin"]:
-			if not s in save.unlocked_ships:
-				save.unlocked_ships.append(s)
-	if id == "capital_strike" and stats.get("victory", false):
-		if not "specter" in save.unlocked_ships:
-			save.unlocked_ships.append("specter")
-	if stats.get("victory", false) and not "hammer" in save.unlocked_ships \
-			and save.missions_done.size() >= 3:
-		save.unlocked_ships.append("hammer")
 	save.credits = int(save.credits) + int(stats.get("score", 0) / 10.0)
 	mark_save_dirty()
 	save_game()

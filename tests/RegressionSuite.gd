@@ -28,6 +28,7 @@ func _ready() -> void:
 	await get_tree().process_frame
 	_test_presets()
 	_test_settings_validation()
+	_test_background_music_playlist()
 	_test_save_validation()
 	_test_lead_solution()
 	_test_damage_model()
@@ -109,11 +110,28 @@ func _test_settings_validation() -> void:
 	_check(Game.settings.fps_limit == 0, "negative fps cap becomes uncapped")
 	_check(_near(Game.settings.vol_master, 0.0), "master volume clamps low")
 	_check(_near(Game.settings.vol_music, 1.0), "music volume clamps high")
+	_check(Game.settings.music_enabled, "music toggle defaults on when absent")
 	_check(not Game.settings.bindings.has("not_an_action"), "unknown input action removed")
 	_check(Game.settings.bindings.fire_primary.size() == 2, "malformed bindings removed")
 	_check(_near(Game.settings.bindings.fire_primary[1].v, -1.0), "axis direction normalized")
 	Game.settings = original
 	Game._normalize_settings()
+
+func _test_background_music_playlist() -> void:
+	var tracks := AudioMgr.background_music_tracks()
+	_check(tracks.size() == 6, "background playlist contains six supplied tracks")
+	var ids := {}
+	for track in tracks:
+		ids[track.id] = true
+		_check(str(track.path).ends_with(".mp3"), "playlist entry uses an MP3 asset")
+	_check(ids.size() == 6, "background playlist track ids are unique")
+	var previous_enabled := AudioMgr.music_enabled()
+	Game.settings.music_enabled = true
+	AudioMgr.play_random_music(0.01)
+	_check(AudioMgr.current_music_title() != "", "random playlist loads a playable track")
+	_check(AudioMgr.is_music_playing(), "random playlist starts its music player")
+	AudioMgr.stop_music(0.01)
+	Game.settings.music_enabled = previous_enabled
 
 func _test_save_validation() -> void:
 	var original := Game.save.duplicate(true)
@@ -124,7 +142,10 @@ func _test_save_validation() -> void:
 	}
 	Game._normalize_save()
 	_check(Game.save.selected_ship == "vanguard", "invalid selected ship repaired")
-	_check("vanguard" in Game.save.unlocked_ships, "Vanguard always unlocked")
+	_check(Game.save.unlocked_ships.size() == ShipDB.SHIPS.size(),
+		"save migration unlocks every flyable ship")
+	for ship_id in ShipDB.SHIPS:
+		_check(ship_id in Game.save.unlocked_ships, "%s is unlocked" % ship_id)
 	_check(Game.save.credits == 0, "negative credits repaired")
 	_check(Game.save.missions_done.is_empty(), "invalid mission records removed")
 	_check(Game.save.loadouts.is_empty(), "invalid loadouts removed")

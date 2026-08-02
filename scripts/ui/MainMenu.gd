@@ -63,7 +63,7 @@ func _ready() -> void:
 	SceneFlow.report(0.88, "TACTICAL INTERFACE", "Bringing flight-deck controls online")
 	_build_ui()
 	Game.settings_changed.connect(_on_settings_changed)
-	AudioMgr.play_music("menu")
+	AudioMgr.ensure_background_music()
 	# SpaceEnv's sky and named-galaxy bakes are frame-driven. Keep the corridor
 	# visible while those first render passes settle instead of revealing a sky
 	# that visibly pops into existence behind the menu.
@@ -172,6 +172,15 @@ func _build_ui() -> void:
 		left.add_child(b)
 		if first_button == null:
 			first_button = b
+	var music_toggle := Styles.button(_music_toggle_label(), 13, Styles.ORANGE)
+	music_toggle.toggle_mode = true
+	music_toggle.button_pressed = AudioMgr.music_enabled()
+	music_toggle.alignment = HORIZONTAL_ALIGNMENT_LEFT
+	music_toggle.tooltip_text = "Enable or disable the randomized six-track combat playlist."
+	music_toggle.toggled.connect(func(enabled: bool):
+		AudioMgr.set_music_enabled(enabled)
+		music_toggle.text = "MUSIC  •  ON" if enabled else "MUSIC  •  OFF")
+	left.add_child(music_toggle)
 	if not Game.save.training_done:
 		var hint := Styles.label("NEW PILOT?\nFlight Academy is under MISSIONS.", 12, Styles.CYAN, true)
 		hint.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
@@ -202,6 +211,9 @@ func _build_ui() -> void:
 		Color(Styles.ORANGE.r, Styles.ORANGE.g, Styles.ORANGE.b, 0.30)))
 	content.visible = false
 	root.add_child(content)
+
+func _music_toggle_label() -> String:
+	return "MUSIC  •  ON" if AudioMgr.music_enabled() else "MUSIC  •  OFF"
 
 func _clear_content() -> Control:
 	for c in content.get_children():
@@ -270,6 +282,8 @@ func _show_briefing(id: String) -> void:
 func _show_hangar() -> void:
 	var vb := _clear_content()
 	vb.add_child(Styles.label("HANGAR", 26, Styles.CYAN, true))
+	vb.add_child(Styles.label("FLEET ACCESS  //  ALL %d HULLS CLEARED" % ShipDB.SHIPS.size(),
+		12, Styles.GREEN, true))
 	var ships_row := HBoxContainer.new()
 	ships_row.add_theme_constant_override("separation", 6)
 	vb.add_child(ships_row)
@@ -418,8 +432,9 @@ Ships, stations & cockpit modelled procedurally in Blender
 Orbitron typeface — Matt McInerney — SIL Open Font Licence 1.1
 Exo 2 typeface — Natanael Gama — SIL Open Font Licence 1.1
 
-All sound effects and music are procedurally synthesised
-originals created for this game.
+Sound effects and the original loops are procedurally synthesised for this
+game. The optional background playlist contains six project-owner-supplied
+MP3s; see LICENSES.md for the redistribution note.
 
 Full licence texts: LICENSES.md inside the project folder.
 No assets were taken from any commercial game.
