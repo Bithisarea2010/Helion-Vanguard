@@ -4,7 +4,7 @@ extends Node
 signal settings_changed
 signal mission_ended(victory: bool, stats: Dictionary)
 
-const VERSION := "1.2.2"
+const VERSION := "1.2.3"
 const SETTINGS_PATH := "user://settings.cfg"
 const SAVE_PATH := "user://save.cfg"
 const MIN_RENDER_SCALE := 0.50
@@ -125,7 +125,7 @@ const PRESETS := [
 # ------------------------------------------------------------------ save data
 var save := {
 	"selected_ship": "vanguard",
-	"unlocked_ships": ["vanguard", "wasp"],
+	"unlocked_ships": ["wasp", "vanguard", "hammer", "raptor", "specter", "paladin"],
 	"credits": 0,
 	"missions_done": {},            # id -> best stats dict
 	"loadouts": {},                 # ship_id -> {primary, secondary, missile, paint, glow}
@@ -580,11 +580,9 @@ func _normalize_save() -> void:
 	var before := save.duplicate(true)
 	if not save.get("selected_ship", "") in ShipDB.SHIPS:
 		save.selected_ship = "vanguard"
-	if not save.get("unlocked_ships", []) is Array:
-		save.unlocked_ships = ["vanguard", "wasp"]
-	save.unlocked_ships = save.unlocked_ships.filter(func(id): return id in ShipDB.SHIPS)
-	if not "vanguard" in save.unlocked_ships:
-		save.unlocked_ships.append("vanguard")
+	# Every flyable hull is available immediately. Rebuilding this list from
+	# ShipDB also migrates old profiles and automatically includes future ships.
+	save.unlocked_ships = ShipDB.SHIPS.keys()
 	if not save.get("missions_done", {}) is Dictionary:
 		save.missions_done = {}
 	else:
@@ -631,25 +629,6 @@ func record_mission(id: String, stats: Dictionary) -> void:
 	var prev: Dictionary = save.missions_done.get(id, {})
 	if prev.is_empty() or int(stats.get("score", 0)) > int(prev.get("score", 0)):
 		save.missions_done[id] = stats
-	# unlock progression
-	if id == "main" and stats.get("victory", false):
-		for s in ["raptor", "hammer", "paladin"]:
-			if not s in save.unlocked_ships:
-				save.unlocked_ships.append(s)
-	if id == "instant_action" and stats.get("victory", false):
-		if not "raptor" in save.unlocked_ships:
-			save.unlocked_ships.append("raptor")
-	# the fleet action is where the new hulls are earned
-	if id == "fleet_action" and stats.get("victory", false):
-		for s in ["specter", "paladin"]:
-			if not s in save.unlocked_ships:
-				save.unlocked_ships.append(s)
-	if id == "capital_strike" and stats.get("victory", false):
-		if not "specter" in save.unlocked_ships:
-			save.unlocked_ships.append("specter")
-	if stats.get("victory", false) and not "hammer" in save.unlocked_ships \
-			and save.missions_done.size() >= 3:
-		save.unlocked_ships.append("hammer")
 	save.credits = int(save.credits) + int(stats.get("score", 0) / 10.0)
 	mark_save_dirty()
 	save_game()

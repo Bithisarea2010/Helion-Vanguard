@@ -1,8 +1,10 @@
 # Helion Vanguard — Licences and Attributions
 
 Helion Vanguard is an original game. All code, 3D models, missions, visual
-effects, music and sound effects were created specifically for this project.
-No assets were extracted from or copied from any commercial game.
+effects, original music loops and sound effects were created specifically for
+this project. The optional playlist consists of project-owner-supplied tracks
+documented below. No assets were extracted from or copied from any commercial
+game.
 
 ## Game code and original content
 

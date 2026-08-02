@@ -68,4 +68,5 @@ guns/missiles and pops flares through the actual input actions).
   songs during menu, mission and debrief flow.
 - Settings persist across launches (`user://settings.cfg` in
   `~/Library/Application Support/HelionVanguard/`).
-- Save/progression: mission best scores, ship unlocks, per-ship loadouts.
+- Save/progression: mission best scores and per-ship loadouts; all six flyable
+  ships are unlocked immediately for both new and existing profiles.

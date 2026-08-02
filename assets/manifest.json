@@ -1,7 +1,7 @@
 {
   "project": "Helion Vanguard",
-  "version": "1.2.1",
-  "generated": "2026-07-11",
+  "version": "1.2.3",
+  "generated": "2026-08-03",
   "assets": [
     {
       "name": "Aerial Rocks 02",
@@ -58,7 +58,7 @@
       ]
     },
     {
-      "name": "Sound effects and music",
+      "name": "Sound effects and original music loops",
       "type": "audio",
       "author": "Original Games (procedural synthesis, this project)",
       "source": "tools/gen_audio.py",
@@ -66,6 +66,21 @@
       "files": [
         "assets/audio/sfx/*.wav",
         "assets/audio/music/*.wav"
+      ]
+    },
+    {
+      "name": "Optional randomized background playlist",
+      "type": "audio",
+      "author": "Project-owner-supplied tracks",
+      "source": "Files supplied directly by the project owner",
+      "license": "Public redistribution and attribution rights require project-owner confirmation",
+      "files": [
+        "assets/audio/music/Warp Speed Rush.mp3",
+        "assets/audio/music/Neon Dogfight.mp3",
+        "assets/audio/music/Orbit Assassin.mp3",
+        "assets/audio/music/Hyperdrive Conflict.mp3",
+        "assets/audio/music/Frontier Combat Drive.mp3",
+        "assets/audio/music/Stellar Vanguard.mp3"
       ]
     },
     {

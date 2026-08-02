@@ -282,6 +282,8 @@ func _show_briefing(id: String) -> void:
 func _show_hangar() -> void:
 	var vb := _clear_content()
 	vb.add_child(Styles.label("HANGAR", 26, Styles.CYAN, true))
+	vb.add_child(Styles.label("FLEET ACCESS  //  ALL %d HULLS CLEARED" % ShipDB.SHIPS.size(),
+		12, Styles.GREEN, true))
 	var ships_row := HBoxContainer.new()
 	ships_row.add_theme_constant_override("separation", 6)
 	vb.add_child(ships_row)

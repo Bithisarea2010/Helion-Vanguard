@@ -142,7 +142,10 @@ func _test_save_validation() -> void:
 	}
 	Game._normalize_save()
 	_check(Game.save.selected_ship == "vanguard", "invalid selected ship repaired")
-	_check("vanguard" in Game.save.unlocked_ships, "Vanguard always unlocked")
+	_check(Game.save.unlocked_ships.size() == ShipDB.SHIPS.size(),
+		"save migration unlocks every flyable ship")
+	for ship_id in ShipDB.SHIPS:
+		_check(ship_id in Game.save.unlocked_ships, "%s is unlocked" % ship_id)
 	_check(Game.save.credits == 0, "negative credits repaired")
 	_check(Game.save.missions_done.is_empty(), "invalid mission records removed")
 	_check(Game.save.loadouts.is_empty(), "invalid loadouts removed")
