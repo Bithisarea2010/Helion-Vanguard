@@ -20,6 +20,7 @@ var shield_regen := 5.0
 var shield_delay := 4.0             # seconds after hit before regen
 var _shield_cd := 0.0
 var alive := true
+var targetable := true # burning death spirals remain alive for their final animation
 var score_value := 100
 var display_name := "Contact"
 var radar_size := 1.0               # HUD blip scale

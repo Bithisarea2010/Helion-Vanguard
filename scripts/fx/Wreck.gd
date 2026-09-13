@@ -82,9 +82,13 @@ static func spawn(battle: Node, model: Node3D, xform: Transform3D,
 	w._lamp.shadow_enabled = false
 	w.add_child(w._lamp)
 	# secondary pop shortly after death
+	var wreck_id := w.get_instance_id()
+	var battle_id := battle.get_instance_id()
 	battle.get_tree().create_timer(randf_range(0.7, 2.2)).timeout.connect(func():
-		if is_instance_valid(w):
-			FX.explosion(battle, w.global_position, 0))
+		var live_wreck := instance_from_id(wreck_id) as Node3D
+		var live_battle := instance_from_id(battle_id) as Node
+		if is_instance_valid(live_wreck) and is_instance_valid(live_battle):
+			FX.explosion(live_battle, live_wreck.global_position, 0))
 	return w
 
 static func _model_bounds(root: Node3D) -> AABB:

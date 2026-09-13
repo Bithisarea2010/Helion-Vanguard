@@ -1,0 +1,8 @@
+[gd_scene format=3]
+
+[ext_resource type="Script" path="res://tests/QualityProbe.gd" id="1_ul01u"]
+
+[node name="QualityProbe" type="Node" unique_id=513310684]
+
+[node name="Runner" type="Node" parent="." unique_id=1554105519]
+script = ExtResource("1_ul01u")

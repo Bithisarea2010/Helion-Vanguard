@@ -1,0 +1,38 @@
+Godot Engine v4.7.2.stable.official.ed1daf0bf - https://godotengine.org
+Metal 4.0 - Forward+ - Using Device #0: Apple - Apple M1 (Apple7)
+
+[MCPRuntimeServer] port: scanning 6570-6585 (default)
+[MCPRuntimeServer] listening on 127.0.0.1:6570
+[MCPRegistry] runtime port 6570 registered for /users/bokkonboldiszar/desktop/codex workspace/05_shared_projects/games/helionvanguard
+2026-09-13 13:26:18.772 Godot[33604:520719] [libMTLHud] Metric com.apple.hud-stat.frame-interval already exist
+2026-09-13 13:26:18.772 Godot[33604:520719] [libMTLHud] Metric com.apple.hud-stat.present-delay already exist
+2026-09-13 13:26:18.772 Godot[33604:520719] [libMTLHud] Metric com.apple.hud-stat.fps already exist
+2026-09-13 13:26:18.772 Godot[33604:520719] [libMTLHud] Metric com.apple.hud-stat.logical-fps already exist
+2026-09-13 13:26:18.772 Godot[33604:520719] [libMTLHud] Metric com.apple.hud-stat.logical-frame-interval already exist
+2026-09-13 13:26:18.802 Godot[33604:520719] NSEventModifierFlagFunction specified to -setKeyEquivalentModifierMask: for item <NSMenuItem: 0x874d65b80 Enable HUD, ke='Command-F9', action: toggleEnabled:>, but is only supported for system-provided menu items; will not be used
+2026-09-13 13:26:18.802 Godot[33604:520719] NSEventModifierFlagFunction specified to -setKeyEquivalentModifierMask: for item <NSMenuItem: 0x874d65ea0 Enable Logging, ke='Command-F8', action: toggleLoggingEnabled:>, but is only supported for system-provided menu items; will not be used
+2026-09-13 13:26:18.802 Godot[33604:520719] NSEventModifierFlagFunction specified to -setKeyEquivalentModifierMask: for item <NSMenuItem: 0x874d669e0 Reset Metrics, ke='Command-F11', action: resetMetrics:>, but is only supported for system-provided menu items; will not be used
+2026-09-13 13:26:18.802 Godot[33604:520719] NSEventModifierFlagFunction specified to -setKeyEquivalentModifierMask: for item <NSMenuItem: 0x874d66c60 Show Configuration Panel, ke='Command-F12', action: showConfigurationPanel:>, but is only supported for system-provided menu items; will not be used
+2026-09-13 13:26:18.802 Godot[33604:520719] NSEventModifierFlagFunction specified to -setKeyEquivalentModifierMask: for item <NSMenuItem: 0x874d66da0 Copy HUD Configuration, action: copyConfig:>, but is only supported for system-provided menu items; will not be used
+[RUN] window=(1280, 720) viewport=(1920.0, 1080.0) render_scale=0.85 preset=Ultra
+[BENCH] t=1.0 fps=145.4 p95=9.39ms worst=13.47ms cpu=12.41ms phys=0.58ms acc=0.000 fcs=0.850 shots=0 assist=0.68 hostiles=3 stage=0 objects=1010 prims=95835 drawcalls=243 vram=363.5MB nodes=370
+[BENCH] t=1.4 fps=11.4 p95=228.50ms worst=2295.68ms cpu=12.41ms phys=0.58ms acc=0.000 fcs=0.850 shots=0 assist=0.68 hostiles=3 stage=0 objects=1039 prims=99103 drawcalls=270 vram=363.5MB nodes=393
+[BENCH] t=2.4 fps=146.6 p95=8.35ms worst=28.75ms cpu=28.08ms phys=1.89ms acc=0.000 fcs=0.000 shots=12 assist=1.00 hostiles=3 stage=0 objects=1055 prims=93895 drawcalls=258 vram=363.6MB nodes=389
+[BENCH] t=2.9 fps=47.6 p95=13.63ms worst=704.42ms cpu=12.73ms phys=0.89ms acc=0.200 fcs=0.150 shots=15 assist=1.00 hostiles=3 stage=0 objects=1089 prims=95941 drawcalls=256 vram=363.6MB nodes=396
+[BENCH] t=3.9 fps=141.5 p95=8.36ms worst=16.31ms cpu=702.34ms phys=7.46ms acc=0.500 fcs=0.530 shots=26 assist=1.00 hostiles=3 stage=0 objects=1051 prims=97385 drawcalls=251 vram=363.6MB nodes=396
+[BENCH] t=4.9 fps=140.4 p95=9.23ms worst=16.79ms cpu=9.39ms phys=8.27ms acc=0.861 fcs=1.000 shots=36 assist=1.00 hostiles=3 stage=0 objects=1071 prims=82921 drawcalls=252 vram=363.7MB nodes=407
+[BENCH] t=5.3 fps=42.8 p95=11.97ms worst=696.23ms cpu=12.44ms phys=1.84ms acc=0.821 fcs=0.925 shots=39 assist=0.93 hostiles=2 stage=0 objects=1024 prims=88233 drawcalls=257 vram=364.1MB nodes=430
+[BENCH] t=6.2 fps=41.0 p95=9.14ms worst=1788.73ms cpu=694.35ms phys=14.61ms acc=0.864 fcs=0.826 shots=44 assist=0.86 hostiles=1 stage=0 objects=1081 prims=86935 drawcalls=271 vram=364.2MB nodes=447
+[BENCH] t=6.9 fps=85.0 p95=7.99ms worst=451.75ms cpu=11.99ms phys=0.96ms acc=0.912 fcs=0.920 shots=57 assist=0.92 hostiles=1 stage=0 objects=1056 prims=86361 drawcalls=238 vram=364.2MB nodes=435
+[BENCH] t=7.9 fps=162.1 p95=7.62ms worst=9.53ms cpu=8.01ms phys=1.38ms acc=0.983 fcs=1.000 shots=58 assist=0.90 hostiles=1 stage=0 objects=906 prims=74529 drawcalls=187 vram=364.2MB nodes=454
+[BENCH] t=8.9 fps=181.0 p95=8.69ms worst=16.52ms cpu=16.03ms phys=7.85ms acc=0.983 fcs=1.000 shots=58 assist=0.90 hostiles=1 stage=0 objects=872 prims=84913 drawcalls=153 vram=364.2MB nodes=456
+[BENCH] t=9.9 fps=181.3 p95=7.06ms worst=31.44ms cpu=13.19ms phys=0.89ms acc=0.926 fcs=0.904 shots=68 assist=0.81 hostiles=4 stage=1 objects=900 prims=70641 drawcalls=181 vram=365.6MB nodes=535
+[BENCH] t=10.9 fps=176.7 p95=6.98ms worst=8.11ms cpu=15.48ms phys=9.07ms acc=0.926 fcs=0.904 shots=68 assist=0.81 hostiles=4 stage=1 objects=860 prims=77329 drawcalls=197 vram=365.6MB nodes=522
+[BENCH] t=11.9 fps=176.3 p95=7.05ms worst=14.92ms cpu=14.34ms phys=0.76ms acc=0.956 fcs=0.963 shots=68 assist=0.81 hostiles=4 stage=1 objects=1041 prims=74103 drawcalls=182 vram=365.6MB nodes=511
+[BENCH] t=12.9 fps=176.9 p95=6.70ms worst=14.86ms cpu=9.18ms phys=0.87ms acc=0.956 fcs=0.963 shots=68 assist=0.81 hostiles=4 stage=1 objects=1006 prims=93629 drawcalls=212 vram=365.6MB nodes=498
+[BENCH] t=13.9 fps=180.8 p95=7.80ms worst=11.50ms cpu=14.39ms phys=0.64ms acc=0.956 fcs=0.963 shots=68 assist=0.81 hostiles=4 stage=1 objects=1011 prims=77317 drawcalls=229 vram=365.6MB nodes=491
+[BENCH] t=14.9 fps=162.6 p95=7.48ms worst=8.47ms cpu=8.17ms phys=0.68ms acc=0.956 fcs=0.963 shots=68 assist=0.81 hostiles=4 stage=1 objects=1106 prims=93363 drawcalls=320 vram=365.6MB nodes=486
+[BENCH] t=15.9 fps=152.9 p95=7.80ms worst=10.10ms cpu=9.60ms phys=0.70ms acc=0.956 fcs=0.963 shots=68 assist=0.81 hostiles=4 stage=1 objects=1126 prims=97421 drawcalls=328 vram=365.6MB nodes=476
+[BENCH] t=16.9 fps=153.6 p95=7.68ms worst=11.06ms cpu=10.60ms phys=0.68ms acc=0.956 fcs=0.963 shots=68 assist=0.81 hostiles=4 stage=1 objects=1031 prims=97751 drawcalls=307 vram=365.6MB nodes=471
+[BENCH] t=17.9 fps=151.8 p95=7.89ms worst=8.76ms cpu=8.35ms phys=1.86ms acc=0.903 fcs=0.856 shots=72 assist=0.75 hostiles=4 stage=1 objects=1049 prims=98353 drawcalls=313 vram=365.6MB nodes=490
+[BENCH] harness complete, shots=0

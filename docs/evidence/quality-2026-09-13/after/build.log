@@ -1,0 +1,365 @@
+Godot Engine v4.7.2.stable.official.ed1daf0bf - https://godotengine.org
+
+[   0% ] [90m[1mfirst_scan_filesystem[22m | Started Project initialization (5 steps)[39m[0m
+[   0% ] [90m[1mfirst_scan_filesystem[22m | Fájlstruktúra vizsgálata...[39m[0m
+[  16% ] [90m[1mfirst_scan_filesystem[22m | Loading global class names...[39m[0m
+[  33% ] [90m[1mfirst_scan_filesystem[22m | GDExtension-ök ellenőrzése...[39m[0m
+[  50% ] [90m[1mfirst_scan_filesystem[22m | Creating autoload scripts...[39m[0m
+[  66% ] [90m[1mfirst_scan_filesystem[22m | Bővítmény beállítása...[39m[0m
+Godot MCP Toolkit v1.0.0 — by NPGameDev · npgamedev.com
+[MCPExtensions] Hot-reload watcher active
+[MCPServer] port: scanning 6550-6560 (default)
+[MCPServer] session token written to user://addons/godot_mcp_toolkit/project_instance_f5b72c286c69/mcp_token
+[MCPServer] listening on 127.0.0.1:6550
+[  83% ] [90m[1mfirst_scan_filesystem[22m | Starting file scan...[39m[0m
+[92m[ DONE ][39m [1mfirst_scan_filesystem[22m
+[0m
+[   0% ] [90m[1msavepack[22m | Started Csomagolás (102 steps)[39m[0m
+[   1% ] [90m[1msavepack[22m | Storing File: res://.godot/imported/ship_hammer.glb-f511eb032ccffd67e7e98dcfa6538164.scn[39m[0m
+[   1% ] [90m[1msavepack[22m | Storing File: res://assets/models/ship_hammer.glb.import[39m[0m
+[   1% ] [90m[1msavepack[22m | Storing File: res://.godot/imported/enemy_razor.glb-f57bf7043d8008a2bc9b68d7be613f5a.scn[39m[0m
+[   1% ] [90m[1msavepack[22m | Storing File: res://assets/models/enemy_razor.glb.import[39m[0m
+[   2% ] [90m[1msavepack[22m | Storing File: res://.godot/imported/ship_aegis.glb-4ff546a81490b3a257fcafc1cad63b15.scn[39m[0m
+[   2% ] [90m[1msavepack[22m | Storing File: res://assets/models/ship_aegis.glb.import[39m[0m
+[   2% ] [90m[1msavepack[22m | Storing File: res://.godot/imported/helion_relay.glb-4f29f1d710edd64da02ed28bf7f1324f.scn[39m[0m
+[   2% ] [90m[1msavepack[22m | Storing File: res://assets/models/helion_relay.glb.import[39m[0m
+[   3% ] [90m[1msavepack[22m | Storing File: res://.godot/imported/enemy_widow.glb-5da389c053b53c099cbae8feb5bff84b.scn[39m[0m
+[   3% ] [90m[1msavepack[22m | Storing File: res://assets/models/enemy_widow.glb.import[39m[0m
+[   3% ] [90m[1msavepack[22m | Storing File: res://.godot/imported/ship_wasp.glb-e4288a5582a661e26c3e121b1d1c985a.scn[39m[0m
+[   3% ] [90m[1msavepack[22m | Storing File: res://assets/models/ship_wasp.glb.import[39m[0m
+[   4% ] [90m[1msavepack[22m | Storing File: res://.godot/imported/ship_vanguard_mk3.glb-3c67f9a0e16fa546b8b2ced7bbb693a5.scn[39m[0m
+[   4% ] [90m[1msavepack[22m | Storing File: res://assets/models/ship_vanguard_mk3.glb.import[39m[0m
+[   4% ] [90m[1msavepack[22m | Storing File: res://.godot/imported/ship_specter.glb-c4b40908283e60e97d4c2b76e4f1655f.scn[39m[0m
+[   4% ] [90m[1msavepack[22m | Storing File: res://assets/models/ship_specter.glb.import[39m[0m
+[   5% ] [90m[1msavepack[22m | Storing File: res://.godot/imported/ship_paladin.glb-1f3d716c3d6fa036a3218a28af09b56b.scn[39m[0m
+[   5% ] [90m[1msavepack[22m | Storing File: res://assets/models/ship_paladin.glb.import[39m[0m
+[   6% ] [90m[1msavepack[22m | Storing File: res://.godot/imported/ship_raptor.glb-9009fb8af3f74b47906f4e3ad2a0d25f.scn[39m[0m
+[   6% ] [90m[1msavepack[22m | Storing File: res://assets/models/ship_raptor.glb.import[39m[0m
+[   6% ] [90m[1msavepack[22m | Storing File: res://.godot/imported/ship_vanguard.glb-4a16a429de84a51215051f7d01bc8b8b.scn[39m[0m
+[   6% ] [90m[1msavepack[22m | Storing File: res://assets/models/ship_vanguard.glb.import[39m[0m
+[   7% ] [90m[1msavepack[22m | Storing File: res://.godot/imported/ship_peregrine.glb-76004257a9da626004cdc169d5789553.scn[39m[0m
+[   7% ] [90m[1msavepack[22m | Storing File: res://assets/models/ship_peregrine.glb.import[39m[0m
+[   7% ] [90m[1msavepack[22m | Storing File: res://scripts/environment/AsteroidBody.gdc[39m[0m
+[   8% ] [90m[1msavepack[22m | Storing File: res://scripts/environment/AsteroidField.gdc[39m[0m
+[   8% ] [90m[1msavepack[22m | Storing File: res://scripts/core/Combatant.gdc[39m[0m
+[   9% ] [90m[1msavepack[22m | Storing File: res://.godot/imported/asteroid_0_tmpqvanih9z.png-26ce335b5cad628c8bb5e0044f801ec4.s3tc.ctex[39m[0m
+[   9% ] [90m[1msavepack[22m | Storing File: res://assets/models/asteroid_0_tmpqvanih9z.png.import[39m[0m
+[  10% ] [90m[1msavepack[22m | Storing File: res://scripts/fx/Wreck.gdc[39m[0m
+[  10% ] [90m[1msavepack[22m | Storing File: res://scripts/environment/SpaceEnv.gdc[39m[0m
+[  11% ] [90m[1msavepack[22m | Storing File: res://scripts/fx/EngineTrail.gdc[39m[0m
+[  11% ] [90m[1msavepack[22m | Storing File: res://scripts/core/Subsystem.gdc[39m[0m
+[  12% ] [90m[1msavepack[22m | Storing File: res://scripts/core/AudioMgr.gdc[39m[0m
+[  12% ] [90m[1msavepack[22m | Storing File: res://scripts/core/SceneFlow.gdc[39m[0m
+[  13% ] [90m[1msavepack[22m | Storing File: res://.godot/imported/asteroid_albedo.png-371c0470d88b7d4b3b2f5c21d035703f.s3tc.ctex[39m[0m
+[  13% ] [90m[1msavepack[22m | Storing File: res://assets/textures/asteroid_albedo.png.import[39m[0m
+[  13% ] [90m[1msavepack[22m | Storing File: res://.godot/imported/asteroid_1_asteroid_albedo.png-b7ae361d174a09d91055d1c5a3b9a34f.s3tc.ctex[39m[0m
+[  13% ] [90m[1msavepack[22m | Storing File: res://assets/models/asteroid_1_asteroid_albedo.png.import[39m[0m
+[  14% ] [90m[1msavepack[22m | Storing File: res://.godot/exported/133200997/export-102cd3dba65fd0ae3d53c527c8b2ae68-Boot.scn[39m[0m
+[  15% ] [90m[1msavepack[22m | Storing File: res://scripts/environment/NavigationRelay.gdc[39m[0m
+[  15% ] [90m[1msavepack[22m | Storing File: res://scripts/fx/ShieldBubble.gdc[39m[0m
+[  16% ] [90m[1msavepack[22m | Storing File: res://assets/manifest.json[39m[0m
+[  16% ] [90m[1msavepack[22m | Storing File: res://scripts/missions/Battle.gdc[39m[0m
+[  17% ] [90m[1msavepack[22m | Storing File: res://scripts/environment/DeepSky.gdc[39m[0m
+[  17% ] [90m[1msavepack[22m | Storing File: res://.godot/imported/turret.glb-68c4d6f6f8c326245ca301f7628d4374.scn[39m[0m
+[  17% ] [90m[1msavepack[22m | Storing File: res://assets/models/turret.glb.import[39m[0m
+[  18% ] [90m[1msavepack[22m | Storing File: res://scripts/fx/SpaceDust.gdc[39m[0m
+[  19% ] [90m[1msavepack[22m | Storing File: res://scripts/core/Boot.gdc[39m[0m
+[  19% ] [90m[1msavepack[22m | Storing File: res://scripts/core/Game.gdc[39m[0m
+[  20% ] [90m[1msavepack[22m | Storing File: res://.godot/exported/133200997/export-0a8f00b69e52c00a35e6d2d8ccf8f5fa-Battle.scn[39m[0m
+[  20% ] [90m[1msavepack[22m | Storing File: res://scripts/core/ShipDB.gdc[39m[0m
+[  21% ] [90m[1msavepack[22m | Storing File: res://.godot/imported/asteroid_1.glb-332922c129bd84c4d7323e335f49bb76.scn[39m[0m
+[  21% ] [90m[1msavepack[22m | Storing File: res://assets/models/asteroid_1.glb.import[39m[0m
+[  21% ] [90m[1msavepack[22m | Storing File: res://.godot/exported/133200997/export-23c8b2a48d59a0cd018bd8ad5ce7794c-MainMenu.scn[39m[0m
+[  22% ] [90m[1msavepack[22m | Storing File: res://scripts/fx/ExhaustPlume.gdc[39m[0m
+[  23% ] [90m[1msavepack[22m | Storing File: res://scripts/fx/HullMaterial.gdc[39m[0m
+[  23% ] [90m[1msavepack[22m | Storing File: res://scripts/fx/FX.gdc[39m[0m
+[  24% ] [90m[1msavepack[22m | Storing File: res://assets/loading/combat_reel.ogv[39m[0m
+[  24% ] [90m[1msavepack[22m | Storing File: res://.godot/imported/ui_deny.wav-30a1016266b76e8ed8c32c234a4cc1dd.sample[39m[0m
+[  24% ] [90m[1msavepack[22m | Storing File: res://assets/audio/sfx/ui_deny.wav.import[39m[0m
+[  25% ] [90m[1msavepack[22m | Storing File: res://.godot/imported/icon.png-816117353ba57afc3af521f78eedcc3c.ctex[39m[0m
+[  25% ] [90m[1msavepack[22m | Storing File: res://assets/icons/icon.png.import[39m[0m
+[  25% ] [90m[1msavepack[22m | Storing File: res://.godot/imported/Exo2.ttf-5f077b4fa4b905bdcd216d29c2686110.fontdata[39m[0m
+[  25% ] [90m[1msavepack[22m | Storing File: res://assets/fonts/Exo2.ttf.import[39m[0m
+[  26% ] [90m[1msavepack[22m | Storing File: res://assets/icons/icon.icns[39m[0m
+[  26% ] [90m[1msavepack[22m | Storing File: res://.godot/imported/Orbitron.ttf-4aa5bef4a915ff1c3ef70d74e72864ce.fontdata[39m[0m
+[  26% ] [90m[1msavepack[22m | Storing File: res://assets/fonts/Orbitron.ttf.import[39m[0m
+[  27% ] [90m[1msavepack[22m | Storing File: res://.godot/imported/ui_target.wav-59055a965258c742f85e9265cabc57bb.sample[39m[0m
+[  27% ] [90m[1msavepack[22m | Storing File: res://assets/audio/sfx/ui_target.wav.import[39m[0m
+[  28% ] [90m[1msavepack[22m | Storing File: res://.godot/imported/ui_hover.wav-eacb3655c6edd16c309106c266f283e3.sample[39m[0m
+[  28% ] [90m[1msavepack[22m | Storing File: res://assets/audio/sfx/ui_hover.wav.import[39m[0m
+[  28% ] [90m[1msavepack[22m | Storing File: res://.godot/imported/ui_ready.wav-49994dddcae6166e90464aeaa97234cb.sample[39m[0m
+[  28% ] [90m[1msavepack[22m | Storing File: res://assets/audio/sfx/ui_ready.wav.import[39m[0m
+[  29% ] [90m[1msavepack[22m | Storing File: res://shaders/space_dust.gdshader[39m[0m
+[  29% ] [90m[1msavepack[22m | Storing File: res://shaders/tracer.gdshader[39m[0m
+[  30% ] [90m[1msavepack[22m | Storing File: res://shaders/shield.gdshader[39m[0m
+[  30% ] [90m[1msavepack[22m | Storing File: res://shaders/planet.gdshader[39m[0m
+[  31% ] [90m[1msavepack[22m | Storing File: res://shaders/sky_bake.gdshader[39m[0m
+[  32% ] [90m[1msavepack[22m | Storing File: res://shaders/hull.gdshader[39m[0m
+[  32% ] [90m[1msavepack[22m | Storing File: res://shaders/space_sky.gdshader[39m[0m
+[  33% ] [90m[1msavepack[22m | Storing File: res://shaders/rings.gdshader[39m[0m
+[  33% ] [90m[1msavepack[22m | Storing File: res://shaders/smoke.gdshader[39m[0m
+[  33% ] [90m[1msavepack[22m | Storing File: res://shaders/spark.gdshader[39m[0m
+[  33% ] [90m[1msavepack[22m | Storing File: res://shaders/warp_tunnel.gdshader[39m[0m
+[  34% ] [90m[1msavepack[22m | Storing File: res://shaders/heat_haze.gdshader[39m[0m
+[  35% ] [90m[1msavepack[22m | Storing File: res://.godot/imported/helion_leviathan.png-bbe4e6d8c18fde7ba168e05d9058a909.ctex[39m[0m
+[  35% ] [90m[1msavepack[22m | Storing File: res://assets/loading/helion_leviathan.png.import[39m[0m
+[  35% ] [90m[1msavepack[22m | Storing File: res://scripts/ships/PlayerShip.gdc[39m[0m
+[  36% ] [90m[1msavepack[22m | Storing File: res://scripts/ui/LoadingProgress.gdc[39m[0m
+[  36% ] [90m[1msavepack[22m | Storing File: res://scripts/ui/HUD.gdc[39m[0m
+[  37% ] [90m[1msavepack[22m | Storing File: res://scripts/ships/Turret.gdc[39m[0m
+[  37% ] [90m[1msavepack[22m | Storing File: res://scripts/ui/Styles.gdc[39m[0m
+[  38% ] [90m[1msavepack[22m | Storing File: res://scripts/ui/MainMenu.gdc[39m[0m
+[  38% ] [90m[1msavepack[22m | Storing File: res://scripts/ui/SettingsPanel.gdc[39m[0m
+[  39% ] [90m[1msavepack[22m | Storing File: res://.godot/imported/capital_leviathan.glb-280cb92ce437234b1c1dce5ad2b9bf47.scn[39m[0m
+[  39% ] [90m[1msavepack[22m | Storing File: res://assets/models/capital_leviathan.glb.import[39m[0m
+[  40% ] [90m[1msavepack[22m | Storing File: res://.godot/imported/capital_kraken.glb-f3b0a39377799a947424c8a518d62325.scn[39m[0m
+[  40% ] [90m[1msavepack[22m | Storing File: res://assets/models/capital_kraken.glb.import[39m[0m
+[  40% ] [90m[1msavepack[22m | Storing File: res://scripts/weapons/TargetingComputer.gdc[39m[0m
+[  41% ] [90m[1msavepack[22m | Storing File: res://scripts/weapons/Missile.gdc[39m[0m
+[  41% ] [90m[1msavepack[22m | Storing File: res://scripts/weapons/Projectiles.gdc[39m[0m
+[  42% ] [90m[1msavepack[22m | Storing File: res://scripts/weapons/Flare.gdc[39m[0m
+[  42% ] [90m[1msavepack[22m | Storing File: res://scripts/ships/EnemyShip.gdc[39m[0m
+[  43% ] [90m[1msavepack[22m | Storing File: res://scripts/ships/CameraRig.gdc[39m[0m
+[  44% ] [90m[1msavepack[22m | Storing File: res://scripts/ships/CapitalShip.gdc[39m[0m
+[  44% ] [90m[1msavepack[22m | Storing File: res://scripts/missions/MissionDefs.gdc[39m[0m
+[  45% ] [90m[1msavepack[22m | Storing File: res://scripts/ships/FTLDrive.gdc[39m[0m
+[  45% ] [90m[1msavepack[22m | Storing File: res://scripts/weapons/WeaponSystem.gdc[39m[0m
+[  46% ] [90m[1msavepack[22m | Storing File: res://shaders/asteroid.gdshader[39m[0m
+[  46% ] [90m[1msavepack[22m | Storing File: res://.godot/imported/cockpit.glb-7d3f23da30aff79486d797c6f0cf8b2f.scn[39m[0m
+[  46% ] [90m[1msavepack[22m | Storing File: res://assets/models/cockpit.glb.import[39m[0m
+[  47% ] [90m[1msavepack[22m | Storing File: res://.godot/imported/cockpit_tmpm0u6tlz6.jpg-059fc80cb60467b5838a3ce30ae8f8fe.s3tc.ctex[39m[0m
+[  47% ] [90m[1msavepack[22m | Storing File: res://assets/models/cockpit_tmpm0u6tlz6.jpg.import[39m[0m
+[  48% ] [90m[1msavepack[22m | Storing File: res://.godot/imported/cockpit_tmp3f9r6t47.png-ad1ec99aa3c27a14d9fcc2a2a57fec5f.s3tc.ctex[39m[0m
+[  48% ] [90m[1msavepack[22m | Storing File: res://assets/models/cockpit_tmp3f9r6t47.png.import[39m[0m
+[  48% ] [90m[1msavepack[22m | Storing File: res://.godot/imported/enemy_jackal.glb-f34748e0975f430d638c99df489dd1bc.scn[39m[0m
+[  48% ] [90m[1msavepack[22m | Storing File: res://assets/models/enemy_jackal.glb.import[39m[0m
+[  49% ] [90m[1msavepack[22m | Storing File: res://.godot/imported/enemy_mauler.glb-b46b0be8a8e3df6258ca02e3b6182aad.scn[39m[0m
+[  49% ] [90m[1msavepack[22m | Storing File: res://assets/models/enemy_mauler.glb.import[39m[0m
+[  49% ] [90m[1msavepack[22m | Storing File: res://shaders/galaxy_bake.gdshader[39m[0m
+[  50% ] [90m[1msavepack[22m | Storing File: res://shaders/fireball.gdshader[39m[0m
+[  50% ] [90m[1msavepack[22m | Storing File: res://shaders/galaxy_card.gdshader[39m[0m
+[  51% ] [90m[1msavepack[22m | Storing File: res://shaders/canopy.gdshader[39m[0m
+[  51% ] [90m[1msavepack[22m | Storing File: res://shaders/exhaust.gdshader[39m[0m
+[  52% ] [90m[1msavepack[22m | Storing File: res://.godot/imported/helion_plate_leviathan.jpg-69b395cce78084bbfe2109afbe2e98ef.ctex[39m[0m
+[  52% ] [90m[1msavepack[22m | Storing File: res://assets/loading/helion_plate_leviathan.jpg.import[39m[0m
+[  53% ] [90m[1msavepack[22m | Storing File: res://.godot/imported/helion_corridor.png-4981b5256d78ca07d544928c052d3a9c.ctex[39m[0m
+[  53% ] [90m[1msavepack[22m | Storing File: res://assets/loading/helion_corridor.png.import[39m[0m
+[  53% ] [90m[1msavepack[22m | Storing File: res://.godot/imported/helion_hangar.png-e44e474ad4d5cb387f3e313fbaf31517.ctex[39m[0m
+[  53% ] [90m[1msavepack[22m | Storing File: res://assets/loading/helion_hangar.png.import[39m[0m
+[  54% ] [90m[1msavepack[22m | Storing File: res://.godot/imported/asteroid_0_asteroid_albedo.png-d912a5baf0fb75fb8415e4fcd6166aa7.s3tc.ctex[39m[0m
+[  54% ] [90m[1msavepack[22m | Storing File: res://assets/models/asteroid_0_asteroid_albedo.png.import[39m[0m
+[  54% ] [90m[1msavepack[22m | Storing File: res://.godot/imported/helion_plate_sovereign.jpg-a2b30bce9deebf6303cc1a9d3222329f.ctex[39m[0m
+[  54% ] [90m[1msavepack[22m | Storing File: res://assets/loading/helion_plate_sovereign.jpg.import[39m[0m
+[  55% ] [90m[1msavepack[22m | Storing File: res://.godot/imported/ui_click.wav-54748830a592cc10bdad7a9be0146cc6.sample[39m[0m
+[  55% ] [90m[1msavepack[22m | Storing File: res://assets/audio/sfx/ui_click.wav.import[39m[0m
+[  55% ] [90m[1msavepack[22m | Storing File: res://.godot/imported/helion_plate_paladin.jpg-f3efbab7fed9f11bb397f2a0e21d7c08.ctex[39m[0m
+[  55% ] [90m[1msavepack[22m | Storing File: res://assets/loading/helion_plate_paladin.jpg.import[39m[0m
+[  56% ] [90m[1msavepack[22m | Storing File: res://.godot/imported/asteroid_0.glb-5b7e290749bc3c070207458c05c91ee6.scn[39m[0m
+[  56% ] [90m[1msavepack[22m | Storing File: res://assets/models/asteroid_0.glb.import[39m[0m
+[  57% ] [90m[1msavepack[22m | Storing File: res://.godot/imported/thruster.wav-6203c1d915967edc17e6f030c4349880.sample[39m[0m
+[  57% ] [90m[1msavepack[22m | Storing File: res://assets/audio/sfx/thruster.wav.import[39m[0m
+[  57% ] [90m[1msavepack[22m | Storing File: res://.godot/imported/singularity.wav-e9986e659073b3ceadc1b21ab2e4fae2.sample[39m[0m
+[  57% ] [90m[1msavepack[22m | Storing File: res://assets/audio/sfx/singularity.wav.import[39m[0m
+[  58% ] [90m[1msavepack[22m | Storing File: res://.godot/imported/radar_ping.wav-ec2be8ff11e12a8257160974d64e6eef.sample[39m[0m
+[  58% ] [90m[1msavepack[22m | Storing File: res://assets/audio/sfx/radar_ping.wav.import[39m[0m
+[  58% ] [90m[1msavepack[22m | Storing File: res://.godot/imported/repeater.wav-dcd2dd122c3677c7d7610fd1251963d6.sample[39m[0m
+[  58% ] [90m[1msavepack[22m | Storing File: res://assets/audio/sfx/repeater.wav.import[39m[0m
+[  59% ] [90m[1msavepack[22m | Storing File: res://.godot/imported/radio.wav-cb3ebe14533eb7af49a1ba7b5f7e70aa.sample[39m[0m
+[  59% ] [90m[1msavepack[22m | Storing File: res://assets/audio/sfx/radio.wav.import[39m[0m
+[  59% ] [90m[1msavepack[22m | Storing File: res://.godot/imported/plasma.wav-bf767dabd21956071717f2a63c481d85.sample[39m[0m
+[  59% ] [90m[1msavepack[22m | Storing File: res://assets/audio/sfx/plasma.wav.import[39m[0m
+[  60% ] [90m[1msavepack[22m | Storing File: res://.godot/imported/objective.wav-5a563b969e546372bc0b8abfb15568e9.sample[39m[0m
+[  60% ] [90m[1msavepack[22m | Storing File: res://assets/audio/sfx/objective.wav.import[39m[0m
+[  61% ] [90m[1msavepack[22m | Storing File: res://.godot/imported/mission_win.wav-260d8bb349b09639ebfbc038d328370a.sample[39m[0m
+[  61% ] [90m[1msavepack[22m | Storing File: res://assets/audio/sfx/mission_win.wav.import[39m[0m
+[  61% ] [90m[1msavepack[22m | Storing File: res://.godot/imported/shield_down.wav-f69f99eb97a04af8d8032d9c99bfd9c7.sample[39m[0m
+[  61% ] [90m[1msavepack[22m | Storing File: res://assets/audio/sfx/shield_down.wav.import[39m[0m
+[  62% ] [90m[1msavepack[22m | Storing File: res://.godot/imported/railgun.wav-82706e641eecaea48bd95929c2347da4.sample[39m[0m
+[  62% ] [90m[1msavepack[22m | Storing File: res://assets/audio/sfx/railgun.wav.import[39m[0m
+[  62% ] [90m[1msavepack[22m | Storing File: res://.godot/imported/phase.wav-774554f224535b6929922e500d21db5a.sample[39m[0m
+[  62% ] [90m[1msavepack[22m | Storing File: res://assets/audio/sfx/phase.wav.import[39m[0m
+[  63% ] [90m[1msavepack[22m | Storing File: res://.godot/imported/asteroid_0_tmpqelb13e4.jpg-3b3544ffbf7281aad330a29c0666ea69.s3tc.ctex[39m[0m
+[  63% ] [90m[1msavepack[22m | Storing File: res://assets/models/asteroid_0_tmpqelb13e4.jpg.import[39m[0m
+[  63% ] [90m[1msavepack[22m | Storing File: res://.godot/imported/asteroid_3_tmpqvanih9z.png-41bbf5e2f0050ad692f3c52ea76bd51b.s3tc.ctex[39m[0m
+[  63% ] [90m[1msavepack[22m | Storing File: res://assets/models/asteroid_3_tmpqvanih9z.png.import[39m[0m
+[  64% ] [90m[1msavepack[22m | Storing File: res://.godot/imported/base_bastion.glb-d4b50bad6019be1dd6c80d10c77cee46.scn[39m[0m
+[  64% ] [90m[1msavepack[22m | Storing File: res://assets/models/base_bastion.glb.import[39m[0m
+[  64% ] [90m[1msavepack[22m | Storing File: res://.godot/imported/asteroid_1_tmpqvanih9z.png-df6c6ecdea1e5e60f05d28f9c5d2c072.s3tc.ctex[39m[0m
+[  64% ] [90m[1msavepack[22m | Storing File: res://assets/models/asteroid_1_tmpqvanih9z.png.import[39m[0m
+[  65% ] [90m[1msavepack[22m | Storing File: res://.godot/imported/asteroid_3.glb-d6498b7e4408b8fb2cda43f50e67ffe2.scn[39m[0m
+[  65% ] [90m[1msavepack[22m | Storing File: res://assets/models/asteroid_3.glb.import[39m[0m
+[  66% ] [90m[1msavepack[22m | Storing File: res://.godot/imported/asteroid_2_tmpqelb13e4.jpg-b61e975003ce7e8e4c13e226c3e2a94c.s3tc.ctex[39m[0m
+[  66% ] [90m[1msavepack[22m | Storing File: res://assets/models/asteroid_2_tmpqelb13e4.jpg.import[39m[0m
+[  66% ] [90m[1msavepack[22m | Storing File: res://.godot/imported/asteroid_2_tmpqvanih9z.png-f39c95c79245d23a4172e85fd58b5d75.s3tc.ctex[39m[0m
+[  66% ] [90m[1msavepack[22m | Storing File: res://assets/models/asteroid_2_tmpqvanih9z.png.import[39m[0m
+[  66% ] [90m[1msavepack[22m | Storing File: res://.godot/imported/capital_carrier.glb-f5914f86495af738c1cbe2a5d3404a08.scn[39m[0m
+[  66% ] [90m[1msavepack[22m | Storing File: res://assets/models/capital_carrier.glb.import[39m[0m
+[  66% ] [90m[1msavepack[22m | Storing File: res://.godot/imported/asteroid_3_tmpqelb13e4.jpg-124603a17946e80a00f832bf2bf5941d.s3tc.ctex[39m[0m
+[  66% ] [90m[1msavepack[22m | Storing File: res://assets/models/asteroid_3_tmpqelb13e4.jpg.import[39m[0m
+[  67% ] [90m[1msavepack[22m | Storing File: res://.godot/imported/asteroid_2_asteroid_albedo.png-f6dac8d24bca107f8a19b4aff9056ef4.s3tc.ctex[39m[0m
+[  67% ] [90m[1msavepack[22m | Storing File: res://assets/models/asteroid_2_asteroid_albedo.png.import[39m[0m
+[  67% ] [90m[1msavepack[22m | Storing File: res://.godot/imported/asteroid_2.glb-349ac76bd0bedc182a51593d1d5f2a1d.scn[39m[0m
+[  67% ] [90m[1msavepack[22m | Storing File: res://assets/models/asteroid_2.glb.import[39m[0m
+[  68% ] [90m[1msavepack[22m | Storing File: res://.godot/imported/capital_warden.glb-da051abf37b4a8c740c4e48b04e66615.scn[39m[0m
+[  68% ] [90m[1msavepack[22m | Storing File: res://assets/models/capital_warden.glb.import[39m[0m
+[  69% ] [90m[1msavepack[22m | Storing File: res://.godot/imported/capital_sovereign.glb-490fb5570145ec8e489ec25b4e14bd1a.scn[39m[0m
+[  69% ] [90m[1msavepack[22m | Storing File: res://assets/models/capital_sovereign.glb.import[39m[0m
+[  69% ] [90m[1msavepack[22m | Storing File: res://.godot/imported/capital_talon.glb-9474dbd5716599951711632c2f600a01.scn[39m[0m
+[  69% ] [90m[1msavepack[22m | Storing File: res://assets/models/capital_talon.glb.import[39m[0m
+[  70% ] [90m[1msavepack[22m | Storing File: res://.godot/imported/asteroid_3_asteroid_albedo.png-d9e6fbfc8678b1082357cae8b4cf5012.s3tc.ctex[39m[0m
+[  70% ] [90m[1msavepack[22m | Storing File: res://assets/models/asteroid_3_asteroid_albedo.png.import[39m[0m
+[  70% ] [90m[1msavepack[22m | Storing File: res://.godot/imported/asteroid_1_tmpqelb13e4.jpg-5008cb294bc6b48c4d60120a28f54fc6.s3tc.ctex[39m[0m
+[  70% ] [90m[1msavepack[22m | Storing File: res://assets/models/asteroid_1_tmpqelb13e4.jpg.import[39m[0m
+[  71% ] [90m[1msavepack[22m | Storing File: res://.godot/imported/combat.wav-b9e6521bf583850577a2b8fe7cca9739.sample[39m[0m
+[  71% ] [90m[1msavepack[22m | Storing File: res://assets/audio/music/combat.wav.import[39m[0m
+[  71% ] [90m[1msavepack[22m | Storing File: res://.godot/imported/Frontier Combat Drive.mp3-72763b50b5f83b88ded5dc11514f41ad.mp3str[39m[0m
+[  71% ] [90m[1msavepack[22m | Storing File: res://assets/audio/music/Frontier Combat Drive.mp3.import[39m[0m
+[  72% ] [90m[1msavepack[22m | Storing File: res://.godot/imported/Hyperdrive Conflict.mp3-a66052a52c19c10f1f0b835c42f39802.mp3str[39m[0m
+[  72% ] [90m[1msavepack[22m | Storing File: res://assets/audio/music/Hyperdrive Conflict.mp3.import[39m[0m
+[  73% ] [90m[1msavepack[22m | Storing File: res://.godot/imported/menu.wav-1ae3736b65f85b86a26f0ab4bfa05ef6.sample[39m[0m
+[  73% ] [90m[1msavepack[22m | Storing File: res://assets/audio/music/menu.wav.import[39m[0m
+[  73% ] [90m[1msavepack[22m | Storing File: res://.godot/imported/Neon Dogfight.mp3-3f9640e7e8650a744949c142d955921e.mp3str[39m[0m
+[  73% ] [90m[1msavepack[22m | Storing File: res://assets/audio/music/Neon Dogfight.mp3.import[39m[0m
+[  74% ] [90m[1msavepack[22m | Storing File: res://.godot/imported/Orbit Assassin.mp3-dc8db3ba58c487bf02a7006b93457233.mp3str[39m[0m
+[  74% ] [90m[1msavepack[22m | Storing File: res://assets/audio/music/Orbit Assassin.mp3.import[39m[0m
+[  74% ] [90m[1msavepack[22m | Storing File: res://.godot/imported/Stellar Vanguard.mp3-95b2452e315d9c22ccb9b6d688d71167.mp3str[39m[0m
+[  74% ] [90m[1msavepack[22m | Storing File: res://assets/audio/music/Stellar Vanguard.mp3.import[39m[0m
+[  75% ] [90m[1msavepack[22m | Storing File: res://.godot/imported/Warp Speed Rush.mp3-11a62af4c2afe8d90b1894096227612b.mp3str[39m[0m
+[  75% ] [90m[1msavepack[22m | Storing File: res://assets/audio/music/Warp Speed Rush.mp3.import[39m[0m
+[  75% ] [90m[1msavepack[22m | Storing File: res://.godot/imported/alarm_heat.wav-4aa7773d426bdd319596b489ab01d9be.sample[39m[0m
+[  75% ] [90m[1msavepack[22m | Storing File: res://assets/audio/sfx/alarm_heat.wav.import[39m[0m
+[  76% ] [90m[1msavepack[22m | Storing File: res://.godot/imported/alarm_missile.wav-a9b8d9653751fe87e53a5221c5ff2077.sample[39m[0m
+[  76% ] [90m[1msavepack[22m | Storing File: res://assets/audio/sfx/alarm_missile.wav.import[39m[0m
+[  76% ] [90m[1msavepack[22m | Storing File: res://.godot/imported/arc.wav-6a8804582dc5a516ac0adc28441b2843.sample[39m[0m
+[  76% ] [90m[1msavepack[22m | Storing File: res://assets/audio/sfx/arc.wav.import[39m[0m
+[  77% ] [90m[1msavepack[22m | Storing File: res://.godot/imported/beam.wav-587abc8789bd0a02fc59f4aca2c55f96.sample[39m[0m
+[  77% ] [90m[1msavepack[22m | Storing File: res://assets/audio/sfx/beam.wav.import[39m[0m
+[  78% ] [90m[1msavepack[22m | Storing File: res://.godot/imported/boost.wav-b1d100a34c8211e0c981487fe489394c.sample[39m[0m
+[  78% ] [90m[1msavepack[22m | Storing File: res://assets/audio/sfx/boost.wav.import[39m[0m
+[  78% ] [90m[1msavepack[22m | Storing File: res://.godot/imported/cannon.wav-fdb5c26ef76ee108ef7d4a0ecfb58adb.sample[39m[0m
+[  78% ] [90m[1msavepack[22m | Storing File: res://assets/audio/sfx/cannon.wav.import[39m[0m
+[  79% ] [90m[1msavepack[22m | Storing File: res://.godot/imported/coil.wav-f4ef6f52d2603b83a9294d241cd7b76c.sample[39m[0m
+[  79% ] [90m[1msavepack[22m | Storing File: res://assets/audio/sfx/coil.wav.import[39m[0m
+[  79% ] [90m[1msavepack[22m | Storing File: res://.godot/imported/collision.wav-6c6ccb6e4debc0a8bb6e0660bd583383.sample[39m[0m
+[  79% ] [90m[1msavepack[22m | Storing File: res://assets/audio/sfx/collision.wav.import[39m[0m
+[  80% ] [90m[1msavepack[22m | Storing File: res://.godot/imported/elaser.wav-3fbb9805916b3d834d98d1e728631d0a.sample[39m[0m
+[  80% ] [90m[1msavepack[22m | Storing File: res://assets/audio/sfx/elaser.wav.import[39m[0m
+[  80% ] [90m[1msavepack[22m | Storing File: res://.godot/imported/emp.wav-22fb06216236398bad7886b014226c86.sample[39m[0m
+[  80% ] [90m[1msavepack[22m | Storing File: res://assets/audio/sfx/emp.wav.import[39m[0m
+[  81% ] [90m[1msavepack[22m | Storing File: res://.godot/imported/engine_loop.wav-8b02a70582b0240db61a2c95bb8ceba3.sample[39m[0m
+[  81% ] [90m[1msavepack[22m | Storing File: res://assets/audio/sfx/engine_loop.wav.import[39m[0m
+[  82% ] [90m[1msavepack[22m | Storing File: res://.godot/imported/eturret.wav-8663c8d4ecf04a7fd749db547f5b0dea.sample[39m[0m
+[  82% ] [90m[1msavepack[22m | Storing File: res://assets/audio/sfx/eturret.wav.import[39m[0m
+[  82% ] [90m[1msavepack[22m | Storing File: res://.godot/imported/explosion.wav-f11908070a3c16e9f40ac8490560a261.sample[39m[0m
+[  82% ] [90m[1msavepack[22m | Storing File: res://assets/audio/sfx/explosion.wav.import[39m[0m
+[  83% ] [90m[1msavepack[22m | Storing File: res://.godot/imported/explosion_big.wav-c53463c362006860d3af3fc42f9129c6.sample[39m[0m
+[  83% ] [90m[1msavepack[22m | Storing File: res://assets/audio/sfx/explosion_big.wav.import[39m[0m
+[  83% ] [90m[1msavepack[22m | Storing File: res://.godot/imported/explosion_small.wav-239e354447b64a0f94b0f1213a16ee7d.sample[39m[0m
+[  83% ] [90m[1msavepack[22m | Storing File: res://assets/audio/sfx/explosion_small.wav.import[39m[0m
+[  84% ] [90m[1msavepack[22m | Storing File: res://.godot/imported/flak.wav-8c78e074e02d53e625f6c22beb07bf21.sample[39m[0m
+[  84% ] [90m[1msavepack[22m | Storing File: res://assets/audio/sfx/flak.wav.import[39m[0m
+[  84% ] [90m[1msavepack[22m | Storing File: res://.godot/imported/flare.wav-2b46ecd8ab3df69a0fe84e827c400f9f.sample[39m[0m
+[  84% ] [90m[1msavepack[22m | Storing File: res://assets/audio/sfx/flare.wav.import[39m[0m
+[  85% ] [90m[1msavepack[22m | Storing File: res://.godot/imported/ftl_breach.wav-b19c70d0743f97d9447e677c9053c82e.sample[39m[0m
+[  85% ] [90m[1msavepack[22m | Storing File: res://assets/audio/sfx/ftl_breach.wav.import[39m[0m
+[  86% ] [90m[1msavepack[22m | Storing File: res://.godot/imported/ftl_cruise.wav-9c148c7683e2483e4e0f856c764eb583.sample[39m[0m
+[  86% ] [90m[1msavepack[22m | Storing File: res://assets/audio/sfx/ftl_cruise.wav.import[39m[0m
+[  86% ] [90m[1msavepack[22m | Storing File: res://.godot/imported/ftl_exit.wav-e13bf2fe3e341d013561fa1d386a8693.sample[39m[0m
+[  86% ] [90m[1msavepack[22m | Storing File: res://assets/audio/sfx/ftl_exit.wav.import[39m[0m
+[  87% ] [90m[1msavepack[22m | Storing File: res://.godot/imported/ftl_spool.wav-17bf6da0f09a8a0a0d53f3613ddc3b9b.sample[39m[0m
+[  87% ] [90m[1msavepack[22m | Storing File: res://assets/audio/sfx/ftl_spool.wav.import[39m[0m
+[  87% ] [90m[1msavepack[22m | Storing File: res://.godot/imported/heavycannon.wav-8d6da7ba595fef4057d621fbfe60beb6.sample[39m[0m
+[  87% ] [90m[1msavepack[22m | Storing File: res://assets/audio/sfx/heavycannon.wav.import[39m[0m
+[  88% ] [90m[1msavepack[22m | Storing File: res://.godot/imported/hitmarker.wav-da26904e43dd8d8649a9e5f091980f5e.sample[39m[0m
+[  88% ] [90m[1msavepack[22m | Storing File: res://assets/audio/sfx/hitmarker.wav.import[39m[0m
+[  88% ] [90m[1msavepack[22m | Storing File: res://.godot/imported/hit_armor.wav-c45ff957422cc93227306435fd1ab957.sample[39m[0m
+[  88% ] [90m[1msavepack[22m | Storing File: res://assets/audio/sfx/hit_armor.wav.import[39m[0m
+[  89% ] [90m[1msavepack[22m | Storing File: res://.godot/imported/hit_rock.wav-9efa1101e71f10847e749899179364e3.sample[39m[0m
+[  89% ] [90m[1msavepack[22m | Storing File: res://assets/audio/sfx/hit_rock.wav.import[39m[0m
+[  89% ] [90m[1msavepack[22m | Storing File: res://.godot/imported/hit_shield.wav-508a1a09ee3885c86f187563b1eac538.sample[39m[0m
+[  89% ] [90m[1msavepack[22m | Storing File: res://assets/audio/sfx/hit_shield.wav.import[39m[0m
+[  90% ] [90m[1msavepack[22m | Storing File: res://.godot/imported/hv_armor.wav-4e928187504ec1619c2717df331c875a.sample[39m[0m
+[  90% ] [90m[1msavepack[22m | Storing File: res://assets/audio/sfx/hv_armor.wav.import[39m[0m
+[  91% ] [90m[1msavepack[22m | Storing File: res://.godot/imported/hv_cannon.wav-a35e9063da3342ce2450d7bc670de367.sample[39m[0m
+[  91% ] [90m[1msavepack[22m | Storing File: res://assets/audio/sfx/hv_cannon.wav.import[39m[0m
+[  91% ] [90m[1msavepack[22m | Storing File: res://.godot/imported/hv_flight_bed.wav-bcd05d82480e02e5b5fc47b7b6104f6c.sample[39m[0m
+[  91% ] [90m[1msavepack[22m | Storing File: res://assets/audio/sfx/hv_flight_bed.wav.import[39m[0m
+[  92% ] [90m[1msavepack[22m | Storing File: res://.godot/imported/hv_plasma.wav-6881ac46ebf5d7b4c48cd4b0279e65a2.sample[39m[0m
+[  92% ] [90m[1msavepack[22m | Storing File: res://assets/audio/sfx/hv_plasma.wav.import[39m[0m
+[  92% ] [90m[1msavepack[22m | Storing File: res://.godot/imported/hv_pulse.wav-3799c2c27fa26c367b901d8897c9bb1a.sample[39m[0m
+[  92% ] [90m[1msavepack[22m | Storing File: res://assets/audio/sfx/hv_pulse.wav.import[39m[0m
+[  93% ] [90m[1msavepack[22m | Storing File: res://.godot/imported/hv_rail.wav-6b745c196f558bd480e20efcf9c89928.sample[39m[0m
+[  93% ] [90m[1msavepack[22m | Storing File: res://assets/audio/sfx/hv_rail.wav.import[39m[0m
+[  93% ] [90m[1msavepack[22m | Storing File: res://.godot/imported/hv_resupply.wav-0b41bd8d18a52f29d8587a0ef7d34455.sample[39m[0m
+[  93% ] [90m[1msavepack[22m | Storing File: res://assets/audio/sfx/hv_resupply.wav.import[39m[0m
+[  94% ] [90m[1msavepack[22m | Storing File: res://.godot/imported/hv_shield.wav-7f3c04f3a4ac0289316032713bd571f1.sample[39m[0m
+[  94% ] [90m[1msavepack[22m | Storing File: res://assets/audio/sfx/hv_shield.wav.import[39m[0m
+[  95% ] [90m[1msavepack[22m | Storing File: res://.godot/imported/hv_transit.wav-03a20d341286e4b21f4cb1fc8a9e768b.sample[39m[0m
+[  95% ] [90m[1msavepack[22m | Storing File: res://assets/audio/sfx/hv_transit.wav.import[39m[0m
+[  95% ] [90m[1msavepack[22m | Storing File: res://.godot/imported/ion.wav-e911eb76019f2a40b29cef18853e826a.sample[39m[0m
+[  95% ] [90m[1msavepack[22m | Storing File: res://assets/audio/sfx/ion.wav.import[39m[0m
+[  96% ] [90m[1msavepack[22m | Storing File: res://.godot/imported/lance.wav-7c54b265ad2cefaabb78ffa934ac9d1c.sample[39m[0m
+[  96% ] [90m[1msavepack[22m | Storing File: res://assets/audio/sfx/lance.wav.import[39m[0m
+[  96% ] [90m[1msavepack[22m | Storing File: res://.godot/imported/laser1.wav-6102ba44a3e9950e142856ed3633ac49.sample[39m[0m
+[  96% ] [90m[1msavepack[22m | Storing File: res://assets/audio/sfx/laser1.wav.import[39m[0m
+[  97% ] [90m[1msavepack[22m | Storing File: res://.godot/imported/lock_tone.wav-25d514a82ade7f71e9d0234a884bfcec.sample[39m[0m
+[  97% ] [90m[1msavepack[22m | Storing File: res://assets/audio/sfx/lock_tone.wav.import[39m[0m
+[  97% ] [90m[1msavepack[22m | Storing File: res://.godot/imported/missile_launch.wav-54adb28035a51ff1eb1d85ea6a0b0321.sample[39m[0m
+[  97% ] [90m[1msavepack[22m | Storing File: res://assets/audio/sfx/missile_launch.wav.import[39m[0m
+[  98% ] [90m[1msavepack[22m | Storing File: res://.godot/imported/mission_fail.wav-bdad22bb5a7ba768d4a556e869bd3f8f.sample[39m[0m
+[  98% ] [90m[1msavepack[22m | Storing File: res://assets/audio/sfx/mission_fail.wav.import[39m[0m
+[  98% ] [90m[1msavepack[22m | Storing File: res://scripts/environment/AsteroidBody.gd.remap[39m[0m
+[  98% ] [90m[1msavepack[22m | Storing File: res://scripts/environment/AsteroidField.gd.remap[39m[0m
+[  98% ] [90m[1msavepack[22m | Storing File: res://scripts/core/Combatant.gd.remap[39m[0m
+[  98% ] [90m[1msavepack[22m | Storing File: res://scripts/fx/Wreck.gd.remap[39m[0m
+[  98% ] [90m[1msavepack[22m | Storing File: res://scripts/environment/SpaceEnv.gd.remap[39m[0m
+[  98% ] [90m[1msavepack[22m | Storing File: res://scripts/fx/EngineTrail.gd.remap[39m[0m
+[  98% ] [90m[1msavepack[22m | Storing File: res://scripts/core/Subsystem.gd.remap[39m[0m
+[  98% ] [90m[1msavepack[22m | Storing File: res://scripts/core/AudioMgr.gd.remap[39m[0m
+[  98% ] [90m[1msavepack[22m | Storing File: res://scripts/core/SceneFlow.gd.remap[39m[0m
+[  98% ] [90m[1msavepack[22m | Storing File: res://scenes/Boot.tscn.remap[39m[0m
+[  98% ] [90m[1msavepack[22m | Storing File: res://scripts/environment/NavigationRelay.gd.remap[39m[0m
+[  98% ] [90m[1msavepack[22m | Storing File: res://scripts/fx/ShieldBubble.gd.remap[39m[0m
+[  98% ] [90m[1msavepack[22m | Storing File: res://scripts/missions/Battle.gd.remap[39m[0m
+[  98% ] [90m[1msavepack[22m | Storing File: res://scripts/environment/DeepSky.gd.remap[39m[0m
+[  98% ] [90m[1msavepack[22m | Storing File: res://scripts/fx/SpaceDust.gd.remap[39m[0m
+[  98% ] [90m[1msavepack[22m | Storing File: res://scripts/core/Boot.gd.remap[39m[0m
+[  98% ] [90m[1msavepack[22m | Storing File: res://scripts/core/Game.gd.remap[39m[0m
+[  98% ] [90m[1msavepack[22m | Storing File: res://scenes/Battle.tscn.remap[39m[0m
+[  98% ] [90m[1msavepack[22m | Storing File: res://scripts/core/ShipDB.gd.remap[39m[0m
+[  98% ] [90m[1msavepack[22m | Storing File: res://scenes/MainMenu.tscn.remap[39m[0m
+[  98% ] [90m[1msavepack[22m | Storing File: res://scripts/fx/ExhaustPlume.gd.remap[39m[0m
+[  98% ] [90m[1msavepack[22m | Storing File: res://scripts/fx/HullMaterial.gd.remap[39m[0m
+[  98% ] [90m[1msavepack[22m | Storing File: res://scripts/fx/FX.gd.remap[39m[0m
+[  98% ] [90m[1msavepack[22m | Storing File: res://scripts/ships/PlayerShip.gd.remap[39m[0m
+[  98% ] [90m[1msavepack[22m | Storing File: res://scripts/ui/LoadingProgress.gd.remap[39m[0m
+[  98% ] [90m[1msavepack[22m | Storing File: res://scripts/ui/HUD.gd.remap[39m[0m
+[  98% ] [90m[1msavepack[22m | Storing File: res://scripts/ships/Turret.gd.remap[39m[0m
+[  98% ] [90m[1msavepack[22m | Storing File: res://scripts/ui/Styles.gd.remap[39m[0m
+[  98% ] [90m[1msavepack[22m | Storing File: res://scripts/ui/MainMenu.gd.remap[39m[0m
+[  98% ] [90m[1msavepack[22m | Storing File: res://scripts/ui/SettingsPanel.gd.remap[39m[0m
+[  98% ] [90m[1msavepack[22m | Storing File: res://scripts/weapons/TargetingComputer.gd.remap[39m[0m
+[  98% ] [90m[1msavepack[22m | Storing File: res://scripts/weapons/Missile.gd.remap[39m[0m
+[  98% ] [90m[1msavepack[22m | Storing File: res://scripts/weapons/Projectiles.gd.remap[39m[0m
+[  98% ] [90m[1msavepack[22m | Storing File: res://scripts/weapons/Flare.gd.remap[39m[0m
+[  98% ] [90m[1msavepack[22m | Storing File: res://scripts/ships/EnemyShip.gd.remap[39m[0m
+[  98% ] [90m[1msavepack[22m | Storing File: res://scripts/ships/CameraRig.gd.remap[39m[0m
+[  98% ] [90m[1msavepack[22m | Storing File: res://scripts/ships/CapitalShip.gd.remap[39m[0m
+[  98% ] [90m[1msavepack[22m | Storing File: res://scripts/missions/MissionDefs.gd.remap[39m[0m
+[  98% ] [90m[1msavepack[22m | Storing File: res://scripts/ships/FTLDrive.gd.remap[39m[0m
+[  98% ] [90m[1msavepack[22m | Storing File: res://scripts/weapons/WeaponSystem.gd.remap[39m[0m
+[  98% ] [90m[1msavepack[22m | Storing File: res://.godot/global_script_class_cache.cfg[39m[0m
+[  98% ] [90m[1msavepack[22m | Storing File: res://assets/icons/icon.png[39m[0m
+[  98% ] [90m[1msavepack[22m | Storing File: res://.godot/uid_cache.bin[39m[0m
+[  98% ] [90m[1msavepack[22m | Storing File: res://project.binary[39m[0m
+[92m[ DONE ][39m [1msavepack[22m
+[0m
+[MCPServer] stopped
+[MCPRegistry] deregistered /users/bokkonboldiszar/desktop/codex workspace/05_shared_projects/games/helionvanguard
+Godot Engine v4.7.2.stable.official.ed1daf0bf - https://godotengine.org
+
+[MCPRuntimeServer] port: scanning 6570-6585 (default)
+[MCPRuntimeServer] listening on 127.0.0.1:6570
+[MCPRegistry] runtime port 6570 registered for /users/bokkonboldiszar/desktop/codex workspace/05_shared_projects/games/helionvanguard
+/var/folders/ms/n13rv5vj11l_656r4wvh76zw0000gp/T/helion-build-t_r1eufd/Helion Vanguard.app: replacing existing signature
+BUILD_READY /Users/bokkonboldiszar/Desktop/Codex Workspace/05_SHARED_PROJECTS/Games/HelionVanguard/build/quality-1.3.0

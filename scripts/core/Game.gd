@@ -4,7 +4,7 @@ extends Node
 signal settings_changed
 signal mission_ended(victory: bool, stats: Dictionary)
 
-const VERSION := "1.2.1"
+const VERSION := "1.3.0"
 const SETTINGS_PATH := "user://settings.cfg"
 const SAVE_PATH := "user://save.cfg"
 const MIN_RENDER_SCALE := 0.50
@@ -81,8 +81,14 @@ const SETTINGS_DEFAULTS := {
 	"invert_y": false,
 	"aim_assist": true,
 	"camera_shake": 1.0,
+	"fov_motion": 0.65,
+	"flash_intensity": 0.65,
+	"hud_scale": 1.15,
+	"quick_transitions": true,
+	"flight_hints": true,
 	"cam_distance": 1.0,            # chase-cam standoff multiplier, 0.7 .. 1.8
-	"vol_master": 0.9, "vol_music": 0.7, "vol_sfx": 1.0, "vol_ui": 0.9,
+	"vol_master": 0.9, "vol_music": 0.7, "vol_sfx": 1.0, "vol_ui": 0.9, "vol_ambience": 0.45,
+	"music_enabled": true,
 	"difficulty": 1,                # 0 easy 1 normal 2 hard
 	"momentum_mode": false,         # flight assist off by default? no: assist on
 	# --- advanced capabilities (1.2) -------------------------------------
@@ -124,7 +130,7 @@ const PRESETS := [
 # ------------------------------------------------------------------ save data
 var save := {
 	"selected_ship": "vanguard",
-	"unlocked_ships": ["vanguard", "wasp"],
+	"unlocked_ships": ["wasp", "vanguard", "hammer", "raptor", "specter", "paladin", "peregrine", "aegis"],
 	"credits": 0,
 	"missions_done": {},            # id -> best stats dict
 	"loadouts": {},                 # ship_id -> {primary, secondary, missile, paint, glow}
@@ -161,10 +167,20 @@ func _enter_tree() -> void:
 	_caps_forced_off = "--nocaps" in OS.get_cmdline_user_args()
 	if not _hermetic:
 		_load_settings()
-	_load_save()
+		_load_save()
 	_normalize_settings()
 	_normalize_save()
 	_setup_input_map()
+	# Apply launch overrides before the first native-window transition. On
+	# macOS, going fullscreen and back during _ready races the OS animation.
+	for arg in OS.get_cmdline_user_args():
+		if arg == "--windowed":
+			settings.display_mode = DisplayMode.WINDOWED
+			settings.window_size = Vector2i(1280, 720)
+		elif arg.begins_with("--seed="):
+			var run_seed := int(arg.get_slice("=", 1))
+			seed(run_seed)
+			rng.seed = run_seed
 
 func _ready() -> void:
 	get_tree().set_auto_accept_quit(true)
@@ -173,11 +189,7 @@ func _ready() -> void:
 	# automated testing hook:  godot -- --mission=instant_action
 	for arg in OS.get_cmdline_user_args():
 		if arg == "--windowed":
-			# Godot's own --resolution is USELESS here: apply_video_settings()
-			# runs first and forces MODE_FULLSCREEN, so every benchmark this
-			# project has ever run measured the same native 2880x1800 buffer.
-			# That is why "frame time is identical at 640x360 and 1920x1080"
-			# looked true and the game was misdiagnosed as CPU-bound.
+			# Reassert the early override after the root window exists.
 			settings.display_mode = DisplayMode.WINDOWED
 			settings.window_size = Vector2i(1280, 720)
 			var win := get_window()
@@ -340,6 +352,18 @@ func binding_text(action: String) -> String:
 			parts.append("Pad axis %d%s" % [jm.axis, "+" if jm.axis_value > 0.0 else "−"])
 	return " / ".join(parts) if parts.size() > 0 else "—"
 
+## Compact live hint for the current device, including user remaps.
+func action_hint(action: String) -> String:
+	var use_pad := not Input.get_connected_joypads().is_empty()
+	for ev in InputMap.action_get_events(action):
+		if use_pad and ev is InputEventJoypadButton:
+			return _joy_button_name(ev.button_index)
+		if not use_pad and ev is InputEventKey:
+			return OS.get_keycode_string(ev.physical_keycode if ev.physical_keycode != KEY_NONE else ev.keycode)
+		if not use_pad and ev is InputEventMouseButton:
+			return {1: "LMB", 2: "RMB", 3: "MMB"}.get(ev.button_index, "Mouse")
+	return binding_text(action).get_slice(" / ", 0)
+
 func _joy_button_name(button: JoyButton) -> String:
 	var names := {
 		JOY_BUTTON_A: "A", JOY_BUTTON_B: "B", JOY_BUTTON_X: "X", JOY_BUTTON_Y: "Y",
@@ -407,9 +431,15 @@ func _normalize_settings() -> void:
 	settings.invert_y = bool(settings.get("invert_y", d.invert_y))
 	settings.aim_assist = bool(settings.get("aim_assist", d.aim_assist))
 	settings.camera_shake = clampf(_as_float(settings.get("camera_shake"), d.camera_shake), 0.0, 1.5)
-	settings.cam_distance = clampf(_as_float(settings.get("cam_distance"), d.cam_distance), 0.6, 2.0)
-	for key in ["vol_master", "vol_music", "vol_sfx", "vol_ui"]:
+	for key in ["fov_motion", "flash_intensity"]:
 		settings[key] = clampf(_as_float(settings.get(key), d[key]), 0.0, 1.0)
+	settings.hud_scale = clampf(_as_float(settings.get("hud_scale"), d.hud_scale), 0.85, 1.3)
+	for key in ["quick_transitions", "flight_hints"]:
+		settings[key] = bool(settings.get(key, d[key]))
+	settings.cam_distance = clampf(_as_float(settings.get("cam_distance"), d.cam_distance), 0.6, 2.0)
+	for key in ["vol_master", "vol_music", "vol_sfx", "vol_ui", "vol_ambience"]:
+		settings[key] = clampf(_as_float(settings.get(key), d[key]), 0.0, 1.0)
+	settings.music_enabled = bool(settings.get("music_enabled", d.music_enabled))
 	settings.difficulty = clampi(_as_int(settings.get("difficulty"), d.difficulty), 0, 2)
 	settings.momentum_mode = bool(settings.get("momentum_mode", d.momentum_mode))
 	for key in ["advanced_caps", "cap_ftl", "cap_shield", "cap_arsenal", "cap_targeting"]:
@@ -560,7 +590,7 @@ func _load_save() -> void:
 		save[k] = cf.get_value("save", k, save[k])
 
 func save_game() -> void:
-	if not _save_dirty:
+	if _hermetic or not _save_dirty:
 		return
 	var cf := ConfigFile.new()
 	for k in save.keys():
@@ -578,11 +608,9 @@ func _normalize_save() -> void:
 	var before := save.duplicate(true)
 	if not save.get("selected_ship", "") in ShipDB.SHIPS:
 		save.selected_ship = "vanguard"
-	if not save.get("unlocked_ships", []) is Array:
-		save.unlocked_ships = ["vanguard", "wasp"]
-	save.unlocked_ships = save.unlocked_ships.filter(func(id): return id in ShipDB.SHIPS)
-	if not "vanguard" in save.unlocked_ships:
-		save.unlocked_ships.append("vanguard")
+	# Every flyable hull is available immediately. Rebuilding this list from
+	# ShipDB also migrates old profiles and automatically includes future ships.
+	save.unlocked_ships = ShipDB.SHIPS.keys()
 	if not save.get("missions_done", {}) is Dictionary:
 		save.missions_done = {}
 	else:
@@ -629,25 +657,6 @@ func record_mission(id: String, stats: Dictionary) -> void:
 	var prev: Dictionary = save.missions_done.get(id, {})
 	if prev.is_empty() or int(stats.get("score", 0)) > int(prev.get("score", 0)):
 		save.missions_done[id] = stats
-	# unlock progression
-	if id == "main" and stats.get("victory", false):
-		for s in ["raptor", "hammer", "paladin"]:
-			if not s in save.unlocked_ships:
-				save.unlocked_ships.append(s)
-	if id == "instant_action" and stats.get("victory", false):
-		if not "raptor" in save.unlocked_ships:
-			save.unlocked_ships.append("raptor")
-	# the fleet action is where the new hulls are earned
-	if id == "fleet_action" and stats.get("victory", false):
-		for s in ["specter", "paladin"]:
-			if not s in save.unlocked_ships:
-				save.unlocked_ships.append(s)
-	if id == "capital_strike" and stats.get("victory", false):
-		if not "specter" in save.unlocked_ships:
-			save.unlocked_ships.append("specter")
-	if stats.get("victory", false) and not "hammer" in save.unlocked_ships \
-			and save.missions_done.size() >= 3:
-		save.unlocked_ships.append("hammer")
 	save.credits = int(save.credits) + int(stats.get("score", 0) / 10.0)
 	mark_save_dirty()
 	save_game()

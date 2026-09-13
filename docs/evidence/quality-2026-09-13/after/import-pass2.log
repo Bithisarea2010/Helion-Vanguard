@@ -1,0 +1,53 @@
+Godot Engine v4.7.2.stable.official.ed1daf0bf - https://godotengine.org
+
+[   0% ] [90m[1mfirst_scan_filesystem[22m | Started Project initialization (5 steps)[39m[0m
+[   0% ] [90m[1mfirst_scan_filesystem[22m | Fájlstruktúra vizsgálata...[39m[0m
+[  16% ] [90m[1mfirst_scan_filesystem[22m | Loading global class names...[39m[0m
+[  33% ] [90m[1mfirst_scan_filesystem[22m | GDExtension-ök ellenőrzése...[39m[0m
+[  50% ] [90m[1mfirst_scan_filesystem[22m | Creating autoload scripts...[39m[0m
+SCRIPT ERROR: Parse Error: The variable type is being inferred from a Variant value, so it will be typed as Variant. (Warning treated as error.)
+          at: GDScript::reload (res://scripts/core/AudioMgr.gd:151)
+SCRIPT ERROR: Compile Error: Failed to compile depended scripts.
+          at: GDScript::reload (res://scripts/fx/ShieldBubble.gd:0)
+SCRIPT ERROR: Compile Error: Failed to compile depended scripts.
+          at: GDScript::reload (res://scripts/fx/FX.gd:0)
+SCRIPT ERROR: Compile Error: Failed to compile depended scripts.
+          at: GDScript::reload (res://scripts/core/Game.gd:0)
+ERROR: Failed to load script "res://scripts/core/Game.gd" with error "Parse error".
+   at: load (modules/gdscript/gdscript_resource_format.cpp:46)
+ERROR: Failed to create an autoload, script 'res://scripts/core/AudioMgr.gd' is not compiling.
+   at: _create_autoload (editor/settings/editor_autoload_settings.cpp:340)
+[  66% ] [90m[1mfirst_scan_filesystem[22m | Bővítmény beállítása...[39m[0m
+Godot MCP Toolkit v1.0.0 — by NPGameDev · npgamedev.com
+[MCPExtensions] Hot-reload watcher active
+[MCPServer] port: scanning 6550-6560 (default)
+[MCPServer] session token written to user://addons/godot_mcp_toolkit/project_instance_f5b72c286c69/mcp_token
+[MCPServer] listening on 127.0.0.1:6551
+[  83% ] [90m[1mfirst_scan_filesystem[22m | Starting file scan...[39m[0m
+[92m[ DONE ][39m [1mfirst_scan_filesystem[22m
+[0m
+[   0% ] [90m[1mupdate_scripts_classes[22m | Started Registering global classes... (11 steps)[39m[0m
+[   0% ] [90m[1mupdate_scripts_classes[22m | [39m[0m
+[   8% ] [90m[1mupdate_scripts_classes[22m | Combatant[39m[0m
+[  16% ] [90m[1mupdate_scripts_classes[22m | AsteroidField[39m[0m
+[  25% ] [90m[1mupdate_scripts_classes[22m | NavigationRelay[39m[0m
+[  33% ] [90m[1mupdate_scripts_classes[22m | SpaceEnv[39m[0m
+[  41% ] [90m[1mupdate_scripts_classes[22m | [39m[0m
+[  50% ] [90m[1mupdate_scripts_classes[22m | CameraRig[39m[0m
+[  58% ] [90m[1mupdate_scripts_classes[22m | EnemyShip[39m[0m
+[  66% ] [90m[1mupdate_scripts_classes[22m | PlayerShip[39m[0m
+[  75% ] [90m[1mupdate_scripts_classes[22m | HUD[39m[0m
+[  83% ] [90m[1mupdate_scripts_classes[22m | [39m[0m
+[92m[ DONE ][39m [1mupdate_scripts_classes[22m
+[0m
+[   0% ] [90m[1mloading_editor_layout[22m | Started Szerkesztő betöltése (5 steps)[39m[0m
+[   0% ] [90m[1mloading_editor_layout[22m | Loading editor layout...[39m[0m
+[  16% ] [90m[1mloading_editor_layout[22m | Loading docks...[39m[0m
+[  33% ] [90m[1mloading_editor_layout[22m | Reopening scenes...[39m[0m
+[  50% ] [90m[1mloading_editor_layout[22m | Loading central editor layout...[39m[0m
+[  66% ] [90m[1mloading_editor_layout[22m | Loading plugin window layout...[39m[0m
+[  83% ] [90m[1mloading_editor_layout[22m | Editor layout ready.[39m[0m
+[92m[ DONE ][39m [1mloading_editor_layout[22m
+[0m
+[MCPServer] stopped
+[MCPRegistry] deregistered /users/bokkonboldiszar/desktop/codex workspace/05_shared_projects/games/helionvanguard

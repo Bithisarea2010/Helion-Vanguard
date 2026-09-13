@@ -1,0 +1,19 @@
+[remap]
+
+importer="mp3"
+type="AudioStreamMP3"
+uid="uid://64enachiwh7x"
+path="res://.godot/imported/Neon Dogfight.mp3-3f9640e7e8650a744949c142d955921e.mp3str"
+
+[deps]
+
+source_file="res://assets/audio/music/Neon Dogfight.mp3"
+dest_files=["res://.godot/imported/Neon Dogfight.mp3-3f9640e7e8650a744949c142d955921e.mp3str"]
+
+[params]
+
+loop=false
+loop_offset=0
+bpm=0
+beat_count=0
+bar_beats=4

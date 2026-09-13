@@ -15,16 +15,27 @@
 
 ### Fast, colourful third-person space combat for macOS
 
-Pilot four purpose-built starfighters, master a deep combat sandbox and lead the charge across nine handcrafted operations.
+Pilot eight distinct starfighters, master the combat sandbox and choose from ten missions and training modes.
 
 [![Release](https://img.shields.io/github/v/release/Bithisarea2010/Helion-Vanguard?style=for-the-badge&color=ff9d2e&label=DOWNLOAD)](https://github.com/Bithisarea2010/Helion-Vanguard/releases/latest)
-[![Godot](https://img.shields.io/badge/Godot-4.7-478CBF?style=for-the-badge&logo=godot-engine&logoColor=white)](https://godotengine.org/)
+[![Godot](https://img.shields.io/badge/Godot-4.7.2-478CBF?style=for-the-badge&logo=godot-engine&logoColor=white)](https://godotengine.org/)
 [![Platform](https://img.shields.io/badge/macOS-Apple%20Silicon-111827?style=for-the-badge&logo=apple&logoColor=white)](https://github.com/Bithisarea2010/Helion-Vanguard/releases/latest)
 [![License](https://img.shields.io/github/license/Bithisarea2010/Helion-Vanguard?style=for-the-badge&color=35c2ff)](LICENSE)
 
 [Download for macOS](https://github.com/Bithisarea2010/Helion-Vanguard/releases/latest) · [Controls](#flight-controls) · [Build from source](#build-from-source) · [Documentation](#engineering-notes)
 
 </div>
+
+**Local quality build 1.3.0:** eight playable ships, redesigned Vanguard plus
+Peregrine and Aegis, navigable Relay 07, revised combat HUD, comfort controls,
+original weapon/impact/reward audio and independent flight ambience.
+
+Read [the tested quality report](docs/QUALITY_REPORT.md) for runtime evidence,
+performance measurements and known limits. Open `project.godot` with Godot
+4.7.2; see [build and verification instructions](docs/BUILD.md). The latest local
+Apple Silicon app is `build/quality-1.3.0/Helion Vanguard.app`.
+
+
 
 ![A Helion Vanguard starfighter approaching a sunlit world](assets/loading/helion_corridor.png)
 
@@ -33,11 +44,11 @@ Pilot four purpose-built starfighters, master a deep combat sandbox and lead the
 
 ## Enter the battlespace
 
-Helion Vanguard is an original, performance-conscious space-combat game built with Godot 4.7, Blender and a procedural asset pipeline. Its controls are immediately readable, but the combat model leaves room to grow: directional shields, heat and energy management, target-leading, velocity matching, countermeasures, missile locks and optional momentum flight all matter once the sky fills with hostiles.
+Helion Vanguard is an original, performance-conscious space-combat game built with Godot 4.7.2, Blender and a procedural asset pipeline. Its controls are immediately readable, but the combat model leaves room to grow: directional shields, heat and energy management, target-leading, velocity matching, countermeasures, missile locks and optional momentum flight all matter once the sky fills with hostiles.
 
 - **Instant Action** — launch directly into an asteroid-belt dogfight.
 - **Nine operations** — progress from Flight Academy to the 15–20 minute campaign strike *Operation Sunfall*.
-- **Four player ships** — choose agility, versatility, armor or long-range missile dominance.
+- **Eight unlocked player ships** — choose agility, versatility, armor, stealth or long-range missile dominance from the first launch.
 - **Advanced capabilities** — lightspeed drive, geodesic shield impacts, adaptive targeting and an expanded arsenal.
 - **Layered combat systems** — directional shields, armor penetration, ricochets, heat, energy, ammunition and flares.
 - **Living battlefields** — enemy formations, coordinated attack runs, destructible capital-ship subsystems and dense procedural asteroid belts.
@@ -92,13 +103,17 @@ Helion Vanguard is an original, performance-conscious space-combat game built wi
 | **SF-7 Vanguard** | Assault fighter | Balanced speed, durability and firepower—the fleet's dependable all-rounder. |
 | **SG-9 Hammer** | Heavy gunship | Slow, armored and built to deliver a brutal broadside. |
 | **SM-5 Raptor** | Strike craft | Eighteen missiles and long-range locks for deliberate stand-off attacks. |
+| **SR-2 Specter** | Stealth interceptor | Fast, low-signature hunter that delays enemy target acquisition. |
+| **SA-11 Paladin** | Assault gunship | Four engines, heavy armor and six racks for direct fleet assaults. |
+| **SF-12 Peregrine** | Precision interceptor | Swept canards, railgun passes and agile exits. |
+| **SA-14 Aegis** | Escort strike fighter | Four engines, substantial shields and radar-guided ordnance. |
 
-Configure weapons, missiles, paint and engine glow in the Hangar. Eight primary weapon families and five missile classes support everything from precision railgun passes to saturation attacks.
+All eight craft are immediately available. Configure weapons, ordnance, paint and engine glow in the Hangar. Fourteen primary weapon systems and eight ordnance classes support everything from precision railgun passes to saturation attacks.
 
 ## Download and play
 
 1. Open the [latest GitHub release](https://github.com/Bithisarea2010/Helion-Vanguard/releases/latest).
-2. Download **`Helion-Vanguard-macOS-v1.2.1.zip`**.
+2. Download the latest **Helion Vanguard macOS ZIP**.
 3. Extract the ZIP and open **Helion Vanguard.app**.
 4. If macOS blocks the first launch, Control-click the app and choose **Open**.
 
@@ -123,7 +138,7 @@ Every binding can be changed under **Settings → Controls**. The game releases 
 ## Built as a complete pipeline
 
 ```text
-       BLENDER GENERATORS                 GODOT 4.7
+       BLENDER GENERATORS                 GODOT 4.7.2
   ┌────────────────────────┐       ┌─────────────────────────┐
   │ ships · fleets · props │──────▶│ scenes · AI · missions │
   │ greebles · vertex AO   │       │ combat · HUD · shaders │
@@ -135,13 +150,13 @@ Every binding can be changed under **Settings → Controls**. The game releases 
   └────────────────────────┘
 ```
 
-The repository includes the gameplay source, procedural Blender generators, original models, synthesized audio, shaders, mission logic, test hooks and performance documentation. Scene stubs stay small because much of the game is assembled in code.
+The repository includes the gameplay source, procedural Blender generators, original models, synthesized sound effects and loops, the documented project-owner-supplied playlist, shaders, mission logic, test hooks and performance documentation. Scene stubs stay small because much of the game is assembled in code.
 
 <details>
 <summary><b>Repository map</b></summary>
 
 ```text
-project.godot          Godot 4.7 project entry point
+project.godot          Godot 4.7.2 project entry point
 scenes/                Scene stubs and test scenes
 scripts/               GDScript gameplay, UI, AI and systems
 shaders/               Hull, sky, planet and effects shaders
@@ -156,13 +171,15 @@ docs/                  Build, controls, performance and audit notes
 
 ## Build from source
 
-Requirements: **Godot 4.7 stable**, macOS 11 or newer, and the matching Godot export templates.
+Requirements for the tested local app: **Godot 4.7.2**, Apple Silicon and macOS
+13 or newer. The local builder packages the installed matching runtime, so
+mismatched export templates are not used.
 
 ```sh
-/Applications/Godot.app/Contents/MacOS/Godot --headless --path . --import
-mkdir -p build
-/Applications/Godot.app/Contents/MacOS/Godot --headless --path . \
-  --export-release "macOS" "build/Helion Vanguard.zip"
+GODOT="/Applications/További programok Boldi/Fejlesztés/Godot.app/Contents/MacOS/Godot"
+"$GODOT" --headless --path . --import
+python3 tools/build_local_macos.py
+# Existing recognized 1.3.0 build: append --replace.
 ```
 
 For signing, installation, asset regeneration and the automated combat harness, read [docs/BUILD.md](docs/BUILD.md).
@@ -195,6 +212,13 @@ The repository includes an [MIT license](LICENSE). Third-party fonts and CC0 tex
 
 **Built with Godot, Blender, procedural tools and an unreasonable affection for glowing engines.**
 
-[Download v1.2.1](https://github.com/Bithisarea2010/Helion-Vanguard/releases/latest) · [Report an issue](https://github.com/Bithisarea2010/Helion-Vanguard/issues)
+[Download latest release](https://github.com/Bithisarea2010/Helion-Vanguard/releases/latest) · [Report an issue](https://github.com/Bithisarea2010/Helion-Vanguard/issues)
+
+## Production credits
+
+Helion Vanguard is directed and owned by Bithisarea / Original Games. The
+project's staged AI-assisted workflow is documented in
+[AI production credits](docs/AI_PRODUCTION_CREDITS.md), including the 1.3.0
+Astra production pass.
 
 </div>

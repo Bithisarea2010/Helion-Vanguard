@@ -3,8 +3,8 @@ render_mode cull_back, specular_schlick_ggx;
 // =============================================================================
 // Helion Vanguard — procedural hard-surface hull.
 //
-// The ship meshes carry POSITION + NORMAL only (no UVs, no textures), which is
-// why they shipped looking like flat plastic. Rather than unwrap and author a
+// Legacy ship meshes carry POSITION + NORMAL only. The authored 1.3 fleet
+// retains UVs and sets panel_detail to zero to preserve its modeled detail. Rather than unwrap and author a
 // texture set per ship, every surface detail here is generated in OBJECT space:
 // the meshes are rigid and never deform, so object-space detail is rock-stable,
 // costs zero VRAM, adds zero draw calls, and works on every hull, capital,
@@ -32,6 +32,7 @@ uniform vec3 emission_color : source_color = vec3(0.0);
 uniform float emission_energy = 0.0;
 
 uniform float plate_scale = 2.6;          // panel cells per object-space unit
+uniform float panel_detail : hint_range(0.0, 1.0) = 1.0;
 uniform float seam_depth : hint_range(0.0, 2.0) = 0.55;
 uniform float plate_variation : hint_range(0.0, 1.0) = 0.35;
 uniform float wear : hint_range(0.0, 1.0) = 0.45;
@@ -107,14 +108,14 @@ void fragment() {
 		// low-frequency noise, so plates read as irregular hull sections rather
 		// than graph paper
 		float w = vnoise(v_obj * 0.55) - 0.5;
-		vec3 q = v_obj * plate_scale + vec3(w * 0.9);
+		vec3 q = v_obj * plate_scale + vec3(w * 0.14);
 
 		// Procedural mip. `px` is roughly how many lattice cells one pixel spans;
 		// once a cell is smaller than a pixel the pattern must dissolve into its
 		// average or it aliases into glitter (which is exactly what the first
 		// tuning pass did to the wings).
 		float px = length(fwidth(q));
-		float sharp = lod * (1.0 - smoothstep(0.10, 0.55, px));
+		float sharp = lod * (1.0 - smoothstep(0.10, 0.55, px)) * panel_detail;
 
 		vec2 a = lattice(q);
 		// second lattice: coarser, rotated 30 deg in XZ, offset
@@ -126,7 +127,7 @@ void fragment() {
 
 		// seam width tracks the pixel footprint, so gaps stay one crisp line
 		// close up and blur away smoothly instead of shimmering
-		float sw = 0.030;
+		float sw = 0.017;
 		float aa = max(px * 0.5, 0.002);
 		float seam = (1.0 - smoothstep(sw - aa, sw + aa, border)) * sharp;
 
@@ -160,7 +161,7 @@ void fragment() {
 		vec3 sgrad = sign(det) * (dFdx(height) * r1 + dFdy(height) * r2);
 		NORMAL = normalize(abs(det) * geo_n - (seam_depth * 0.05) * sgrad);
 
-		albedo *= 1.0 - seam * 0.45;
+		albedo *= 1.0 - seam * 0.28;
 		rough = clamp(rough + seam * 0.26, 0.05, 1.0);
 		albedo = mix(albedo, albedo * 1.5, bolt_field * 0.45);
 		rough = clamp(rough - bolt_field * 0.18, 0.05, 1.0);
@@ -173,7 +174,7 @@ void fragment() {
 		rough = clamp(rough - wear_mask * 0.18, 0.05, 1.0);
 
 		// grime is low frequency, so it survives the whole LOD range
-		float soot = smoothstep(0.58, 0.88, dirt) * grime * lod;
+		float soot = smoothstep(0.58, 0.88, dirt) * grime * lod * panel_detail;
 		albedo *= 1.0 - soot * 0.40;
 		rough = clamp(rough + soot * 0.30, 0.05, 1.0);
 		metal *= 1.0 - soot * 0.45;

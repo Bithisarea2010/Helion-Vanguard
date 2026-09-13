@@ -1,0 +1,25 @@
+/Users/bokkonboldiszar/Desktop/Codex Workspace/05_SHARED_PROJECTS/Games/HelionVanguard/blender_src/relay_foundry.py:15: DeprecationWarning: 'Material.use_nodes' is expected to be removed in Blender 6.0
+  m=bpy.data.materials.new(name);m.use_nodes=True
+INFO Draco is available, use library at /Applications/További programok Boldi/Fejlesztés/Blender.app/Contents/Resources/5.2/scripts/addons_core/io_scene_gltf2/libbf_intern_draco_bridge.dylib
+INFO MeshOptimizer is available, use library at /Applications/További programok Boldi/Fejlesztés/Blender.app/Contents/Resources/5.2/scripts/addons_core/io_scene_gltf2/libbf_intern_meshopt_bridge.dylib
+12:39:37 | INFO: Starting glTF 2.0 export
+12:39:37 | INFO: Extracting primitive: Cube.006
+12:39:38 | INFO: Primitives created: 1
+12:39:38 | INFO: Extracting primitive: Segment ceramic
+12:39:38 | INFO: Primitives created: 1
+12:39:38 | INFO: Extracting primitive: Pressure frame
+12:39:38 | INFO: Primitives created: 1
+12:39:38 | INFO: Extracting primitive: Brass outer band
+12:39:38 | INFO: Primitives created: 1
+12:39:38 | INFO: Extracting primitive: Navigation inset
+12:39:38 | INFO: Primitives created: 1
+12:39:38 | INFO: Extracting primitive: Cube.005
+12:39:38 | INFO: Primitives created: 1
+12:39:38 | INFO: Finished glTF 2.0 export in 0.02509284019470215 s
+00:10.611  render           | Saved: '/Users/bokkonboldiszar/Desktop/Codex Workspace/05_SHARED_PROJECTS/Games/HelionVanguard/docs/evidence/quality-2026-09-13/after/relay_blender.png'
+
+Info: Saved as "helion_relay.blend"
+{"asset": "/Users/bokkonboldiszar/Desktop/Codex Workspace/05_SHARED_PROJECTS/Games/HelionVanguard/assets/models/helion_relay.glb", "blend": "/Users/bokkonboldiszar/Desktop/Codex Workspace/05_SHARED_PROJECTS/Games/HelionVanguard/blender_src/blends/helion_relay.blend", "triangles": 9716, "surfaces": 6, "clear_aperture_m": 180}
+Blender 5.2.0 LTS (hash fbe6228777e7 built 2026-07-14 01:31:22)
+
+Blender quit

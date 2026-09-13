@@ -1,0 +1,14 @@
+Godot Engine v4.7.2.stable.official.ed1daf0bf - https://godotengine.org
+Metal 4.0 - Forward+ - Using Device #0: Apple - Apple M1 (Apple7)
+
+2026-09-13 13:38:08.274 HelionVanguard[34065:529972] [libMTLHud] Metric com.apple.hud-stat.frame-interval already exist
+2026-09-13 13:38:08.274 HelionVanguard[34065:529972] [libMTLHud] Metric com.apple.hud-stat.present-delay already exist
+2026-09-13 13:38:08.274 HelionVanguard[34065:529972] [libMTLHud] Metric com.apple.hud-stat.fps already exist
+2026-09-13 13:38:08.274 HelionVanguard[34065:529972] [libMTLHud] Metric com.apple.hud-stat.logical-fps already exist
+2026-09-13 13:38:08.274 HelionVanguard[34065:529972] [libMTLHud] Metric com.apple.hud-stat.logical-frame-interval already exist
+2026-09-13 13:38:08.278 HelionVanguard[34065:529972] NSEventModifierFlagFunction specified to -setKeyEquivalentModifierMask: for item <NSMenuItem: 0x9eb444d20 Enable HUD, ke='Command-F9', action: toggleEnabled:>, but is only supported for system-provided menu items; will not be used
+2026-09-13 13:38:08.281 HelionVanguard[34065:529972] NSEventModifierFlagFunction specified to -setKeyEquivalentModifierMask: for item <NSMenuItem: 0x9eb446800 Enable Logging, ke='Command-F8', action: toggleLoggingEnabled:>, but is only supported for system-provided menu items; will not be used
+2026-09-13 13:38:08.281 HelionVanguard[34065:529972] NSEventModifierFlagFunction specified to -setKeyEquivalentModifierMask: for item <NSMenuItem: 0x9eb445ea0 Reset Metrics, ke='Command-F11', action: resetMetrics:>, but is only supported for system-provided menu items; will not be used
+2026-09-13 13:38:08.281 HelionVanguard[34065:529972] NSEventModifierFlagFunction specified to -setKeyEquivalentModifierMask: for item <NSMenuItem: 0x9eb444820 Show Configuration Panel, ke='Command-F12', action: showConfigurationPanel:>, but is only supported for system-provided menu items; will not be used
+2026-09-13 13:38:08.281 HelionVanguard[34065:529972] NSEventModifierFlagFunction specified to -setKeyEquivalentModifierMask: for item <NSMenuItem: 0x9eb445040 Copy HUD Configuration, action: copyConfig:>, but is only supported for system-provided menu items; will not be used
+[CAPTURE] native menu (2880, 1800) saved=true

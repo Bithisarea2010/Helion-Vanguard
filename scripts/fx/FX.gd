@@ -358,22 +358,25 @@ static func explosion(parent: Node, pos: Vector3, kind := 1) -> void:
 	tw.parallel().tween_property(l, "light_energy", 0.0, 0.9 * s).set_trans(Tween.TRANS_QUAD)
 	tw.tween_callback(l.queue_free)
 	# --- 7. shockwave ring + debris + delayed cook-offs
+	var parent_id := parent.get_instance_id()
 	if kind >= 1:
 		shockwave(parent, pos, 16.0 * s, Color(1.0, 0.78, 0.5))
 		if kind >= 2:
 			var t2 := tree.create_timer(0.12)
 			t2.timeout.connect(func():
-				if is_instance_valid(parent):
-					shockwave(parent, pos, 30.0 * s, Color(0.8, 0.6, 1.0)))
+				var live_parent := instance_from_id(parent_id) as Node
+				if is_instance_valid(live_parent):
+					shockwave(live_parent, pos, 30.0 * s, Color(0.8, 0.6, 1.0)))
 		debris(parent, pos, 3 + kind * 3, s)
 		var n_sec := 1 if kind == 1 else 3
 		for i in n_sec:
 			var t := tree.create_timer(randf_range(0.15, 0.6) * (i + 1))
 			t.timeout.connect(func():
-				if is_instance_valid(parent):
+				var live_parent := instance_from_id(parent_id) as Node
+				if is_instance_valid(live_parent):
 					var off := Vector3(randf_range(-1, 1), randf_range(-1, 1), randf_range(-1, 1)) * 3.5 * s
-					fireball(parent, pos + off, 3.6 * s, 0.34 * s + 0.2, 1.1, 1.4)
-					_particles(parent, pos + off, int(12 * pq), 0.4 * s, 4.0 * s, 16.0 * s,
+					fireball(live_parent, pos + off, 3.6 * s, 0.34 * s + 0.2, 1.1, 1.4)
+					_particles(live_parent, pos + off, int(12 * pq), 0.4 * s, 4.0 * s, 16.0 * s,
 						0.5 * s, 1.1 * s, Color(1.0, 0.85, 0.45, 1.0), Color(0.9, 0.3, 0.05, 0.0))
 					AudioMgr.play_3d("explosion_small", pos + off, -6.0))
 	# audio

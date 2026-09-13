@@ -220,7 +220,7 @@ func _resolve_hit(b: Dictionary, hit: Dictionary) -> bool:
 	var was_shield: bool = not bypass and "shield_front" in recv \
 		and (recv.shield_front > 0.0 or recv.shield_rear > 0.0)
 	recv.take_hit(b.dmg, hit.position, (b.vel as Vector3).normalized(), b.pen, sh_mult,
-		b.hu, b.shooter, hit.get("normal", Vector3.ZERO))
+		b.hu, b.shooter if is_instance_valid(b.shooter) else null, hit.get("normal", Vector3.ZERO))
 	var reactive := recv.is_in_group("reactive_surface")
 	var kind: String = str(recv.get_meta("surface_kind", "metal"))
 	if reactive:
@@ -274,7 +274,7 @@ func _chain_from(b: Dictionary, first: Node, from: Vector3) -> void:
 		var to: Vector3 = best.global_position
 		FX.arc_bolt(self, src, to, b.tint)
 		best.take_hit(dmg, to, (to - src).normalized(), float(b.pen), float(b.sh),
-			float(b.hu), b.shooter, (src - to).normalized())
+			float(b.hu), b.shooter if is_instance_valid(b.shooter) else null, (src - to).normalized())
 		if is_instance_valid(b.shooter) and b.shooter.is_in_group("player"):
 			player_hit_confirmed.emit(best, false)
 		src = to
