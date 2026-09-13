@@ -2,8 +2,8 @@ class_name HullMaterial
 ## Converts the flat Principled-BSDF materials baked into the ship GLBs into
 ## procedural hard-surface `hull.gdshader` materials.
 ##
-## The source meshes have no UVs and no textures, so the ships shipped as solid
-## untextured colour. This walks every MeshInstance3D surface once at spawn,
+## Legacy meshes have no UVs or textures. The authored 1.3 fleet retains UVs
+## and uses a restrained shader profile over its modeled panel detail. This walks every MeshInstance3D surface once at spawn,
 ## reads whatever the GLB material declared (albedo / metallic / roughness /
 ## emission) and installs a shader material that adds plating, seams, bolts,
 ## edge wear and grime procedurally in object space.
@@ -81,9 +81,9 @@ static func _hull_material(albedo: Color, metal: float, rough: float,
 	var wear: float = opts.get("wear", 0.45)
 	var grime: float = opts.get("grime", 0.40)
 	var stripe: Color = opts.get("stripe", Color(0.95, 0.55, 0.10))
-	var stripe_amt: float = 0.0 if is_trim else float(opts.get("stripe_amount", 0.0))
+	var stripe_amt: float = 0.0 if is_trim or bool(opts.get("authored", false)) else float(opts.get("stripe_amount", 0.0))
 	var rim: Color = opts.get("rim", Color(0.32, 0.46, 0.80))
-	var rim_s: float = opts.get("rim_strength", 1.0)
+	var rim_s: float = 0.12 if bool(opts.get("authored", false)) else float(opts.get("rim_strength", 1.0))
 	var fade_a: float = opts.get("detail_fade_start", 90.0)
 	var fade_b: float = opts.get("detail_fade_end", 320.0)
 	var tex_key := "none" if albedo_tex == null else (
@@ -92,6 +92,7 @@ static func _hull_material(albedo: Color, metal: float, rough: float,
 		albedo.to_html(), metal, rough, emit_col.to_html(), emit_e,
 		tex_key, plate, wear, grime, stripe.to_html(), stripe_amt, rim.to_html(), rim_s,
 		fade_a, fade_b, 1 if is_trim else 0]
+	key += "|authored=" + str(bool(opts.get("authored", false)))
 	if _cache.has(key):
 		return _cache[key]
 	var m := ShaderMaterial.new()
@@ -105,6 +106,7 @@ static func _hull_material(albedo: Color, metal: float, rough: float,
 	m.set_shader_parameter("emission_color", emit_col)
 	m.set_shader_parameter("emission_energy", emit_e)
 	m.set_shader_parameter("plate_scale", plate * (0.4 if is_trim else 1.0))
+	m.set_shader_parameter("panel_detail", 0.0 if bool(opts.get("authored", false)) else 1.0)
 	m.set_shader_parameter("seam_depth", 0.15 if is_trim else 0.55)
 	m.set_shader_parameter("plate_variation", 0.10 if is_trim else 0.35)
 	m.set_shader_parameter("wear", 0.0 if is_trim else wear)

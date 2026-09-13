@@ -67,7 +67,9 @@ func begin(context: Dictionary = {}) -> void:
 	_reported_progress = 0.0
 	_kind = str(context.get("kind", "boot"))
 	_minimum_present_seconds = clampf(float(context.get("min_present_seconds",
-		PRESENT_SECONDS.get(_kind, 8.0))), 7.0, 10.0)
+		PRESENT_SECONDS.get(_kind, 8.0))), 0.0, 10.0)
+	if bool(Game.settings.quick_transitions):
+		_minimum_present_seconds = minf(_minimum_present_seconds, 1.2 if _kind == "boot" else 0.45)
 	_progress.call("reset")
 	_eyebrow.text = str(context.get("eyebrow", "HELION COMMAND  //  FTL INSERTION"))
 	_title.text = str(context.get("title", "VANGUARD SYSTEMS"))
@@ -95,12 +97,7 @@ func transition_to(path: String, context: Dictionary = {}) -> void:
 	begin(context)
 	_retry_path = path
 	_retry_context = context.duplicate(true)
-	var watchdog := _watchdog_serial
-	get_tree().create_timer(35.0, true, false, true).timeout.connect(func():
-		if _active and _busy and watchdog == _watchdog_serial:
-			push_warning("SceneFlow watchdog held a stalled transition to %s" % path)
-			_enter_fault(path, context, "TRANSFER HOLD",
-				"Scene channel timed out — pulse the FTL field to retry"))
+	_arm_watchdog(path, context, _watchdog_serial, 35.0)
 	await get_tree().process_frame
 	await get_tree().process_frame
 	report(0.025, "TRANSFER GATE", "Opening secure scene channel")
@@ -109,6 +106,29 @@ func transition_to(path: String, context: Dictionary = {}) -> void:
 		push_error("SceneFlow could not open %s: %s" % [path, error_string(err)])
 		_enter_fault(path, context, "TRANSFER FAULT",
 			"Scene channel rejected (%s) — pulse the FTL field to retry" % error_string(err))
+
+## First-time renderer work can block a frame beyond the initial 35-second
+## transfer deadline. Give a scene which has reported initialization milestones
+## a bounded grace period; missing resources still fail at the normal deadline.
+func _watchdog_grace_seconds() -> float:
+	if _reported_progress <= 0.025 or _reported_progress >= 1.0:
+		return 0.0
+	var elapsed := float(Time.get_ticks_msec() - _started_msec) / 1000.0
+	return clampf(120.0 - elapsed, 0.0, 35.0)
+
+func _arm_watchdog(path: String, context: Dictionary, serial: int, seconds: float) -> void:
+	get_tree().create_timer(seconds, true, false, true).timeout.connect(func():
+		if not _active or not _busy or serial != _watchdog_serial:
+			return
+		var grace := _watchdog_grace_seconds()
+		if grace > 0.1:
+			_progress.call("set_progress", _reported_progress, _last_stage,
+				"Preparing the scene — first use of a graphics profile can take longer")
+			_arm_watchdog(path, context, serial, grace)
+			return
+		push_warning("SceneFlow watchdog held a stalled transition to %s" % path)
+		_enter_fault(path, context, "TRANSFER HOLD",
+			"Scene channel timed out — pulse the FTL field to retry"))
 
 ## Keep the overlay between the player and a missing or half-initialised scene.
 ## The focused FTL instrument becomes a retry control; unlike finish(), this
@@ -169,7 +189,7 @@ func finish() -> void:
 	_flash.color = Color(0.78, 0.93, 1.0, 0.0)
 	var flash_tw := create_tween()
 	flash_tw.set_pause_mode(Tween.TWEEN_PAUSE_PROCESS)
-	flash_tw.tween_property(_flash, "color:a", 0.72, 0.10)
+	flash_tw.tween_property(_flash, "color:a", 0.32 * float(Game.settings.flash_intensity), 0.10)
 	flash_tw.tween_property(_flash, "color:a", 0.0, 0.34)
 	var tw := create_tween()
 	tw.set_pause_mode(Tween.TWEEN_PAUSE_PROCESS)

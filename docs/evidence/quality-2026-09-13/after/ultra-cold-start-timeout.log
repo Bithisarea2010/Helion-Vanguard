@@ -1,0 +1,22 @@
+Godot Engine v4.7.2.stable.official.ed1daf0bf - https://godotengine.org
+Metal 4.0 - Forward+ - Using Device #0: Apple - Apple M1 (Apple7)
+
+[MCPRuntimeServer] port: scanning 6570-6585 (default)
+[MCPRuntimeServer] listening on 127.0.0.1:6570
+[MCPRegistry] runtime port 6570 registered for /users/bokkonboldiszar/desktop/codex workspace/05_shared_projects/games/helionvanguard
+WARNING: SceneFlow watchdog held a stalled transition to res://scenes/Battle.tscn
+     at: push_warning (core/variant/variant_utility.cpp:1033)
+     GDScript backtrace (most recent call first):
+         [0] <anonymous lambda> (res://scripts/core/SceneFlow.gd:103)
+2026-09-13 13:24:12.839 Godot[33487:518763] [libMTLHud] Metric com.apple.hud-stat.frame-interval already exist
+2026-09-13 13:24:12.839 Godot[33487:518763] [libMTLHud] Metric com.apple.hud-stat.present-delay already exist
+2026-09-13 13:24:12.839 Godot[33487:518763] [libMTLHud] Metric com.apple.hud-stat.fps already exist
+2026-09-13 13:24:12.839 Godot[33487:518763] [libMTLHud] Metric com.apple.hud-stat.logical-fps already exist
+2026-09-13 13:24:12.839 Godot[33487:518763] [libMTLHud] Metric com.apple.hud-stat.logical-frame-interval already exist
+[RUN] window=(1280, 720) viewport=(1920.0, 1080.0) render_scale=0.85 preset=Ultra
+2026-09-13 13:24:13.592 Godot[33487:518763] NSEventModifierFlagFunction specified to -setKeyEquivalentModifierMask: for item <NSMenuItem: 0x7964ca1c0 Enable HUD, ke='Command-F9', action: toggleEnabled:>, but is only supported for system-provided menu items; will not be used
+2026-09-13 13:24:13.592 Godot[33487:518763] NSEventModifierFlagFunction specified to -setKeyEquivalentModifierMask: for item <NSMenuItem: 0x7964c8320 Enable Logging, ke='Command-F8', action: toggleLoggingEnabled:>, but is only supported for system-provided menu items; will not be used
+2026-09-13 13:24:13.592 Godot[33487:518763] NSEventModifierFlagFunction specified to -setKeyEquivalentModifierMask: for item <NSMenuItem: 0x7964cb340 Reset Metrics, ke='Command-F11', action: resetMetrics:>, but is only supported for system-provided menu items; will not be used
+2026-09-13 13:24:13.592 Godot[33487:518763] NSEventModifierFlagFunction specified to -setKeyEquivalentModifierMask: for item <NSMenuItem: 0x7964cb5c0 Show Configuration Panel, ke='Command-F12', action: showConfigurationPanel:>, but is only supported for system-provided menu items; will not be used
+2026-09-13 13:24:13.592 Godot[33487:518763] NSEventModifierFlagFunction specified to -setKeyEquivalentModifierMask: for item <NSMenuItem: 0x7964cb660 Copy HUD Configuration, action: copyConfig:>, but is only supported for system-provided menu items; will not be used
+[BENCH] t=0.5 fps=11.9 p95=781.83ms worst=781.83ms cpu=726.38ms phys=1.88ms acc=0.000 fcs=0.850 shots=0 assist=0.68 hostiles=3 stage=0 objects=1414 prims=126617 drawcalls=374 vram=383.9MB nodes=384

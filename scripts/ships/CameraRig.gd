@@ -132,6 +132,8 @@ func toggle_photo() -> void:
 		if cockpit_model:
 			cockpit_model.visible = false
 		get_tree().paused = true
+	if is_instance_valid(ship) and is_instance_valid(ship.model_root):
+		ship.model_root.visible = (mode != Mode.COCKPIT) and ship.alive
 	process_mode = Node.PROCESS_MODE_ALWAYS
 
 func add_shake(v: float) -> void:
@@ -142,6 +144,8 @@ func aim_ray(screen_pos: Vector2) -> Array:
 
 func _process(delta: float) -> void:
 	if ship == null or not is_instance_valid(ship):
+		return
+	if get_tree().paused and mode != Mode.PHOTO:
 		return
 	_shake = maxf(0.0, _shake - delta * 2.2)
 	_shake_t += delta * 34.0
@@ -182,13 +186,14 @@ func _chase(delta: float) -> void:
 	var tr := Transform3D(Basis.looking_at(look_pt - global_position, up), global_position)
 	global_transform = global_transform.interpolate_with(tr, 1.0 - exp(-lerpf(18.0, 9.0, smooth) * delta))
 	global_position += global_transform.basis * _shake_off()
-	var want_fov := base_fov + clampf(speed / ship.sdef.speed, 0.0, 2.2) * 9.0
+	var motion: float = Game.settings.fov_motion
+	var want_fov := base_fov + clampf(speed / ship.sdef.speed, 0.0, 2.2) * 9.0 * motion
 	# The FTL drive owns the lens while it is engaged: the spool COMPRESSES the
 	# frame and the breach snaps it wide. Blending that through the speed term
 	# would cancel it out, because cruise speed is already at the clamp.
 	var fov_rate := 4.0
 	if ship.ftl and ship.ftl.engaged():
-		want_fov = base_fov + ship.ftl.fov_offset()
+		want_fov = base_fov + ship.ftl.fov_offset() * motion
 		fov_rate = 9.0
 	cam.fov = lerpf(cam.fov, want_fov, 1.0 - exp(-fov_rate * delta))
 	# anti-clip: ease the lens in when a rock blocks the view. Snapping to the
@@ -213,7 +218,7 @@ func _cockpit(delta: float) -> void:
 	var b := ship.global_transform.basis
 	global_position = ship.global_position + b * eye
 	var vib := _shake_off() * 0.5
-	vib += Vector3(sin(_shake_t * 0.31), cos(_shake_t * 0.41), 0) * 0.006 * clampf(ship.linear_velocity.length() / 80.0, 0.2, 1.5)
+	vib += Vector3(sin(_shake_t * 0.31), cos(_shake_t * 0.41), 0) * 0.006 * clampf(ship.linear_velocity.length() / 80.0, 0.2, 1.5) * float(Game.settings.camera_shake)
 	# head: spring back when not holding look; subtle lean into the aim
 	if not Input.is_action_pressed("look_around"):
 		head_look = head_look.lerp(Vector2.ZERO, 1.0 - exp(-6.0 * delta))

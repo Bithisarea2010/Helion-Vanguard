@@ -1,0 +1,78 @@
+/Users/bokkonboldiszar/Desktop/Codex Workspace/05_SHARED_PROJECTS/Games/HelionVanguard/blender_src/hero_fleet.py:16: DeprecationWarning: 'Material.use_nodes' is expected to be removed in Blender 6.0
+  m.use_nodes = True
+Warning: No mesh data to join
+INFO Draco is available, use library at /Applications/További programok Boldi/Fejlesztés/Blender.app/Contents/Resources/5.2/scripts/addons_core/io_scene_gltf2/libbf_intern_draco_bridge.dylib
+INFO MeshOptimizer is available, use library at /Applications/További programok Boldi/Fejlesztés/Blender.app/Contents/Resources/5.2/scripts/addons_core/io_scene_gltf2/libbf_intern_meshopt_bridge.dylib
+12:59:53 | INFO: Starting glTF 2.0 export
+12:59:53 | INFO: Extracting primitive: Faceted canopy
+12:59:53 | INFO: Primitives created: 1
+12:59:53 | INFO: Extracting primitive: Primary pressure hull
+12:59:53 | INFO: Primitives created: 1
+12:59:53 | INFO: Extracting primitive: Cockpit service light
+12:59:53 | INFO: Primitives created: 1
+12:59:53 | INFO: Extracting primitive: Spine vent
+12:59:53 | INFO: Primitives created: 1
+12:59:53 | INFO: Extracting primitive: Maintenance spine
+12:59:53 | INFO: Primitives created: 1
+12:59:53 | INFO: Extracting primitive: Canopy cross frame
+12:59:53 | INFO: Primitives created: 1
+12:59:53 | INFO: Extracting primitive: Position beacon
+12:59:53 | INFO: Primitives created: 1
+12:59:53 | INFO: Extracting primitive: Dorsal spine
+12:59:53 | INFO: Primitives created: 1
+12:59:53 | INFO: Finished glTF 2.0 export in 0.03806900978088379 s
+
+FLEET_ASSET {"ship": "vanguard", "triangles": 22560, "surfaces": 8, "bytes": 1515360}
+00:10.263  render           | Saved: '/Users/bokkonboldiszar/Desktop/Codex Workspace/05_SHARED_PROJECTS/Games/HelionVanguard/docs/evidence/quality-2026-09-13/after/final/vanguard-blender.png'
+/Users/bokkonboldiszar/Desktop/Codex Workspace/05_SHARED_PROJECTS/Games/HelionVanguard/blender_src/hero_fleet.py:16: DeprecationWarning: 'Material.use_nodes' is expected to be removed in Blender 6.0
+  m.use_nodes = True
+Info: Saved as "ship_vanguard_mk3.blend"
+Warning: No mesh data to join
+13:00:02 | INFO: Starting glTF 2.0 export
+13:00:02 | INFO: Extracting primitive: Faceted canopy.001
+13:00:02 | INFO: Primitives created: 1
+13:00:02 | INFO: Extracting primitive: Primary pressure hull.001
+13:00:02 | INFO: Primitives created: 1
+13:00:02 | INFO: Extracting primitive: Cockpit service light.002
+13:00:02 | INFO: Primitives created: 1
+13:00:02 | INFO: Extracting primitive: Spine vent.005
+13:00:02 | INFO: Primitives created: 1
+13:00:02 | INFO: Extracting primitive: Maintenance spine.001
+13:00:02 | INFO: Primitives created: 1
+13:00:02 | INFO: Extracting primitive: Canopy cross frame.003
+13:00:02 | INFO: Primitives created: 1
+13:00:02 | INFO: Extracting primitive: Position beacon.002
+13:00:02 | INFO: Primitives created: 1
+13:00:02 | INFO: Extracting primitive: Dorsal spine.001
+13:00:02 | INFO: Primitives created: 1
+13:00:02 | INFO: Finished glTF 2.0 export in 0.03051280975341797 s
+
+FLEET_ASSET {"ship": "peregrine", "triangles": 22456, "surfaces": 8, "bytes": 1510832}
+00:18.734  render           | Saved: '/Users/bokkonboldiszar/Desktop/Codex Workspace/05_SHARED_PROJECTS/Games/HelionVanguard/docs/evidence/quality-2026-09-13/after/final/peregrine-blender.png'
+Info: Saved as "ship_peregrine.blend"
+Warning: No mesh data to join
+13:00:12 | INFO: Starting glTF 2.0 export
+13:00:12 | INFO: Extracting primitive: Faceted canopy.002
+13:00:12 | INFO: Primitives created: 1
+13:00:12 | INFO: Extracting primitive: Primary pressure hull.002
+13:00:12 | INFO: Primitives created: 1
+13:00:12 | INFO: Extracting primitive: Cockpit service light.004
+13:00:12 | INFO: Primitives created: 1
+13:00:12 | INFO: Extracting primitive: Spine vent.010
+13:00:12 | INFO: Primitives created: 1
+13:00:12 | INFO: Extracting primitive: Maintenance spine.002
+13:00:12 | INFO: Primitives created: 1
+13:00:12 | INFO: Extracting primitive: Canopy cross frame.006
+13:00:12 | INFO: Primitives created: 1
+13:00:12 | INFO: Extracting primitive: Position beacon.004
+13:00:12 | INFO: Primitives created: 1
+13:00:12 | INFO: Extracting primitive: Dorsal spine.002
+13:00:12 | INFO: Primitives created: 1
+13:00:12 | INFO: Finished glTF 2.0 export in 0.0351560115814209 s
+
+FLEET_ASSET {"ship": "aegis", "triangles": 32552, "surfaces": 8, "bytes": 2207780}
+00:28.849  render           | Saved: '/Users/bokkonboldiszar/Desktop/Codex Workspace/05_SHARED_PROJECTS/Games/HelionVanguard/docs/evidence/quality-2026-09-13/after/final/aegis-blender.png'
+Info: Saved as "ship_aegis.blend"
+Blender 5.2.0 LTS (hash fbe6228777e7 built 2026-07-14 01:31:22)
+
+Blender quit

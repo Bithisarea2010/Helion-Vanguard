@@ -28,6 +28,7 @@ func _ready() -> void:
 	await get_tree().process_frame
 	_test_presets()
 	_test_settings_validation()
+	_test_background_music_playlist()
 	_test_save_validation()
 	_test_lead_solution()
 	_test_damage_model()
@@ -40,6 +41,7 @@ func _ready() -> void:
 	_test_extended_arsenal()
 	await _test_shield_matrix()
 	_test_targeting_servo()
+	await _test_quality_regressions()
 	print("[TEST] pass=%d fail=%d" % [_passed, _failed])
 	Game.prepare_shutdown()
 	await get_tree().create_timer(0.2).timeout
@@ -109,11 +111,28 @@ func _test_settings_validation() -> void:
 	_check(Game.settings.fps_limit == 0, "negative fps cap becomes uncapped")
 	_check(_near(Game.settings.vol_master, 0.0), "master volume clamps low")
 	_check(_near(Game.settings.vol_music, 1.0), "music volume clamps high")
+	_check(Game.settings.music_enabled, "music toggle defaults on when absent")
 	_check(not Game.settings.bindings.has("not_an_action"), "unknown input action removed")
 	_check(Game.settings.bindings.fire_primary.size() == 2, "malformed bindings removed")
 	_check(_near(Game.settings.bindings.fire_primary[1].v, -1.0), "axis direction normalized")
 	Game.settings = original
 	Game._normalize_settings()
+
+func _test_background_music_playlist() -> void:
+	var tracks := AudioMgr.background_music_tracks()
+	_check(tracks.size() == 6, "background playlist contains six supplied tracks")
+	var ids := {}
+	for track in tracks:
+		ids[track.id] = true
+		_check(str(track.path).ends_with(".mp3"), "playlist entry uses an MP3 asset")
+	_check(ids.size() == 6, "background playlist track ids are unique")
+	var previous_enabled := AudioMgr.music_enabled()
+	Game.settings.music_enabled = true
+	AudioMgr.play_random_music(0.01)
+	_check(AudioMgr.current_music_title() != "", "random playlist loads a playable track")
+	_check(AudioMgr.is_music_playing(), "random playlist starts its music player")
+	AudioMgr.stop_music(0.01)
+	Game.settings.music_enabled = previous_enabled
 
 func _test_save_validation() -> void:
 	var original := Game.save.duplicate(true)
@@ -124,7 +143,10 @@ func _test_save_validation() -> void:
 	}
 	Game._normalize_save()
 	_check(Game.save.selected_ship == "vanguard", "invalid selected ship repaired")
-	_check("vanguard" in Game.save.unlocked_ships, "Vanguard always unlocked")
+	_check(Game.save.unlocked_ships.size() == ShipDB.SHIPS.size(),
+		"save migration unlocks every flyable ship")
+	for ship_id in ShipDB.SHIPS:
+		_check(ship_id in Game.save.unlocked_ships, "%s is unlocked" % ship_id)
 	_check(Game.save.credits == 0, "negative credits repaired")
 	_check(Game.save.missions_done.is_empty(), "invalid mission records removed")
 	_check(Game.save.loadouts.is_empty(), "invalid loadouts removed")
@@ -243,6 +265,12 @@ func _test_projectile_pool_and_hit() -> void:
 	_check(second.hull < 100.0, "pierce round carries through to the second hull")
 	_check(second.hull > target.hull, "pierce damage decays with each pass")
 	second.queue_free()
+	target.combat_setup(100.0, 0.0, 0.0, 0.0)
+	pm.fire_bullet(shooter, Vector3.ZERO, Vector3(0, 0, -1), weapon, 0, Vector3.ZERO)
+	shooter.free()
+	await get_tree().physics_frame
+	await get_tree().physics_frame
+	_check(target.hull < 100.0, "a projectile still deals damage after its shooter is freed")
 
 func _test_repeatable_surfaces() -> void:
 	var field := AsteroidField.new()
@@ -435,3 +463,100 @@ func _test_settings_panel() -> void:
 	_check(SettingsPanel.QUALITY_SUMMARIES[3].find("4× MSAA + TAA") >= 0,
 		"settings explains the real Ultra profile")
 	panel.queue_free()
+
+func _test_quality_regressions() -> void:
+	var settings_before := Game.settings.duplicate(true)
+	Game.settings.fov_motion = 8.0
+	Game.settings.flash_intensity = -3.0
+	Game.settings.hud_scale = 10.0
+	Game._normalize_settings()
+	_check(_near(Game.settings.fov_motion, 1.0), "FOV comfort clamps to one")
+	_check(_near(Game.settings.flash_intensity, 0.0), "flash comfort supports zero")
+	_check(_near(Game.settings.hud_scale, 1.3), "HUD scale clamps for readability")
+	Game.settings = settings_before.duplicate(true)
+	_check(Game.action_hint("fire_primary") == "LMB", "input hint names real mouse binding")
+	_check(AudioServer.get_bus_effect(0, 0) is AudioEffectHardLimiter, "master has verified hard limiter")
+	_check(AudioServer.get_bus_effect(AudioServer.get_bus_index("SFX"), 0) is AudioEffectCompressor,
+		"combat mix has compressor")
+	var ambience := AudioServer.get_bus_index("Ambience")
+	_check(ambience > 0, "ambience has independent bus")
+	Game.settings.vol_ambience = 0.0
+	AudioMgr.apply_volumes()
+	_check(AudioServer.is_bus_mute(ambience), "ambience can be fully muted")
+	Game.settings = settings_before.duplicate(true)
+	AudioMgr.apply_volumes()
+	_check(not AudioServer.is_bus_mute(ambience), "ambience volume restores after mute")
+	var bed := AudioMgr.stream("hv_flight_bed") as AudioStreamWAV
+	_check(bed != null and bed.get_length() >= 15.9, "flight bed imports full loop duration")
+	_check(bed.loop_mode == AudioStreamWAV.LOOP_DISABLED, "loop setup cannot mutate shared one shots")
+	for name in ["hv_pulse", "hv_cannon", "hv_rail", "hv_plasma", "hv_shield", "hv_armor", "hv_transit", "hv_resupply"]:
+		_check(AudioMgr.has_sound(name), "authored cue loads: " + name)
+	var prior_progress: float = SceneFlow._reported_progress
+	var prior_started: int = SceneFlow._started_msec
+	SceneFlow._reported_progress = 0.60
+	SceneFlow._started_msec = Time.get_ticks_msec() - 36000
+	_check(SceneFlow._watchdog_grace_seconds() > 0.0, "initializing scene gets bounded renderer warmup grace")
+	SceneFlow._started_msec = Time.get_ticks_msec() - 121000
+	_check(SceneFlow._watchdog_grace_seconds() == 0.0, "renderer warmup cannot extend beyond 120 seconds")
+	SceneFlow._reported_progress = 0.0
+	SceneFlow._started_msec = Time.get_ticks_msec() - 36000
+	_check(SceneFlow._watchdog_grace_seconds() == 0.0, "missing scene cannot receive initialization grace")
+	SceneFlow._reported_progress = prior_progress
+	SceneFlow._started_msec = prior_started
+	var pilot := PlayerShip.new()
+	add_child(pilot)
+	pilot.set_physics_process(false)
+	pilot.sdef = ShipDB.SHIPS.values()[0]
+	pilot.hull_max = 100.0
+	pilot.hull = 30.0
+	pilot.missiles_left = 0
+	pilot.cm_left = 0
+	pilot.weapons = WeaponSystem.new()
+	pilot.add_child(pilot.weapons)
+	pilot.weapons.ammo = {"autocannon": 0}
+	pilot.resupply(0.30, 2, 0.12)
+	_check(_near(pilot.hull, 42.0), "survival supplies repair twelve percent")
+	_check(pilot.missiles_left == 2 and pilot.cm_left == 2, "survival restores bounded ordnance")
+	_check(pilot.weapons.ammo.autocannon == ceili(ShipDB.weapon("autocannon").ammo * 0.3),
+		"wave completion replenishes a fraction of ballistic capacity")
+	pilot.resupply(5.0, 999, 5.0)
+	_check(_near(pilot.hull, 100.0) and pilot.missiles_left == int(pilot.sdef.missile_cap),
+		"repeated resupply never exceeds hull or missile capacity")
+	_check(pilot.weapons.ammo.autocannon == int(ShipDB.weapon("autocannon").ammo),
+		"arena unlimited ammo remains bounded")
+	var dying := Combatant.new()
+	add_child(dying)
+	dying.targetable = false
+	pilot.loadout = {"missile": ShipDB.MISSILES.keys()[0]}
+	pilot.set_target(dying)
+	pilot._lock_update(0.016)
+	_check(pilot.target == null, "burning untargetable fighters release missile lock")
+	var camera := CameraRig.new()
+	add_child(camera)
+	camera.set_process(false)
+	camera.ship = pilot
+	pilot.model_root = Node3D.new()
+	pilot.add_child(pilot.model_root)
+	camera.mode = CameraRig.Mode.COCKPIT
+	pilot.model_root.visible = false
+	camera.toggle_photo()
+	_check(get_tree().paused and pilot.model_root.visible, "photo from cockpit reveals exterior hull")
+	camera.toggle_photo()
+	_check(not get_tree().paused and not pilot.model_root.visible, "photo exit restores cockpit visibility")
+	for ship_id in ShipDB.SHIPS:
+		var ship: Dictionary = ShipDB.SHIPS[ship_id]
+		_check(ResourceLoader.exists(ship.model), "ship model exists: " + ship_id)
+		_check(ShipDB.WEAPONS.has(ship.default_primary) and ShipDB.WEAPONS.has(ship.default_primary2),
+			"ship has real weapon definitions: " + ship_id)
+		_check(ShipDB.MISSILES.has(ship.default_missile), "ship has valid ordnance: " + ship_id)
+	var rocks := AsteroidField.new()
+	rocks._rocks = [{"pos": Vector3(0, 0, 0), "scale": 2.0},
+		{"pos": Vector3(240, 0, 0), "scale": 20.0},
+		{"pos": Vector3(400, 0, 0), "scale": 10.0}]
+	rocks.reserve_sphere(Vector3.ZERO, 230)
+	_check(rocks._rocks.size() == 1, "relay lane excludes overlapping large rocks too")
+	rocks.free()
+	camera.queue_free()
+	dying.queue_free()
+	pilot.queue_free()
+	await get_tree().process_frame

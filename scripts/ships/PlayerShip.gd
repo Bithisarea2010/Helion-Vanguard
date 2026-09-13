@@ -140,6 +140,7 @@ func _load_model() -> void:
 func _tint_and_measure(inst: Node) -> AABB:
 	# hero ship: strongest procedural detail budget in the game
 	return HullMaterial.apply(inst, {
+		"authored": bool(sdef.get("authored", false)),
 		"paint": loadout.paint,
 		"glow": loadout.glow,
 		"plate_scale": 0.78,
@@ -491,6 +492,8 @@ func set_target(t: Node3D) -> void:
 	target_changed.emit(t)
 
 func _lock_update(delta: float) -> void:
+	if is_instance_valid(target) and target is Combatant and not target.targetable:
+		set_target(null)
 	var mdef: Dictionary = ShipDB.MISSILES[loadout.missile]
 	if mdef.guidance == "none" or target == null or not is_instance_valid(target) \
 			or ("alive" in target and not target.alive):
@@ -519,6 +522,17 @@ func incoming_missile(m: Node) -> void:
 
 func _cleanup_incoming() -> void:
 	incoming = incoming.filter(func(m): return is_instance_valid(m))
+
+## Mission logistics replenish only used stores and never exceed hull/loadout caps.
+func resupply(ammo_fraction: float, ordnance: int, repair_fraction: float) -> void:
+	if not alive:
+		return
+	for id in weapons.ammo:
+		var capacity := int(ShipDB.weapon(id).get("ammo", 0))
+		weapons.ammo[id] = mini(capacity, int(weapons.ammo[id]) + ceili(capacity * ammo_fraction))
+	missiles_left = mini(int(sdef.missile_cap), missiles_left + ordnance)
+	cm_left = mini(int(sdef.cm_count), cm_left + ordnance)
+	hull = minf(hull_max, hull + hull_max * repair_fraction)
 
 # ============================================================= DAMAGE / DEATH
 func _on_body_entered(body: Node) -> void:

@@ -1,0 +1,20 @@
+Godot Engine v4.7.2.stable.official.ed1daf0bf - https://godotengine.org
+Metal 4.0 - Forward+ - Using Device #0: Apple - Apple M1 (Apple7)
+
+[MCPRuntimeServer] port: scanning 6570-6585 (default)
+[MCPRuntimeServer] listening on 127.0.0.1:6570
+[MCPRegistry] runtime port 6570 registered for /users/bokkonboldiszar/desktop/codex workspace/05_shared_projects/games/helionvanguard
+2026-09-13 12:39:36.013 Godot[31764:484308] [libMTLHud] Metric com.apple.hud-stat.frame-interval already exist
+2026-09-13 12:39:36.014 Godot[31764:484308] [libMTLHud] Metric com.apple.hud-stat.present-delay already exist
+2026-09-13 12:39:36.014 Godot[31764:484308] [libMTLHud] Metric com.apple.hud-stat.fps already exist
+2026-09-13 12:39:36.014 Godot[31764:484308] [libMTLHud] Metric com.apple.hud-stat.logical-fps already exist
+2026-09-13 12:39:36.014 Godot[31764:484308] [libMTLHud] Metric com.apple.hud-stat.logical-frame-interval already exist
+2026-09-13 12:39:36.029 Godot[31764:484308] NSEventModifierFlagFunction specified to -setKeyEquivalentModifierMask: for item <NSMenuItem: 0xa08d45e00 Enable HUD, ke='Command-F9', action: toggleEnabled:>, but is only supported for system-provided menu items; will not be used
+2026-09-13 12:39:36.029 Godot[31764:484308] NSEventModifierFlagFunction specified to -setKeyEquivalentModifierMask: for item <NSMenuItem: 0xa08d454a0 Enable Logging, ke='Command-F8', action: toggleLoggingEnabled:>, but is only supported for system-provided menu items; will not be used
+2026-09-13 12:39:36.029 Godot[31764:484308] NSEventModifierFlagFunction specified to -setKeyEquivalentModifierMask: for item <NSMenuItem: 0xa08d45a40 Reset Metrics, ke='Command-F11', action: resetMetrics:>, but is only supported for system-provided menu items; will not be used
+2026-09-13 12:39:36.029 Godot[31764:484308] NSEventModifierFlagFunction specified to -setKeyEquivalentModifierMask: for item <NSMenuItem: 0xa08d45ea0 Show Configuration Panel, ke='Command-F12', action: showConfigurationPanel:>, but is only supported for system-provided menu items; will not be used
+2026-09-13 12:39:36.029 Godot[31764:484308] NSEventModifierFlagFunction specified to -setKeyEquivalentModifierMask: for item <NSMenuItem: 0xa08d46260 Copy HUD Configuration, action: copyConfig:>, but is only supported for system-provided menu items; will not be used
+[MCPTools] execute.code: [get_window().mode, get_window().size, get_node("/root/Game").settings.display_mode, get_node("/root/Game").settings.window_size]
+[MCPTools] execute.code: get_node("/root/Game").apply_video_settings()
+[MCPTools] execute.code: [get_window().mode, get_window().size]
+[MCPTools] execute.code: [get_node("/root/Game").prepare_shutdown(), get_tree().call_deferred("quit")]

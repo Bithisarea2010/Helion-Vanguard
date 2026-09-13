@@ -1,0 +1,19 @@
+[remap]
+
+importer="mp3"
+type="AudioStreamMP3"
+uid="uid://c4vnh2ohk3k33"
+path="res://.godot/imported/Warp Speed Rush.mp3-11a62af4c2afe8d90b1894096227612b.mp3str"
+
+[deps]
+
+source_file="res://assets/audio/music/Warp Speed Rush.mp3"
+dest_files=["res://.godot/imported/Warp Speed Rush.mp3-11a62af4c2afe8d90b1894096227612b.mp3str"]
+
+[params]
+
+loop=false
+loop_offset=0
+bpm=0
+beat_count=0
+bar_beats=4

@@ -17,6 +17,14 @@ var _obj_marker_pos := Vector3.INF
 var score := 0
 
 var _dmg_t := 0.0
+var _damage_pos := Vector3.ZERO
+var _feedback_t := 0.0
+var _feedback_text := ""
+var _ui_scale := 1.0
+const INK := Color(0.018, 0.034, 0.060, 0.90)
+const TEXT := Color(0.89, 0.95, 0.98)
+const HOSTILE := Color(1.0, 0.43, 0.32)
+
 
 func setup(p: PlayerShip, b: Node) -> void:
 	player = p
@@ -28,9 +36,10 @@ func setup(p: PlayerShip, b: Node) -> void:
 	mouse_filter = Control.MOUSE_FILTER_IGNORE
 	battle.projectiles.player_hit_confirmed.connect(_on_hit_confirmed)
 	battle.projectiles.player_surface_hit.connect(_on_surface_hit)
-	player.damaged.connect(func(_amt, _pos, was_shield):
-		if not was_shield:
-			_dmg_t = 0.55)
+	player.damaged.connect(func(_amt, hit_pos, was_shield):
+		_damage_pos = hit_pos
+		_dmg_t = 0.35 if was_shield else 0.65
+		AudioMgr.play_ui("hv_shield" if was_shield else "hv_armor", -9.0))
 
 func _on_hit_confirmed(_t: Node, was_shield: bool) -> void:
 	_hitmarker_t = 0.22
@@ -49,11 +58,19 @@ func comms(speaker: String, text: String) -> void:
 	if _comms.size() > 4:
 		_comms.pop_front()
 	AudioMgr.play_ui("radio")
+	AudioMgr.duck_music(2.5)
 
 func set_objective(main: String, sub := "", marker := Vector3.INF) -> void:
 	_objective = main
 	_objective_sub = sub
 	_obj_marker_pos = marker
+
+func confirm_kill(points: int, streak: int) -> void:
+	_feedback_text = "TARGET DESTROYED   +%d" % points
+	if streak > 1:
+		_feedback_text += "   /   CHAIN %d" % streak
+	_feedback_t = 1.8
+	AudioMgr.play_ui("ui_ready", -8.0, 1.0 + minf(streak, 5) * 0.04)
 
 func kill_feed(text: String) -> void:
 	_kill_feed.append({"text": text, "t": 5.0})
@@ -66,6 +83,10 @@ func _process(delta: float) -> void:
 	if size != vr:
 		position = Vector2.ZERO
 		size = vr
+	if get_tree().paused:
+		queue_redraw()
+		return
+	_feedback_t = maxf(0.0, _feedback_t - delta)
 	_hitmarker_t -= delta
 	_dmg_t = maxf(0.0, _dmg_t - delta)
 	_warn_blink += delta * 6.0
@@ -95,6 +116,7 @@ func _draw() -> void:
 	var vig := clampf(_dmg_t * 1.6, 0.0, 0.85)
 	if player.hull_frac() < 0.3:
 		vig = maxf(vig, 0.25 + 0.15 * sin(_warn_blink * 0.8))
+	vig *= float(Game.settings.flash_intensity)
 	if vig > 0.01:
 		for i in 3:
 			var inset := 4.0 + i * 14.0
@@ -104,14 +126,41 @@ func _draw() -> void:
 	_draw_ftl(vp, f, bf)
 	_draw_target_elements(vp, f, bf)
 	_draw_offscreen_and_markers(vp)
-	_draw_bars(vp, f, bf)
-	_draw_radar(vp)
+	_draw_relay(vp, bf)
 	_draw_warnings(vp, f)
-	_draw_comms(vp, f, bf)
-	_draw_objective(vp, f, bf)
-	_draw_killfeed(vp, bf)
+	if _feedback_t > 0.0:
+		var a := minf(_feedback_t * 2.0, 1.0)
+		_centered(f, _feedback_text, vp, vp.y * 0.40, 15, Color(1.0, 0.75, 0.40, a))
+	# Instrument scaling is independent from 3D projection and aim markers.
+	_ui_scale = clampf(float(Game.settings.hud_scale), 0.85, minf(1.3, vp.x / 1100.0))
+	draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE * _ui_scale)
+	var uvp := vp / _ui_scale
+	_draw_bars(uvp, f, bf)
+	_draw_radar(uvp)
+	_draw_comms(uvp, f, bf)
+	_draw_objective(uvp, f, bf)
+	_draw_target_card(uvp, f, bf)
+	_draw_killfeed(uvp, bf)
+	_draw_hints(uvp, bf)
+	draw_set_transform(Vector2.ZERO)
 	if show_tacmap:
 		_draw_tacmap(vp, f, bf)
+
+func _draw_relay(vp: Vector2, font: Font) -> void:
+	if not is_instance_valid(battle.relay) or battle.relay.traversed:
+		return
+	var relay: NavigationRelay = battle.relay
+	var camera: Camera3D = player.cam_rig.cam
+	var distance := player.global_position.distance_to(relay.global_position)
+	if distance > 2800 or distance < 120 or camera.is_position_behind(relay.global_position):
+		return
+	var at := camera.unproject_position(relay.global_position)
+	if not Rect2(Vector2(370, 160), vp - Vector2(740, 410)).has_point(at):
+		return
+	var col := Color(1.0, 0.75, 0.42, 0.88)
+	draw_arc(at, 17, PI * 0.15, PI * 0.85, 14, col, 1.3, true)
+	draw_string(font, at + Vector2(-78, 42), "RELAY 07  /  %d M" % roundi(distance), HORIZONTAL_ALIGNMENT_CENTER, 156, 12, col)
+	draw_string(font, at + Vector2(-78, 58), "FLY THROUGH  +150", HORIZONTAL_ALIGNMENT_CENTER, 156, 10, Styles.DIM)
 
 # ------------------------------------------------------------- crosshair
 func _draw_crosshair(vp: Vector2) -> void:
@@ -180,23 +229,17 @@ func _draw_target_elements(vp: Vector2, f: Font, bf: Font) -> void:
 	var bracket := clampf(2200.0 / maxf(dist, 10.0), 14.0, 46.0)
 	if "radar_size" in t:
 		bracket *= clampf(t.radar_size * 0.6 + 0.4, 1.0, 4.0)
-	var col := Styles.RED if ("team" in t and t.team == Combatant.TEAM_HOSTILE) else Styles.GREEN
+	var col := HOSTILE if ("team" in t and t.team == Combatant.TEAM_HOSTILE) else Styles.GREEN
 	# corner brackets
 	for sxy: Vector2 in [Vector2(1, 1), Vector2(-1, 1), Vector2(1, -1), Vector2(-1, -1)]:
 		var corner: Vector2 = sp + sxy * bracket
 		draw_line(corner, corner - Vector2(sxy.x, 0) * bracket * 0.45, col, 1.6, true)
 		draw_line(corner, corner - Vector2(0, sxy.y) * bracket * 0.45, col, 1.6, true)
-	# info block
-	var name_s: String = t.display_name if "display_name" in t else t.name
+	# Keep only range beside the world bracket; telemetry has a stable card.
 	var vel: Vector3 = t.get_velocity() if t.has_method("get_velocity") else Vector3.ZERO
-	var closing := (player.linear_velocity - vel).dot((tpos - player.global_position).normalized())
-	var info := "%s\n%0.0f m   %+0.0f m/s" % [name_s, dist, closing]
-	if "shield_front" in t:
-		info += "\nSH %0.0f%%  HULL %0.0f%%" % [t.shield_frac() * 100.0, t.hull_frac() * 100.0]
-	elif t is Subsystem:
-		info += "\nSYS %0.0f%%" % [(t as Subsystem).hp_frac() * 100.0]
-	draw_multiline_string(bf, sp + Vector2(bracket + 8, -bracket + 10), info,
-		HORIZONTAL_ALIGNMENT_LEFT, 260, 13, 4, col)
+	if sp.x > 30 and sp.x < vp.x - 100 and sp.y > 70 and sp.y < vp.y - 230:
+		draw_string(bf, sp + Vector2(bracket + 8, 4), "%.0f m" % dist,
+			HORIZONTAL_ALIGNMENT_LEFT, 90, 13, TEXT)
 	# --- mathematical lead indicator ---
 	var w_speed := player.weapons.current_speed()
 	if w_speed < 50000.0 and dist < player.weapons.current_range() * 1.4:
@@ -264,75 +307,79 @@ func _draw_offscreen_and_markers(vp: Vector2) -> void:
 			draw_rect(Rect2(edge - Vector2(5, 5), Vector2(10, 10)), Styles.CYAN, false, 1.5)
 
 # ------------------------------------------------------------- bars
-func _draw_bars(vp: Vector2, f: Font, bf: Font) -> void:
-	var x := 30.0
-	var y := vp.y - 30.0
-	# shield arcs + hull blocks (left)
-	_bar(Vector2(x, y - 66), "SHD F", player.shield_front / maxf(player.shield_max, 1.0), Styles.CYAN, bf)
-	_bar(Vector2(x, y - 44), "SHD R", player.shield_rear / maxf(player.shield_max, 1.0), Styles.CYAN, bf)
-	_bar(Vector2(x, y - 22), "HULL", player.hull_frac(), Styles.GREEN if player.hull_frac() > 0.35 else Styles.RED, bf)
-	# energy/heat/boost (right)
-	var rx := vp.x - 230.0
-	_bar(Vector2(rx, y - 66), "ENER", player.energy / player.sdef.energy, Styles.CYAN, bf)
-	var heat_frac: float = player.heat / player.sdef.heat_cap
-	_bar(Vector2(rx, y - 44), "HEAT", heat_frac, Styles.ORANGE if not player.overheated else Styles.RED, bf)
-	_bar(Vector2(rx, y - 22), "SPD", clampf(player.linear_velocity.length() / (player.sdef.speed * player.sdef.boost_mult), 0, 1),
-		Styles.ORANGE if player.boost_on else Styles.DIM, bf,
-		"%0.0f m/s" % player.linear_velocity.length())
-	# weapon + missile info (right, above bars)
-	var wtxt: String = player.weapons.group_label()
-	var am := player.weapons.ammo_text()
-	if am != "":
-		wtxt += "  [%s]" % am
-	draw_string(f, Vector2(rx, y - 96), wtxt, HORIZONTAL_ALIGNMENT_LEFT, -1, 14, Color(0.8, 0.9, 1.0))
-	var mdef: Dictionary = ShipDB.MISSILES[player.loadout.missile]
-	draw_string(f, Vector2(rx, y - 118), "%s  ×%d" % [mdef.label, player.missiles_left],
-		HORIZONTAL_ALIGNMENT_LEFT, -1, 14, Color(0.8, 0.9, 1.0))
-	draw_string(bf, Vector2(rx, y - 138), "FLARES ×%d" % player.cm_left, HORIZONTAL_ALIGNMENT_LEFT, -1, 13, Styles.DIM)
-	# --- advanced capability readouts, only when fitted -------------------
-	var cap_y := y - 158.0
-	if player.fcs:
-		var rate: float = player.fcs.hit_rate()
-		var in_band: bool = rate >= 0.79 and rate <= 0.91
-		var fcol := Styles.GREEN if in_band else Styles.ORANGE
-		if not player.fcs.enabled:
-			fcol = Styles.DIM
-		draw_string(bf, Vector2(rx, cap_y),
-			"FCS %s  %d%%" % ["ON" if player.fcs.enabled else "OFF", int(round(rate * 100.0))],
-			HORIZONTAL_ALIGNMENT_LEFT, -1, 13, fcol)
-		cap_y -= 18.0
-	if player.ftl and player.ftl.phase == FTLDrive.Phase.IDLE:
-		var ready: bool = player.energy >= FTLDrive.MIN_ENERGY
-		draw_string(bf, Vector2(rx, cap_y), "FTL %s" % ("READY" if ready else "CHARGING"),
-			HORIZONTAL_ALIGNMENT_LEFT, -1, 13, Styles.CYAN if ready else Styles.DIM)
-	# flight state (left, above bars)
-	var st := ""
-	if not player.flight_assist:
-		st += "ASSIST OFF  "
-	if player.match_vel_target:
-		st += "V-MATCH  "
-	if player.boost_on:
-		st += "BOOST"
-	if st != "":
-		draw_string(f, Vector2(x, y - 96), st, HORIZONTAL_ALIGNMENT_LEFT, -1, 13, Styles.ORANGE)
-	# score
-	draw_string(f, Vector2(vp.x - 160, 40), "SCORE %d" % score, HORIZONTAL_ALIGNMENT_LEFT, -1, 16, Color(0.85, 0.92, 1.0))
+func _plate(rect: Rect2, accent := Styles.CYAN) -> void:
+	draw_rect(rect, INK)
+	draw_rect(rect, Color(accent.r, accent.g, accent.b, 0.22), false, 1.0)
+	draw_line(rect.position, rect.position + Vector2(42, 0), accent, 2.0)
+	draw_line(rect.end - Vector2(22, 0), rect.end, accent, 2.0)
 
-func _bar(pos: Vector2, label_s: String, frac: float, col: Color, bf: Font, extra := "") -> void:
-	frac = clampf(frac, 0.0, 1.0)
-	draw_string(bf, pos + Vector2(0, 12), label_s, HORIZONTAL_ALIGNMENT_LEFT, -1, 12, Styles.DIM)
-	var r := Rect2(pos + Vector2(52, 2), Vector2(140, 12))
-	draw_rect(r, Color(0.1, 0.14, 0.2, 0.7))
-	draw_rect(Rect2(r.position, Vector2(r.size.x * frac, r.size.y)), col)
-	draw_rect(r, Color(col.r, col.g, col.b, 0.5), false, 1.0)
-	if extra != "":
-		draw_string(bf, pos + Vector2(198, 12), extra, HORIZONTAL_ALIGNMENT_LEFT, -1, 12, Styles.DIM)
+func _text(font: Font, at: Vector2, text: String, px: int, width: float, color := TEXT) -> void:
+	var fitted := TextLine.new()
+	fitted.add_string(text, font, px)
+	fitted.width = width
+	fitted.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
+	fitted.draw(get_canvas_item(), at - Vector2(0, fitted.get_line_ascent()), color)
+
+func _meter(at: Vector2, width: float, value: float, color: Color) -> void:
+	draw_rect(Rect2(at, Vector2(width, 6)), Color(0.16, 0.22, 0.29, 0.85))
+	draw_rect(Rect2(at, Vector2(width * clampf(value, 0.0, 1.0), 6)), color)
+	for i in range(1, 10):
+		draw_line(at + Vector2(width * i / 10.0, 0), at + Vector2(width * i / 10.0, 6), INK, 2)
+
+func _draw_bars(vp: Vector2, f: Font, bf: Font) -> void:
+	var left := Vector2(26, vp.y - 177)
+	var right := Vector2(vp.x - 348, vp.y - 211)
+	_plate(Rect2(left, Vector2(310, 151)))
+	_plate(Rect2(right, Vector2(322, 185)), Styles.ORANGE)
+	_text(f, left + Vector2(16, 26), player.display_name.to_upper(), 15, 278)
+	_text(bf, left + Vector2(16, 47), "FLIGHT ASSIST  " + ("ON" if player.flight_assist else "OFF / DRIFT"), 12, 278, Styles.CYAN)
+	var rows := [["FORE SHIELD", player.shield_front / maxf(player.shield_max, 1.0), Styles.CYAN],
+		["AFT SHIELD", player.shield_rear / maxf(player.shield_max, 1.0), Styles.CYAN],
+		["HULL INTEGRITY", player.hull_frac(), Styles.GREEN if player.hull_frac() > 0.35 else HOSTILE]]
+	for i in rows.size():
+		var pt := left + Vector2(16, 70 + i * 26)
+		_text(bf, pt, rows[i][0], 11, 165, Styles.DIM)
+		_text(bf, pt + Vector2(228, 0), "%d%%" % roundi(rows[i][1] * 100), 12, 52, rows[i][2])
+		_meter(pt + Vector2(0, 6), 278, rows[i][1], rows[i][2])
+	var weapon: String = ShipDB.WEAPONS[player.weapons.wpn_a].label
+	_text(f, right + Vector2(16, 26), weapon.to_upper(), 14, 290)
+	_text(bf, right + Vector2(16, 46), "%s  /  %s" % [player.weapons.group_label(), player.weapons.ammo_text()], 12, 290, Styles.DIM)
+	var missile: Dictionary = ShipDB.MISSILES[player.loadout.missile]
+	_text(bf, right + Vector2(16, 69), "%s  ×%d" % [missile.label, player.missiles_left], 14, 290)
+	_text(bf, right + Vector2(16, 89), "FLARES  %02d    FCS  %s" % [player.cm_left, "ON" if player.fcs and player.fcs.enabled else "OFF"], 12, 290, Styles.CYAN)
+	_text(bf, right + Vector2(16, 112), "ENERGY", 11, 85, Styles.DIM)
+	_meter(right + Vector2(90, 106), 216, player.energy / player.sdef.energy, Styles.CYAN)
+	_text(bf, right + Vector2(16, 134), "HEAT", 11, 85, Styles.DIM)
+	_meter(right + Vector2(90, 128), 216, player.heat / player.sdef.heat_cap, HOSTILE if player.overheated else Styles.ORANGE)
+	_text(f, right + Vector2(16, 169), "%03d  M/S" % roundi(player.linear_velocity.length()), 20, 200)
+	_text(bf, right + Vector2(211, 166), "BOOST" if player.boost_on else "CRUISE", 12, 95, Styles.ORANGE if player.boost_on else Styles.DIM)
+
+func _draw_target_card(vp: Vector2, f: Font, bf: Font) -> void:
+	var t := player.target
+	if not is_instance_valid(t) or ("alive" in t and not t.alive):
+		return
+	var pos := Vector2(vp.x - 348, 78)
+	_plate(Rect2(pos, Vector2(322, 126)), HOSTILE)
+	_text(bf, pos + Vector2(16, 22), "TARGET TELEMETRY", 11, 290, HOSTILE)
+	_text(f, pos + Vector2(16, 44), t.display_name if "display_name" in t else t.name, 15, 290)
+	var dist := player.global_position.distance_to(t.global_position)
+	var vel: Vector3 = t.get_velocity() if t.has_method("get_velocity") else Vector3.ZERO
+	var closing := (player.linear_velocity - vel).dot((t.global_position - player.global_position).normalized())
+	_text(bf, pos + Vector2(16, 65), "%.0f M    /    CLOSURE %+0.0f M/S" % [dist, closing], 12, 290, Styles.DIM)
+	var hp: float = t.hull_frac() if t.has_method("hull_frac") else (t.hp_frac() if t.has_method("hp_frac") else 1.0)
+	_meter(pos + Vector2(16, 82), 290, hp, HOSTILE)
+	if t.has_method("shield_frac"):
+		_meter(pos + Vector2(16, 92), 290, t.shield_frac(), Styles.CYAN)
+	var status := "MISSILE LOCK" if player.locked else ("ACQUIRING" if player.lock_progress > 0 else "TRACKING")
+	_text(bf, pos + Vector2(16, 116), status + "    /    HULL %d%%" % roundi(hp * 100), 12, 290, HOSTILE if player.locked else TEXT)
 
 # ------------------------------------------------------------- radar
 func _draw_radar(vp: Vector2) -> void:
-	var c := Vector2(vp.x * 0.5, vp.y - 110.0)
-	var R := 78.0
-	draw_circle(c, R, Color(0.03, 0.07, 0.12, 0.42))
+	var c := Vector2(vp.x * 0.5, vp.y - 100.0)
+	var R := 62.0
+	_plate(Rect2(c - Vector2(87, 77), Vector2(174, 151)))
+	draw_string(Styles.body_font(), c + Vector2(-40, 69), "RADAR / 2.5 KM", HORIZONTAL_ALIGNMENT_LEFT, 130, 11, Styles.DIM)
+	draw_circle(c, R, Color(0.025, 0.05, 0.08, 0.70))
 	draw_arc(c, R, 0, TAU, 48, Color(0.3, 0.6, 0.8, 0.5), 1.2, true)
 	draw_arc(c, R * 0.5, 0, TAU, 36, Color(0.3, 0.6, 0.8, 0.22), 1.0, true)
 	draw_line(c - Vector2(0, R), c + Vector2(0, R), Color(0.3, 0.6, 0.8, 0.15), 1.0)
@@ -373,8 +420,8 @@ func _draw_radar(vp: Vector2) -> void:
 # ------------------------------------------------------------- warnings
 func _draw_warnings(vp: Vector2, f: Font) -> void:
 	var y := vp.y * 0.30
-	if not player.incoming.is_empty() and fmod(_warn_blink, 1.0) < 0.6:
-		var txt := "⚠ MISSILE INBOUND — G FOR FLARES"
+	if not player.incoming.is_empty():
+		var txt := "MISSILE INBOUND  /  %s  FLARES" % Game.action_hint("countermeasure")
 		var w := f.get_string_size(txt, HORIZONTAL_ALIGNMENT_LEFT, -1, 18).x
 		draw_string(f, Vector2((vp.x - w) / 2.0, y), txt, HORIZONTAL_ALIGNMENT_LEFT, -1, 18, Styles.RED)
 	# the guns going quiet needs an explanation, or it reads as a bug
@@ -382,37 +429,60 @@ func _draw_warnings(vp: Vector2, f: Font) -> void:
 		var reason := player.fcs.inhibit_reason()
 		if reason != "":
 			_centered(f, reason, vp, y - 26.0, 15, Styles.ORANGE)
-	if player.overheated and fmod(_warn_blink, 1.2) < 0.7:
+	if player.overheated:
 		var txt2 := "WEAPONS OVERHEAT"
 		var w2 := f.get_string_size(txt2, HORIZONTAL_ALIGNMENT_LEFT, -1, 16).x
 		draw_string(f, Vector2((vp.x - w2) / 2.0, y + 26), txt2, HORIZONTAL_ALIGNMENT_LEFT, -1, 16, Styles.ORANGE)
-	if player.hull_frac() < 0.25 and fmod(_warn_blink, 1.4) < 0.8:
+	if player.hull_frac() < 0.25:
 		var txt3 := "HULL CRITICAL"
 		var w3 := f.get_string_size(txt3, HORIZONTAL_ALIGNMENT_LEFT, -1, 16).x
 		draw_string(f, Vector2((vp.x - w3) / 2.0, y + 50), txt3, HORIZONTAL_ALIGNMENT_LEFT, -1, 16, Styles.RED)
 
 # ------------------------------------------------------------- comms & objectives
 func _draw_comms(vp: Vector2, f: Font, bf: Font) -> void:
-	var y := vp.y * 0.62
-	for c in _comms:
-		var alpha := clampf(c.t / 1.5, 0.0, 1.0)
-		draw_string(f, Vector2(34, y), c.speaker + " ▸", HORIZONTAL_ALIGNMENT_LEFT, -1, 13, Color(Styles.CYAN.r, Styles.CYAN.g, Styles.CYAN.b, alpha))
-		draw_string(bf, Vector2(34, y + 17), c.text, HORIZONTAL_ALIGNMENT_LEFT, -1, 14, Color(0.9, 0.95, 1.0, alpha))
-		y += 42.0
+	# Two readable radio subtitles, wrapped inside a stable contrast plate.
+	var first := maxi(_comms.size() - 2, 0)
+	var y := vp.y - 209.0
+	for i in range(_comms.size() - 1, first - 1, -1):
+		var c: Dictionary = _comms[i]
+		var para := TextParagraph.new()
+		para.add_string(c.text, bf, 14)
+		para.width = 390
+		para.break_flags = TextServer.BREAK_MANDATORY | TextServer.BREAK_WORD_BOUND
+		var height := maxf(para.get_size().y, 18) + 44
+		y -= height + 6
+		_plate(Rect2(Vector2(26, y), Vector2(422, height)))
+		_text(f, Vector2(42, y + 22), c.speaker + " / COMMS", 11, 390, Styles.CYAN)
+		para.draw(get_canvas_item(), Vector2(42, y + 31), TEXT)
 
 func _draw_objective(vp: Vector2, f: Font, bf: Font) -> void:
 	if _objective == "":
 		return
-	draw_string(f, Vector2(34, 46), "▸ " + _objective, HORIZONTAL_ALIGNMENT_LEFT, -1, 17, Styles.CYAN)
-	if _objective_sub != "":
-		draw_string(bf, Vector2(50, 68), _objective_sub, HORIZONTAL_ALIGNMENT_LEFT, -1, 13, Styles.DIM)
+	var w := minf(570, vp.x - 424)
+	_plate(Rect2(Vector2(26, 26), Vector2(w, 90)))
+	_text(bf, Vector2(42, 48), "HELION COMMAND  /  ACTIVE OBJECTIVE", 11, w - 32, Styles.DIM)
+	_text(f, Vector2(42, 76), _objective, 17, w - 32, Styles.CYAN)
+	_text(bf, Vector2(42, 99), _objective_sub, 13, w - 32)
+	_plate(Rect2(Vector2(vp.x - 222, 26), Vector2(196, 38)), Styles.ORANGE)
+	_text(f, Vector2(vp.x - 206, 51), "%06d  /  SCORE" % score, 14, 168)
 
 func _draw_killfeed(vp: Vector2, bf: Font) -> void:
-	var y := 90.0
+	var y := 232.0
 	for k in _kill_feed:
-		var alpha := clampf(k.t / 1.0, 0.0, 1.0)
-		draw_string(bf, Vector2(vp.x - 300, y), k.text, HORIZONTAL_ALIGNMENT_LEFT, -1, 13, Color(0.8, 0.85, 0.9, alpha * 0.9))
-		y += 18.0
+		var a := clampf(k.t, 0.0, 1.0)
+		_text(bf, Vector2(vp.x - 348, y), k.text, 13, 322, Color(0.88, 0.92, 1.0, a))
+		y += 20
+
+func _draw_hints(vp: Vector2, bf: Font) -> void:
+	if not bool(Game.settings.flight_hints) or battle.mission_time > 28.0:
+		return
+	var txt := "%s THRUST   %s TARGET   %s FIRE   %s PAUSE" % [Game.action_hint("thrust_forward"), Game.action_hint("cycle_target"), Game.action_hint("fire_primary"), Game.action_hint("pause")]
+	var w := minf(600, vp.x - 760)
+	if w < 340:
+		return
+	var pos := Vector2((vp.x - w) * 0.5, vp.y - 219)
+	_plate(Rect2(pos, Vector2(w, 30)))
+	_text(bf, pos + Vector2(12, 20), txt, 12, w - 24, Styles.DIM)
 
 # ------------------------------------------------------------- tactical map
 func _draw_tacmap(vp: Vector2, f: Font, bf: Font) -> void:

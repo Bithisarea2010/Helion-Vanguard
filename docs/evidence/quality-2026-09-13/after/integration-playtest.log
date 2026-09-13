@@ -1,0 +1,100 @@
+Godot Engine v4.7.2.stable.official.ed1daf0bf - https://godotengine.org
+Metal 4.0 - Forward+ - Using Device #0: Apple - Apple M1 (Apple7)
+
+[MCPRuntimeServer] port: scanning 6570-6585 (default)
+[MCPRuntimeServer] listening on 127.0.0.1:6570
+[MCPRegistry] runtime port 6570 registered for /users/bokkonboldiszar/desktop/codex workspace/05_shared_projects/games/helionvanguard
+2026-09-13 12:55:24.318 Godot[32431:497945] [libMTLHud] Metric com.apple.hud-stat.frame-interval already exist
+2026-09-13 12:55:24.318 Godot[32431:497945] [libMTLHud] Metric com.apple.hud-stat.present-delay already exist
+2026-09-13 12:55:24.318 Godot[32431:497945] [libMTLHud] Metric com.apple.hud-stat.fps already exist
+2026-09-13 12:55:24.318 Godot[32431:497945] [libMTLHud] Metric com.apple.hud-stat.logical-fps already exist
+2026-09-13 12:55:24.318 Godot[32431:497945] [libMTLHud] Metric com.apple.hud-stat.logical-frame-interval already exist
+2026-09-13 12:55:24.474 Godot[32431:497945] NSEventModifierFlagFunction specified to -setKeyEquivalentModifierMask: for item <NSMenuItem: 0xa207eebc0 Enable HUD, ke='Command-F9', action: toggleEnabled:>, but is only supported for system-provided menu items; will not be used
+2026-09-13 12:55:24.474 Godot[32431:497945] NSEventModifierFlagFunction specified to -setKeyEquivalentModifierMask: for item <NSMenuItem: 0xa207efa20 Enable Logging, ke='Command-F8', action: toggleLoggingEnabled:>, but is only supported for system-provided menu items; will not be used
+2026-09-13 12:55:24.474 Godot[32431:497945] NSEventModifierFlagFunction specified to -setKeyEquivalentModifierMask: for item <NSMenuItem: 0xa220e7e80 Reset Metrics, ke='Command-F11', action: resetMetrics:>, but is only supported for system-provided menu items; will not be used
+2026-09-13 12:55:24.474 Godot[32431:497945] NSEventModifierFlagFunction specified to -setKeyEquivalentModifierMask: for item <NSMenuItem: 0xa220e63a0 Show Configuration Panel, ke='Command-F12', action: showConfigurationPanel:>, but is only supported for system-provided menu items; will not be used
+2026-09-13 12:55:24.474 Godot[32431:497945] NSEventModifierFlagFunction specified to -setKeyEquivalentModifierMask: for item <NSMenuItem: 0xa220e66c0 Copy HUD Configuration, action: copyConfig:>, but is only supported for system-provided menu items; will not be used
+[RUN] window=(1280, 720) viewport=(1920.0, 1080.0) render_scale=0.85 preset=High
+[PLAYTEST] PASS launch training in 1.66s
+[PLAYTEST] PASS window override reaches real 1280 x 720 drawable
+[PLAYTEST] PASS held thrust produces real flight
+[PLAYTEST] PASS pause action opens paused menu
+[PLAYTEST] PASS pause gives controller and keyboard focus to Resume
+[PLAYTEST] PASS screenshot pause
+[PLAYTEST] PASS pause action resumes flight
+[PLAYTEST] PASS camera input enters cockpit
+[PLAYTEST] PASS screenshot cockpit
+[PLAYTEST] PASS photo input from cockpit reveals ship
+ERROR: [PLAYTEST] FAIL photo input restores cockpit
+   at: push_error (core/variant/variant_utility.cpp:1023)
+   GDScript backtrace (most recent call first):
+       [0] check (res://tests/QualityProbe.gd:19)
+       [1] _start (res://tests/QualityProbe.gd:83)
+       [2] tap (res://tests/QualityProbe.gd:34)
+       [3] pause_for (res://tests/QualityProbe.gd:22)
+[PLAYTEST] PASS relay aperture has no invisible collision wall
+[PLAYTEST] PASS relay armor blocks physical ray
+ERROR: [PLAYTEST] FAIL real flight through relay awards one navigation bonus
+   at: push_error (core/variant/variant_utility.cpp:1023)
+   GDScript backtrace (most recent call first):
+       [0] check (res://tests/QualityProbe.gd:19)
+       [1] _start (res://tests/QualityProbe.gd:102)
+       [2] pause_for (res://tests/QualityProbe.gd:22)
+ERROR: [PLAYTEST] FAIL training formation fully drains its spawn queue
+   at: push_error (core/variant/variant_utility.cpp:1023)
+   GDScript backtrace (most recent call first):
+       [0] check (res://tests/QualityProbe.gd:19)
+       [1] _start (res://tests/QualityProbe.gd:109)
+       [2] pause_for (res://tests/QualityProbe.gd:22)
+[PLAYTEST] PASS screenshot relay-in-game
+[PLAYTEST] PASS screenshot comfort-settings
+[RUN] window=(1280, 720) viewport=(1920.0, 1080.0) render_scale=0.85 preset=High
+[PLAYTEST] PASS launch instant_action in 1.10s
+[PLAYTEST] PASS playable state instant_action
+[RUN] window=(1280, 720) viewport=(1920.0, 1080.0) render_scale=0.85 preset=High
+[PLAYTEST] PASS launch patrol in 1.03s
+[PLAYTEST] PASS playable state patrol
+[RUN] window=(1280, 720) viewport=(1920.0, 1080.0) render_scale=0.85 preset=High
+[PLAYTEST] PASS launch convoy in 0.99s
+[PLAYTEST] PASS playable state convoy
+[RUN] window=(1280, 720) viewport=(1920.0, 1080.0) render_scale=0.85 preset=High
+[PLAYTEST] PASS launch station_defence in 1.05s
+[PLAYTEST] PASS playable state station_defence
+[RUN] window=(1280, 720) viewport=(1920.0, 1080.0) render_scale=0.85 preset=High
+[PLAYTEST] PASS launch capital_strike in 1.13s
+[PLAYTEST] PASS playable state capital_strike
+[RUN] window=(1280, 720) viewport=(1920.0, 1080.0) render_scale=0.85 preset=High
+[PLAYTEST] PASS launch fleet_action in 1.17s
+[PLAYTEST] PASS playable state fleet_action
+[RUN] window=(1280, 720) viewport=(1920.0, 1080.0) render_scale=0.85 preset=High
+[PLAYTEST] PASS launch main in 1.00s
+[PLAYTEST] PASS playable state main
+[RUN] window=(1280, 720) viewport=(1920.0, 1080.0) render_scale=0.85 preset=High
+[PLAYTEST] PASS launch survival in 1.08s
+[PLAYTEST] PASS playable state survival
+[PLAYTEST] PASS cleared survival wave advances and supplies missiles
+[PLAYTEST] PASS survival repair applies in live director
+ERROR: Lambda capture at index 0 was freed. Passed "null" instead.
+   at: call (modules/gdscript/gdscript_lambda_callable.cpp:110)
+ERROR: Lambda capture at index 0 was freed. Passed "null" instead.
+   at: call (modules/gdscript/gdscript_lambda_callable.cpp:110)
+ERROR: Lambda capture at index 1 was freed. Passed "null" instead.
+   at: call (modules/gdscript/gdscript_lambda_callable.cpp:110)
+ERROR: Lambda capture at index 0 was freed. Passed "null" instead.
+   at: call (modules/gdscript/gdscript_lambda_callable.cpp:110)
+ERROR: Lambda capture at index 1 was freed. Passed "null" instead.
+   at: call (modules/gdscript/gdscript_lambda_callable.cpp:110)
+[RUN] window=(1280, 720) viewport=(1920.0, 1080.0) render_scale=0.85 preset=High
+[PLAYTEST] PASS launch arena in 1.08s
+[PLAYTEST] PASS playable state arena
+ERROR: Lambda capture at index 0 was freed. Passed "null" instead.
+   at: call (modules/gdscript/gdscript_lambda_callable.cpp:110)
+ERROR: Lambda capture at index 1 was freed. Passed "null" instead.
+   at: call (modules/gdscript/gdscript_lambda_callable.cpp:110)
+[PLAYTEST] PASS arena reloads live missile stores
+[PLAYTEST] PASS held primary input fires real projectiles
+[PLAYTEST] PASS screenshot combat-hud
+[PLAYTEST] PASS screenshot hud-960x540
+[PLAYTEST] PASS return to main menu completes
+[PLAYTEST] PASS screenshot main-menu
+[PLAYTEST] pass=40 fail=3

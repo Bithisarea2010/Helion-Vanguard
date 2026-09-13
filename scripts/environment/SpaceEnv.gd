@@ -17,16 +17,16 @@ var deep_sky: DeepSky
 const DEFAULT_DEEP_SKY := [
 	{"dir": Vector3(-0.52, 0.34, -0.78), "angular_deg": 26.0, "res": 2048,
 		"inclination": 77.0, "position_angle": 38.0, "winding": 2.4,
-		"brightness": 1.0, "gain": 1.0},
+		"brightness": 0.65, "gain": 0.58},
 	# a face-on grand-design spiral, much smaller and further away
-	{"dir": Vector3(0.72, 0.12, -0.68), "angular_deg": 7.0, "res": 1024,
+	{"dir": Vector3(0.72, 0.12, -0.68), "angular_deg": 4.5, "res": 1024,
 		"inclination": 22.0, "position_angle": -14.0, "winding": 3.1,
-		"brightness": 0.62, "gain": 0.85,
+		"brightness": 0.40, "gain": 0.42,
 		"core": Color(1.0, 0.90, 0.72), "arm": Color(0.66, 0.80, 1.0)},
 	# an edge-on lenticular, almost a sliver
 	{"dir": Vector3(0.18, -0.42, 0.88), "angular_deg": 5.0, "res": 1024,
 		"inclination": 86.0, "position_angle": 62.0, "winding": 1.8,
-		"brightness": 0.5, "gain": 0.7,
+		"brightness": 0.4, "gain": 0.5,
 		"core": Color(1.0, 0.82, 0.60), "arm": Color(0.85, 0.86, 0.95)},
 ]
 
@@ -40,7 +40,7 @@ func build(cfg: Dictionary) -> void:
 	mat.set_shader_parameter("nebula_a", cfg.get("neb_a", Color(0.16, 0.05, 0.28)))
 	mat.set_shader_parameter("nebula_b", cfg.get("neb_b", Color(0.02, 0.16, 0.30)))
 	mat.set_shader_parameter("nebula_c", cfg.get("neb_c", Color(0.30, 0.10, 0.05)))
-	mat.set_shader_parameter("nebula_intensity", cfg.get("neb_i", 1.0))
+	mat.set_shader_parameter("nebula_intensity", float(cfg.get("neb_i", 1.0)) * 0.58)
 	sky.sky_material = mat
 	# The sky drives every specular reflection on the hulls; 64 px was too coarse
 	# to carry the nebula's colour into the metal. QUALITY mode is essential
@@ -83,7 +83,7 @@ func build(cfg: Dictionary) -> void:
 	env.glow_blend_mode = Environment.GLOW_BLEND_MODE_ADDITIVE
 	env.adjustment_enabled = true
 	env.adjustment_contrast = 1.06
-	env.adjustment_saturation = 1.12
+	env.adjustment_saturation = 1.04
 	world_env.environment = env
 	add_child(world_env)
 	# ---- sun: rendered inside the sky shader (disc + corona + rays),
@@ -143,7 +143,7 @@ func _bake_sky(env: Environment, cfg: Dictionary, dir_to_sun: Vector3, sun_col: 
 	m.set_shader_parameter("nebula_a", cfg.get("neb_a", Color(0.16, 0.05, 0.28)))
 	m.set_shader_parameter("nebula_b", cfg.get("neb_b", Color(0.02, 0.16, 0.30)))
 	m.set_shader_parameter("nebula_c", cfg.get("neb_c", Color(0.30, 0.10, 0.05)))
-	m.set_shader_parameter("nebula_intensity", cfg.get("neb_i", 1.0))
+	m.set_shader_parameter("nebula_intensity", float(cfg.get("neb_i", 1.0)) * 0.58)
 	m.set_shader_parameter("sun_dir", dir_to_sun)
 	m.set_shader_parameter("sun_tint", sun_col)
 	cr.material = m
@@ -195,7 +195,7 @@ func _add_planet(pl: Dictionary, dir_to_sun: Vector3, sun_col: Color) -> void:
 	mat.set_shader_parameter("city_lights", pl.get("cities", 0.0))
 	mat.set_shader_parameter("ice_caps", pl.get("ice", 0.0 if rocky < 0.5 else 0.55))
 	mat.set_shader_parameter("water_level", pl.get("water", 0.0))
-	mat.set_shader_parameter("exposure", pl.get("exposure", 1.6))
+	mat.set_shader_parameter("exposure", pl.get("exposure", 1.25))
 	mat.set_shader_parameter("spin", pl.get("spin", 0.004))
 	mi.material_override = mat
 	mi.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF

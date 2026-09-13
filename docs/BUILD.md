@@ -1,44 +1,60 @@
-# Building Helion Vanguard for macOS
+# Building and running Helion Vanguard 1.3.0
 
-## Requirements
+## Tested environment
 
-- Godot **4.7 stable** (official build) — `/Applications/Godot.app`
-- Godot 4.7 export templates installed
-  (`~/Library/Application Support/Godot/export_templates/4.7.stable/`)
-- macOS 11+ (Apple Silicon or Intel; the export is a universal binary)
+- Godot **4.7.2.stable.official.ed1daf0bf**, Metal Forward+.
+- Blender **5.2.0 LTS**, needed only to regenerate authored assets.
+- Verified machine: Apple M1, 8 GB RAM, macOS. The local app targets Apple
+  Silicon and macOS 13+. Windows, Linux and Intel builds were not tested.
 
-## Steps
+Authoritative project root:
+`/Users/bokkonboldiszar/Desktop/Codex Workspace/05_SHARED_PROJECTS/Games/HelionVanguard`
+
+Open `project.godot` in Godot 4.7.2 and press F6 on a mission or F5 for the main
+menu. Select HANGAR to choose all eight unlocked ships. Saves and settings stay
+under Godot's custom `HelionVanguard` user-data directory.
+
+## Local app
+
+Open `build/quality-1.3.0/Helion Vanguard.app`. This self-contained local build
+uses the exact installed 4.7.2 runtime with an exported game resource pack.
+The installed export templates were only 4.7, so the builder deliberately does
+not use that mismatched release template. It strips the official universal
+runtime to arm64, includes license notices, signs ad-hoc and verifies the app
+in temporary staging. No developer account, purchase or notarization is used.
+
+The Desktop FileProvider can attach FinderInfo metadata after copying the app,
+which can make `codesign --verify --strict` complain about a resource fork.
+The builder verifies before copying; actual packaged gameplay is tested after
+copying. A notarized distribution build with matching release templates remains
+future release work.
 
 ```sh
-cd HelionVanguard
-
-# 1. import all assets
-/Applications/Godot.app/Contents/MacOS/Godot --headless --path . --import
-
-# 2. export (uses export_presets.cfg, preset "macOS")
-mkdir -p build
-/Applications/Godot.app/Contents/MacOS/Godot --headless --path . \
-    --export-release "macOS" "build/Helion Vanguard.zip"
-
-# 3. unpack the app bundle
-cd build && unzip -o "Helion Vanguard.zip"
-
-# 4. (re)sign for local execution — ad-hoc:
-codesign --force --deep -s - "Helion Vanguard.app"
-
-# 5. install
-cp -R "Helion Vanguard.app" ~/Desktop/
+cd "/Users/bokkonboldiszar/Desktop/Codex Workspace/05_SHARED_PROJECTS/Games/HelionVanguard"
+GODOT="/Applications/További programok Boldi/Fejlesztés/Godot.app/Contents/MacOS/Godot"
+"$GODOT" --headless --path . --import
+python3 tools/build_local_macos.py
 ```
 
-## Code-signing status
+Use `--replace` to rebuild an existing **recognized 1.3.0 output**. The script
+retains it until the replacement has exported and passed staging verification.
+It never replaces an arbitrary folder. Build output is Git-ignored.
 
-- The bundled build is **ad-hoc signed** (`codesign -s -`). It runs locally.
-- It is **not notarised** — a Developer ID certificate was not available on
-  the build machine (only an *Apple Development* certificate was present,
-  which cannot be used for notarised distribution).
-- If you download the app (rather than build/copy it locally), macOS
-  Gatekeeper may quarantine it; right-click → Open, or run
-  `xattr -dr com.apple.quarantine "Helion Vanguard.app"`.
+## Final verification commands
+
+```sh
+"$GODOT" --headless --path . tests/RegressionSuite.tscn -- --defaults
+"$GODOT" --path . tests/QualityProbe.tscn -- --defaults --windowed --seed=1309
+"$GODOT" --path . -- --mission=instant_action --autotest --defaults \
+  --windowed --uncapped --nocamcycle --seed=1309 --quitafter=25
+```
+
+QualityProbe has a 240-second watchdog and drives Godot input events through
+real rendered gameplay. It captures the changed screens, launches all ten
+missions and checks camera/pause, relay geometry/traversal, training, wave
+resupply and the three authored hulls. This is automated playtesting, not a
+claim of physical-controller or long campaign testing. Use `--defaults` to keep
+test activity isolated from both saved settings and campaign data.
 
 ## Automated test hooks
 
@@ -67,10 +83,13 @@ Godot --path . -- --mission=survival --autotest
     `write_wav` trims the tail (`DEFAULT_SFX_MAX`, overridden per sound).
     Without that a 0.2 s laser shipped as a 2.5 s file of mostly silence and a
     big explosion held one of the 32 positional voices for twelve seconds.
-  * looping assets (`engine_loop`, both music tracks) go through `seamless()`,
+  * looping assets (`engine_loop`, the original music loops) go through `seamless()`,
     which crossfades the tail into the head. Noise layers never line up at a
     loop boundary, so without it the engine ticks once per cycle. Music is
     stereo; **3D sounds must stay mono** — `AudioStreamPlayer3D` pans them.
+- The optional background playlist is stored under `assets/audio/music/` as
+  six project-owner-supplied MP3 files. It is controlled directly from the
+  first menu and rotates through a no-immediate-repeat shuffle bag.
 - Icon: `python3 tools/gen_icon.py`, then `iconutil` (see tools file).
 
 ---
@@ -118,21 +137,21 @@ Godot --path . --resolution 1280x720 -- --mission=instant_action --autotest \
 | `--mission=<id>` | boot straight into a mission |
 | `--autotest` | self-driving combat bot |
 | `--shotdir=<abs>` | PNG capture every 4 s |
-| `--quitafter=<s>` | exit after N mission-seconds |
+| `--quitafter=<s>` | exit after N mission-seconds (plus watchdog) |
 | `--uncapped` | disable vsync and the FPS limit, to see real headroom |
 | `--preset=0..3` | force a quality preset |
 | `--nocamcycle` | hold one camera, for comparable captures |
 | `--cinematicreel` | self-driving third-person capture; cycles cinematic/orbit/chase only (never cockpit/photo) |
 | `--noast`, `--nodust`, `--notrails`, `--nohud` | subsystem isolation for profiling |
-| `--defaults` | **use for every A/B.** Ignore `settings.cfg` and never write it |
+| `--defaults` | **use for every A/B.** Ignore saved settings and campaign data; never write either |
 | `--windowed` | 1280×720 window — Godot's own `--resolution` does NOT work here |
 | `--renderscale=0.25..1.0` | force the 3D render scale |
 
 Three traps this harness had, all of which produced confidently wrong numbers:
 
-1. **`--resolution` is ignored.** `Game.apply_video_settings()` forces
-   `MODE_FULLSCREEN` before the command line is parsed, so the window is always
-   native. Use `--windowed` / `--renderscale=`.
+1. **Legacy window sizing was wrong.** Version 1.3 applies `--windowed` before
+   the first macOS mode transition and confirms the real drawable size. Use
+   `--windowed` for 1280×720; omit it for native fullscreen.
 2. **Runs were not hermetic.** Settings save on quit, so flags leak forward.
    Always pass `--defaults` when comparing.
 3. **`--quitafter` used to hang.** `Battle` is `PROCESS_MODE_PAUSABLE`, and both
@@ -142,7 +161,7 @@ Three traps this harness had, all of which produced confidently wrong numbers:
 
 Also: an invalid `--mission=` id boots to the main menu and sits there forever.
 The valid ids are `training instant_action patrol convoy station_defence
-capital_strike survival arena main`.
+capital_strike fleet_action survival arena main`.
 
 For effects specifically, use the deterministic probe instead — the battle
 harness screenshots on a fixed 4 s cadence and almost never lands on a blast:
@@ -247,3 +266,26 @@ base mesh at 47k triangles before the detail pass had even run.
 `tools/gen_audio.py` gained twelve sounds: `ftl_spool`, `ftl_breach`,
 `ftl_cruise` (looping, seamless), `ftl_exit`, `shield_down`, `railgun`, `arc`,
 `flak`, `phase`, `repeater`, `singularity`, `emp`. Same command as before.
+
+## Regenerating the 1.3 assets
+
+Run `blender_src/hero_fleet.py` and `blender_src/relay_foundry.py` using Blender
+5.2 in background mode. They export the original merged-material GLBs and
+editable source scenes. `tools/quality_audio.py` uses Blender's bundled NumPy
+and only regenerates the new `hv_*.wav` bank, preserving older sounds and music.
+After regeneration, run the import and relevant verification commands above.
+Studio renders are explicitly separate from Godot runtime evidence.
+
+## Inspecting the local resource pack
+
+```sh
+APP="$PWD/build/quality-1.3.0/Helion Vanguard.app"
+"$APP/Contents/MacOS/HelionVanguard" --headless --path /tmp \
+  --main-pack "$APP/Contents/Resources/HelionVanguard.pck" \
+  --script "$PWD/tools/inspect_local_pack.gd" -- --defaults
+```
+
+Use absolute pack/script paths because `--path` changes resource resolution.
+The inspector confirms eight ships, new models/audio, game version, and exclusion
+of editor bridge/configuration. The final packaged smoke log is separate from
+its screenshot log, whose readback stalls must not be used as a benchmark.

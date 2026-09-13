@@ -417,6 +417,10 @@ func die(killer: Node = null) -> void:
 	# some kills enter a burning death spiral before detonating
 	if not _spiraling and randf() < 0.45 and linear_velocity.length() > 25.0:
 		_spiraling = true
+		targetable = false
+		_release_token()
+		if battle.has_method("invalidate_target_cache"):
+			battle.invalidate_target_cache()
 		_spiral_t = randf_range(0.9, 1.6)
 		_killer = killer
 		hull = 1.0

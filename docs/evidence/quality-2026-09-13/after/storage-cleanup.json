@@ -1,0 +1,86 @@
+{
+  "authorization": "User asked to delete obsolete builds/checkpoints and avoid SSD bloat; only regenerable obsolete output and this task's redundant captures were removed.",
+  "old_build_version": "1.2.3",
+  "replacement": "build/quality-1.3.0/Helion Vanguard.app",
+  "replacement_gate": "Package content checks true; capture-free app combat harness completed with exit 0.",
+  "removed": [
+    {
+      "path": "build/all-ships-release",
+      "logical_bytes": 333859768,
+      "allocated_bytes": 333877248
+    },
+    {
+      "path": "docs/evidence/quality-2026-09-13/after/pass1",
+      "logical_bytes": 17355422,
+      "allocated_bytes": 17362944
+    },
+    {
+      "path": "docs/evidence/quality-2026-09-13/after/final/instant_action_01.png",
+      "logical_bytes": 741175,
+      "allocated_bytes": 741376
+    },
+    {
+      "path": "docs/evidence/quality-2026-09-13/after/final/instant_action_02.png",
+      "logical_bytes": 749446,
+      "allocated_bytes": 749568
+    },
+    {
+      "path": "docs/evidence/quality-2026-09-13/after/final/instant_action_03.png",
+      "logical_bytes": 730288,
+      "allocated_bytes": 733184
+    },
+    {
+      "path": "docs/evidence/quality-2026-09-13/after/final/instant_action_04.png",
+      "logical_bytes": 708753,
+      "allocated_bytes": 712704
+    },
+    {
+      "path": "docs/evidence/quality-2026-09-13/after/final/instant_action_05.png",
+      "logical_bytes": 708540,
+      "allocated_bytes": 708608
+    },
+    {
+      "path": "docs/evidence/quality-2026-09-13/before/instant_action_02.png",
+      "logical_bytes": 3059263,
+      "allocated_bytes": 3059712
+    },
+    {
+      "path": "docs/evidence/quality-2026-09-13/before/instant_action_03.png",
+      "logical_bytes": 2718918,
+      "allocated_bytes": 2719744
+    },
+    {
+      "path": "docs/evidence/quality-2026-09-13/before/instant_action_04.png",
+      "logical_bytes": 3192159,
+      "allocated_bytes": 3194880
+    },
+    {
+      "path": "tools/__pycache__/quality_audio.cpython-313.pyc",
+      "logical_bytes": 12616,
+      "allocated_bytes": 16384
+    },
+    {
+      "path": "tools/__pycache__/build_local_macos.cpython-313.pyc",
+      "logical_bytes": 7272,
+      "allocated_bytes": 8192
+    },
+    {
+      "path": "blender_src/__pycache__/hero_fleet.cpython-313.pyc",
+      "logical_bytes": 25220,
+      "allocated_bytes": 28672
+    },
+    {
+      "path": "blender_src/__pycache__/relay_foundry.cpython-313.pyc",
+      "logical_bytes": 15753,
+      "allocated_bytes": 16384
+    }
+  ],
+  "total_allocated_bytes_removed": 363929600,
+  "preserved": [
+    "Current source and editable Blender files",
+    "Current app and one before/after evidence set",
+    "Git branches/history and initial 891f267 checkpoint",
+    "Existing local .mcp.json and user saves",
+    "Other projects, backups, applications and shared caches"
+  ]
+}

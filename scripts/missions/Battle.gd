@@ -8,6 +8,7 @@ var projectiles: Projectiles
 var flares: Array = []
 var env: SpaceEnv
 var field: AsteroidField
+var relay: NavigationRelay
 var player: PlayerShip
 var cam_rig: CameraRig
 var hud: HUD
@@ -64,6 +65,7 @@ var _bench_t := 0.0
 var _bench_frames := 0
 var _bench_worst := 0.0
 var _bench_samples: Array[float] = []
+var _bench_last_usec := 0
 var _harness_quitting := false
 var _initializing := true
 
@@ -134,7 +136,7 @@ func _ready() -> void:
 	SceneFlow.report(0.92, "MISSION DIRECTOR", "Authorising launch sequence")
 	_title_card()
 	_mission_start()
-	AudioMgr.play_music("combat")
+	AudioMgr.ensure_background_music()
 	Game.settings_changed.connect(_on_settings_changed)
 	_parse_harness_args()
 	# Keep the corridor over the first frame-driven HDR/deep-sky passes. The
@@ -146,6 +148,10 @@ func _ready() -> void:
 			"Locking insertion vector %d / 3" % (i + 1))
 	await SceneFlow.finish()
 	_initializing = false
+	_bench_last_usec = Time.get_ticks_usec()
+	print("[RUN] window=%s viewport=%s render_scale=%.2f preset=%s" % [
+		get_window().size, get_viewport().get_visible_rect().size,
+		get_viewport().scaling_3d_scale, Game.PRESET_NAMES[int(Game.settings.preset)]])
 	capture_mouse()
 
 func _on_settings_changed() -> void:
@@ -169,6 +175,18 @@ func _build_field() -> void:
 		_:
 			field.populate_belt(Vector3(0, 0, -1500), 2600.0, 650.0, 1400, 7)
 			field.populate_cluster(Vector3(1800, 300, -3400), 1200.0, 300, 8)
+	# Authored navigation structure makes the belt a place with a purpose.
+	relay = NavigationRelay.new()
+	add_child(relay)
+	relay.position = Vector3(-220, -15, -780)
+	if mission_id == "training":
+		relay.position = Vector3(0, 0, -1200)
+	elif mission_id in ["convoy", "station_defence", "fleet_action", "capital_strike"]:
+		relay.position = Vector3(-650, -100, -1100)
+	relay.battle = self
+	relay.build()
+	field.reserve_sphere(relay.position, 230.0)
+	field.reserve_sphere(Vector3.ZERO, 100.0)
 	if "--noast" in OS.get_cmdline_user_args():
 		return
 	field.commit()
@@ -214,6 +232,11 @@ func _input(event: InputEvent) -> void:
 		elif not over:
 			open_pause_menu()
 		get_viewport().set_input_as_handled()
+	elif event.is_action_pressed("photo_mode") and not get_tree().paused and not over:
+		# Event-driven entry avoids re-entering on the same just-pressed frame
+		# when CameraRig handles photo exit while the battle is paused.
+		cam_rig.toggle_photo()
+		get_viewport().set_input_as_handled()
 
 func _process(delta: float) -> void:
 	if _initializing or over or get_tree().paused:
@@ -226,8 +249,6 @@ func _process(delta: float) -> void:
 		player.target_under_crosshair()
 	if Input.is_action_just_pressed("camera_cycle"):
 		cam_rig.cycle()
-	if Input.is_action_just_pressed("photo_mode"):
-		cam_rig.toggle_photo()  # keeps mouse captured for free-look
 	_director_tick(delta)
 	hud.score = score
 	if _autotest:
@@ -266,7 +287,12 @@ func _parse_harness_args() -> void:
 					_quit_harness_cleanly())
 
 ## Screenshots on a fixed cadence + frame-time telemetry printed once a second.
-func _harness_tick(delta: float) -> void:
+func _harness_tick(_delta: float) -> void:
+	# Measure elapsed wall time. Engine delta may be smoothed/clamped and can
+	# report 70+ FPS on a 60 Hz session; keep capture readbacks in the result.
+	var now_usec := Time.get_ticks_usec()
+	var delta := float(now_usec - _bench_last_usec) / 1000000.0
+	_bench_last_usec = now_usec
 	_bench_frames += 1
 	_bench_t += delta
 	_bench_samples.append(delta)
@@ -445,7 +471,7 @@ func _refresh_target_cache() -> void:
 	_cached_hostiles.clear()
 	_cached_friendlies.clear()
 	for n in get_tree().get_nodes_in_group("hostiles"):
-		if n is Combatant and (n as Combatant).alive:
+		if n is Combatant and (n as Combatant).alive and (n as Combatant).targetable:
 			_cached_combatants.append(n)
 			_cached_hostiles.append(n)
 			if n is CapitalShip:
@@ -456,7 +482,7 @@ func _refresh_target_cache() -> void:
 					if is_instance_valid(t) and t.alive:
 						_cached_hostiles.append(t)
 	for n in get_tree().get_nodes_in_group("friendlies"):
-		if n is Combatant and (n as Combatant).alive:
+		if n is Combatant and (n as Combatant).alive and (n as Combatant).targetable:
 			_cached_combatants.append(n)
 			_cached_friendlies.append(n)
 	if player and player.alive:
@@ -605,6 +631,7 @@ func on_kill(victim: Node, killer: Node) -> void:
 			else:
 				_streak = 1
 			_streak_t = mission_time
+			hud.confirm_kill(int(victim.score_value) if "score_value" in victim else 100, _streak)
 		hud.kill_feed("%s destroyed" % (victim.display_name if "display_name" in victim else "Hostile"))
 	elif "display_name" in victim:
 		hud.kill_feed("%s LOST" % victim.display_name)
@@ -698,6 +725,8 @@ func _build_menu_panel(title: String, entries: Array) -> Control:
 		var b := Styles.button(e[0], 18)
 		b.pressed.connect(e[1])
 		vb.add_child(b)
+		if vb.get_child_count() == 2:
+			b.grab_focus.call_deferred()
 	return root
 
 func _on_player_died() -> void:
@@ -814,7 +843,7 @@ func _show_debrief(win: bool) -> void:
 	vb.add_child(menu)
 	overlay_layer.add_child(root)
 	_debrief_panel = root
-	AudioMgr.play_music("menu" if win else "combat", 2.0)
+	AudioMgr.ensure_background_music(2.0)
 	AudioMgr.play_ui("mission_win" if win else "mission_fail")
 
 # =================================================================== DIRECTOR
@@ -825,8 +854,8 @@ func _mission_start() -> void:
 		pass # briefing was shown on the menu; opening radio below
 	match mission_id:
 		"training":
-			hud.comms("INSTRUCTOR", "Throttle up with W and follow the marker. Space/Ctrl move you vertically.")
-			hud.set_objective("Reach the nav point", "W thrust • mouse steers • Shift boost", Vector3(0, 0, -1200))
+			hud.comms("INSTRUCTOR", "Throttle up with %s and follow the marker. %s / %s move you vertically." % [Game.action_hint("thrust_forward"), Game.action_hint("move_up"), Game.action_hint("move_down")])
+			hud.set_objective("Reach the nav point", "%s thrust • mouse steers • %s boost" % [Game.action_hint("thrust_forward"), Game.action_hint("boost")], Vector3(0, 0, -1200))
 		"instant_action":
 			hud.comms("COMMAND", "Multiple bandits in the belt. Weapons free.")
 			spawn_wave(["razor", "razor", "jackal"], Vector3(300, 50, -1400))
@@ -889,7 +918,7 @@ func _director_tick(delta: float) -> void:
 		"capital_strike": _dir_capital_strike()
 		"fleet_action": _dir_fleet_action(delta)
 		"survival": _dir_survival()
-		"arena": pass
+		"arena": _dir_arena()
 		"main": _dir_main(delta)
 
 func _dir_clear_all() -> void:
@@ -1047,7 +1076,11 @@ func _dir_fleet_action(_delta: float) -> void:
 				mission_complete()
 
 func _dir_survival() -> void:
-	if _spawn_cd <= 0.0 and hostile_fighters_alive() <= 1:
+	if _spawn_cd <= 0.0 and hostile_fighters_alive() == 0:
+		if _wave_no > 0:
+			player.resupply(0.30, 2, 0.12)
+			AudioMgr.play_ui("hv_resupply", -6.0)
+			hud.kill_feed("WAVE CLEAR   /   AMMO +30%   /   HULL +12%")
 		_wave_no += 1
 		_spawn_cd = 8.0
 		var comp: Array = []
@@ -1061,6 +1094,16 @@ func _dir_survival() -> void:
 		hud.set_objective("Survive", "Wave %d" % _wave_no)
 		hud.comms("SIM DECK", "Wave %d. Score %d." % [_wave_no, score])
 		score += 50 * maxi(_wave_no - 1, 0)
+
+func _dir_arena() -> void:
+	# The arena promises unlimited ammunition. Refill without resetting cooldowns,
+	# weapon heat or lock timing so the range still teaches real combat cadence.
+	player.resupply(1.0, 999, 0.0)
+
+func _configure_practice_drone(e: EnemyShip, _lead: EnemyShip) -> void:
+	e.set_physics_process(false)
+	e.freeze = true
+	e.display_name = "Practice Drone"
 
 func _spawn_arena_targets() -> void:
 	for i in 10:
@@ -1078,18 +1121,15 @@ func _dir_training() -> void:
 		0:
 			if player.global_position.distance_to(Vector3(0, 0, -1200)) < 160.0:
 				_train_step = 1
-				hud.comms("INSTRUCTOR", "Good. Now hold Shift and boost through the rock cluster ahead.")
-				hud.set_objective("Boost to the far marker", "Hold Shift — watch your energy", Vector3(0, 0, -2600))
+				hud.comms("INSTRUCTOR", "Good. Now hold %s and boost to the far marker." % Game.action_hint("boost"))
+				hud.set_objective("Boost to the far marker", "Hold %s — watch your energy" % Game.action_hint("boost"), Vector3(0, 0, -2600))
 		1:
 			if player.global_position.distance_to(Vector3(0, 0, -2600)) < 200.0:
 				_train_step = 2
-				spawn_wave(["widow", "widow", "widow"], Vector3(0, 50, -3200))
-				for h in get_tree().get_nodes_in_group("hostiles"):
-					if h is EnemyShip:
-						(h as EnemyShip).set_physics_process(false)
-						(h as EnemyShip).display_name = "Practice Drone"
-				hud.comms("INSTRUCTOR", "Practice drones released. R cycles targets, guns on left mouse.")
-				hud.set_objective("Destroy the practice drones", "R to target • left mouse to fire")
+				spawn_wave(["widow", "widow", "widow"], Vector3(0, 50, -3200),
+					300.0, Combatant.TEAM_HOSTILE, _configure_practice_drone)
+				hud.comms("INSTRUCTOR", "Practice drones released. %s cycles targets; %s fires your guns." % [Game.action_hint("cycle_target"), Game.action_hint("fire_primary")])
+				hud.set_objective("Destroy the practice drones", "%s target • %s fire" % [Game.action_hint("cycle_target"), Game.action_hint("fire_primary")])
 		2:
 			if hostile_fighters_alive() == 0:
 				_train_step = 3
@@ -1098,19 +1138,19 @@ func _dir_training() -> void:
 				d.edef = d.edef.duplicate()
 				d.edef.acc = 0.0
 				d.weapons.wpn_a = "e_light"
-				hud.comms("INSTRUCTOR", "This one dodges. Hold the lock reticle on it and fire a missile — right mouse.")
-				hud.set_objective("Missile kill the evasive drone", "T targets it • hold lock • right mouse")
+				hud.comms("INSTRUCTOR", "This one dodges. Hold the lock reticle on it, then press %s to fire a missile." % Game.action_hint("fire_secondary"))
+				hud.set_objective("Missile kill the evasive drone", "%s target • hold lock • %s missile" % [Game.action_hint("target_crosshair"), Game.action_hint("fire_secondary")])
 		3:
 			if hostile_fighters_alive() == 0:
 				_train_step = 4
 				stage_t = 0.0
-				hud.comms("INSTRUCTOR", "Last drill: when you hear the missile tone, hit G for flares and turn hard.")
+				hud.comms("INSTRUCTOR", "Last drill: when you hear the missile tone, press %s for flares and turn hard." % Game.action_hint("countermeasure"))
 				var m := spawn_enemy("stinger", player.global_position + Vector3(0, 0, 900))
 				m.display_name = "Instructor Drone"
 				m.edef = m.edef.duplicate()
 				m.edef.acc = 0.0
 				m._msl_cd = 1.0
-				hud.set_objective("Survive the missile drill", "G deploys flares • keep turning")
+				hud.set_objective("Survive the missile drill", "%s flares • keep turning" % Game.action_hint("countermeasure"))
 		4:
 			if stage_t > 22.0 or hostile_fighters_alive() == 0:
 				for h in get_tree().get_nodes_in_group("hostiles"):

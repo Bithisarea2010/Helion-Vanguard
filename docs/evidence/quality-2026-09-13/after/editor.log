@@ -1,0 +1,223 @@
+Godot Engine v4.7.2.stable.official.ed1daf0bf - https://godotengine.org
+Metal 4.0 - Forward+ - Using Device #0: Apple - Apple M1 (Apple7)
+
+2026-09-13 12:36:04.714 Godot[31631:481857] [libMTLHud] Metric com.apple.hud-stat.frame-interval already exist
+2026-09-13 12:36:04.715 Godot[31631:481857] [libMTLHud] Metric com.apple.hud-stat.present-delay already exist
+2026-09-13 12:36:04.715 Godot[31631:481857] [libMTLHud] Metric com.apple.hud-stat.fps already exist
+2026-09-13 12:36:04.715 Godot[31631:481857] [libMTLHud] Metric com.apple.hud-stat.logical-fps already exist
+2026-09-13 12:36:04.715 Godot[31631:481857] [libMTLHud] Metric com.apple.hud-stat.logical-frame-interval already exist
+Godot MCP Toolkit v1.0.0 — by NPGameDev · npgamedev.com
+[MCPExtensions] Hot-reload watcher active
+[MCPServer] port: scanning 6550-6560 (default)
+[MCPServer] session token written to user://addons/godot_mcp_toolkit/project_instance_f5b72c286c69/mcp_token
+[MCPServer] listening on 127.0.0.1:6550
+[MCPRegistry] registered /users/bokkonboldiszar/desktop/codex workspace/05_shared_projects/games/helionvanguard on port 6550
+2026-09-13 12:36:05.529 Godot[31631:481857] NSEventModifierFlagFunction specified to -setKeyEquivalentModifierMask: for item <NSMenuItem: 0x99fc6c6e0 Enable HUD, ke='Command-F9', action: toggleEnabled:>, but is only supported for system-provided menu items; will not be used
+2026-09-13 12:36:05.529 Godot[31631:481857] NSEventModifierFlagFunction specified to -setKeyEquivalentModifierMask: for item <NSMenuItem: 0x99fc6cb40 Enable Logging, ke='Command-F8', action: toggleLoggingEnabled:>, but is only supported for system-provided menu items; will not be used
+2026-09-13 12:36:05.529 Godot[31631:481857] NSEventModifierFlagFunction specified to -setKeyEquivalentModifierMask: for item <NSMenuItem: 0x99fc6d2c0 Reset Metrics, ke='Command-F11', action: resetMetrics:>, but is only supported for system-provided menu items; will not be used
+2026-09-13 12:36:05.529 Godot[31631:481857] NSEventModifierFlagFunction specified to -setKeyEquivalentModifierMask: for item <NSMenuItem: 0x99fc6d540 Show Configuration Panel, ke='Command-F12', action: showConfigurationPanel:>, but is only supported for system-provided menu items; will not be used
+2026-09-13 12:36:05.529 Godot[31631:481857] NSEventModifierFlagFunction specified to -setKeyEquivalentModifierMask: for item <NSMenuItem: 0x99fc6d5e0 Copy HUD Configuration, action: copyConfig:>, but is only supported for system-provided menu items; will not be used
+2026-09-13 12:36:05.572 Godot[31631:481857] [libMTLHud] Metric com.apple.hud-stat.frame-interval already exist
+2026-09-13 12:36:05.572 Godot[31631:481857] [libMTLHud] Metric com.apple.hud-stat.present-delay already exist
+2026-09-13 12:36:05.572 Godot[31631:481857] [libMTLHud] Metric com.apple.hud-stat.fps already exist
+2026-09-13 12:36:05.572 Godot[31631:481857] [libMTLHud] Metric com.apple.hud-stat.logical-fps already exist
+2026-09-13 12:36:05.572 Godot[31631:481857] [libMTLHud] Metric com.apple.hud-stat.logical-frame-interval already exist
+2026-09-13 12:36:28.628 Godot[31631:482027] [libMTLHud] Metric com.apple.hud-stat.frame-interval already exist
+2026-09-13 12:36:28.628 Godot[31631:482027] [libMTLHud] Metric com.apple.hud-stat.present-delay already exist
+2026-09-13 12:36:28.628 Godot[31631:482027] [libMTLHud] Metric com.apple.hud-stat.fps already exist
+2026-09-13 12:36:28.628 Godot[31631:482027] [libMTLHud] Metric com.apple.hud-stat.logical-fps already exist
+2026-09-13 12:36:28.628 Godot[31631:482027] [libMTLHud] Metric com.apple.hud-stat.logical-frame-interval already exist
+2026-09-13 12:36:28.902 Godot[31631:481860] [libMTLHud] Metric com.apple.hud-stat.frame-interval already exist
+2026-09-13 12:36:28.902 Godot[31631:481860] [libMTLHud] Metric com.apple.hud-stat.present-delay already exist
+2026-09-13 12:36:28.902 Godot[31631:481860] [libMTLHud] Metric com.apple.hud-stat.fps already exist
+2026-09-13 12:36:28.902 Godot[31631:481860] [libMTLHud] Metric com.apple.hud-stat.logical-fps already exist
+2026-09-13 12:36:28.902 Godot[31631:481860] [libMTLHud] Metric com.apple.hud-stat.logical-frame-interval already exist
+2026-09-13 12:36:28.902 Godot[31631:481860] [libMTLHud] Metric com.apple.hud-stat.frame-interval already exist
+2026-09-13 12:36:28.902 Godot[31631:481860] [libMTLHud] Metric com.apple.hud-stat.present-delay already exist
+2026-09-13 12:36:28.902 Godot[31631:481860] [libMTLHud] Metric com.apple.hud-stat.fps already exist
+2026-09-13 12:36:28.902 Godot[31631:481860] [libMTLHud] Metric com.apple.hud-stat.logical-fps already exist
+2026-09-13 12:36:28.902 Godot[31631:481860] [libMTLHud] Metric com.apple.hud-stat.logical-frame-interval already exist
+2026-09-13 12:36:28.921 Godot[31631:482359] [libMTLHud] Metric com.apple.hud-stat.frame-interval already exist
+2026-09-13 12:36:28.921 Godot[31631:482359] [libMTLHud] Metric com.apple.hud-stat.present-delay already exist
+2026-09-13 12:36:28.921 Godot[31631:482359] [libMTLHud] Metric com.apple.hud-stat.fps already exist
+2026-09-13 12:36:28.921 Godot[31631:482359] [libMTLHud] Metric com.apple.hud-stat.logical-fps already exist
+2026-09-13 12:36:28.921 Godot[31631:482359] [libMTLHud] Metric com.apple.hud-stat.logical-frame-interval already exist
+2026-09-13 12:36:28.956 Godot[31631:481860] [libMTLHud] Metric com.apple.hud-stat.frame-interval already exist
+2026-09-13 12:36:28.956 Godot[31631:481860] [libMTLHud] Metric com.apple.hud-stat.present-delay already exist
+2026-09-13 12:36:28.956 Godot[31631:481860] [libMTLHud] Metric com.apple.hud-stat.fps already exist
+2026-09-13 12:36:28.956 Godot[31631:481860] [libMTLHud] Metric com.apple.hud-stat.logical-fps already exist
+2026-09-13 12:36:28.956 Godot[31631:481860] [libMTLHud] Metric com.apple.hud-stat.logical-frame-interval already exist
+2026-09-13 12:36:33.904 Godot[31631:481860] [libMTLHud] Metric com.apple.hud-stat.frame-interval already exist
+2026-09-13 12:36:33.905 Godot[31631:481860] [libMTLHud] Metric com.apple.hud-stat.present-delay already exist
+2026-09-13 12:36:33.905 Godot[31631:481860] [libMTLHud] Metric com.apple.hud-stat.fps already exist
+2026-09-13 12:36:33.905 Godot[31631:481860] [libMTLHud] Metric com.apple.hud-stat.logical-fps already exist
+2026-09-13 12:36:33.905 Godot[31631:481860] [libMTLHud] Metric com.apple.hud-stat.logical-frame-interval already exist
+2026-09-13 12:36:35.457 Godot[31631:482359] [libMTLHud] Metric com.apple.hud-stat.frame-interval already exist
+2026-09-13 12:36:35.457 Godot[31631:482359] [libMTLHud] Metric com.apple.hud-stat.present-delay already exist
+2026-09-13 12:36:35.457 Godot[31631:482359] [libMTLHud] Metric com.apple.hud-stat.fps already exist
+2026-09-13 12:36:35.457 Godot[31631:482359] [libMTLHud] Metric com.apple.hud-stat.logical-fps already exist
+2026-09-13 12:36:35.457 Godot[31631:482359] [libMTLHud] Metric com.apple.hud-stat.logical-frame-interval already exist
+2026-09-13 12:36:35.458 Godot[31631:482359] [libMTLHud] Metric com.apple.hud-stat.frame-interval already exist
+2026-09-13 12:36:35.458 Godot[31631:482359] [libMTLHud] Metric com.apple.hud-stat.present-delay already exist
+2026-09-13 12:36:35.458 Godot[31631:482359] [libMTLHud] Metric com.apple.hud-stat.fps already exist
+2026-09-13 12:36:35.458 Godot[31631:482359] [libMTLHud] Metric com.apple.hud-stat.logical-fps already exist
+2026-09-13 12:36:35.458 Godot[31631:482359] [libMTLHud] Metric com.apple.hud-stat.logical-frame-interval already exist
+2026-09-13 12:36:36.354 Godot[31631:481874] [libMTLHud] Metric com.apple.hud-stat.frame-interval already exist
+2026-09-13 12:36:36.354 Godot[31631:481874] [libMTLHud] Metric com.apple.hud-stat.present-delay already exist
+2026-09-13 12:36:36.354 Godot[31631:481874] [libMTLHud] Metric com.apple.hud-stat.fps already exist
+2026-09-13 12:36:36.354 Godot[31631:481874] [libMTLHud] Metric com.apple.hud-stat.logical-fps already exist
+2026-09-13 12:36:36.354 Godot[31631:481874] [libMTLHud] Metric com.apple.hud-stat.logical-frame-interval already exist
+2026-09-13 12:36:36.372 Godot[31631:481874] [libMTLHud] Metric com.apple.hud-stat.frame-interval already exist
+2026-09-13 12:36:36.372 Godot[31631:481874] [libMTLHud] Metric com.apple.hud-stat.present-delay already exist
+2026-09-13 12:36:36.372 Godot[31631:481874] [libMTLHud] Metric com.apple.hud-stat.fps already exist
+2026-09-13 12:36:36.372 Godot[31631:481874] [libMTLHud] Metric com.apple.hud-stat.logical-fps already exist
+2026-09-13 12:36:36.372 Godot[31631:481874] [libMTLHud] Metric com.apple.hud-stat.logical-frame-interval already exist
+2026-09-13 12:36:36.372 Godot[31631:481874] [libMTLHud] Metric com.apple.hud-stat.frame-interval already exist
+2026-09-13 12:36:36.372 Godot[31631:481874] [libMTLHud] Metric com.apple.hud-stat.present-delay already exist
+2026-09-13 12:36:36.372 Godot[31631:481874] [libMTLHud] Metric com.apple.hud-stat.fps already exist
+2026-09-13 12:36:36.372 Godot[31631:481874] [libMTLHud] Metric com.apple.hud-stat.logical-fps already exist
+2026-09-13 12:36:36.372 Godot[31631:481874] [libMTLHud] Metric com.apple.hud-stat.logical-frame-interval already exist
+2026-09-13 12:36:39.097 Godot[31631:481874] [libMTLHud] Metric com.apple.hud-stat.frame-interval already exist
+2026-09-13 12:36:39.097 Godot[31631:481874] [libMTLHud] Metric com.apple.hud-stat.present-delay already exist
+2026-09-13 12:36:39.097 Godot[31631:481874] [libMTLHud] Metric com.apple.hud-stat.fps already exist
+2026-09-13 12:36:39.097 Godot[31631:481874] [libMTLHud] Metric com.apple.hud-stat.logical-fps already exist
+2026-09-13 12:36:39.097 Godot[31631:481874] [libMTLHud] Metric com.apple.hud-stat.logical-frame-interval already exist
+[MCPServer] unfocused-responsive mode ON: interface/editor/unfocused_low_processor_mode_sleep_usec 100000 -> 16666 (~60 fps while unfocused)
+[MCP] MCP client connected (1 peer)
+[MCPServer] unfocused-responsive mode OFF: interface/editor/unfocused_low_processor_mode_sleep_usec restored to 100000
+[MCP] MCP client disconnected
+[MCPServer] unfocused-responsive mode ON: interface/editor/unfocused_low_processor_mode_sleep_usec 100000 -> 16666 (~60 fps while unfocused)
+[MCP] MCP client connected (1 peer)
+[MCPServer] unfocused-responsive mode OFF: interface/editor/unfocused_low_processor_mode_sleep_usec restored to 100000
+[MCP] MCP client disconnected
+[MCPServer] unfocused-responsive mode ON: interface/editor/unfocused_low_processor_mode_sleep_usec 100000 -> 16666 (~60 fps while unfocused)
+[MCP] MCP client connected (1 peer)
+[MCPServer] unfocused-responsive mode OFF: interface/editor/unfocused_low_processor_mode_sleep_usec restored to 100000
+[MCP] MCP client disconnected
+[MCPServer] unfocused-responsive mode ON: interface/editor/unfocused_low_processor_mode_sleep_usec 100000 -> 16666 (~60 fps while unfocused)
+[MCP] MCP client connected (1 peer)
+[MCPServer] unfocused-responsive mode OFF: interface/editor/unfocused_low_processor_mode_sleep_usec restored to 100000
+[MCP] MCP client disconnected
+[MCPServer] unfocused-responsive mode ON: interface/editor/unfocused_low_processor_mode_sleep_usec 100000 -> 16666 (~60 fps while unfocused)
+[MCP] MCP client connected (1 peer)
+[MCPServer] unfocused-responsive mode OFF: interface/editor/unfocused_low_processor_mode_sleep_usec restored to 100000
+[MCP] MCP client disconnected
+[MCPServer] unfocused-responsive mode ON: interface/editor/unfocused_low_processor_mode_sleep_usec 100000 -> 16666 (~60 fps while unfocused)
+[MCP] MCP client connected (1 peer)
+[MCPServer] unfocused-responsive mode OFF: interface/editor/unfocused_low_processor_mode_sleep_usec restored to 100000
+[MCP] MCP client disconnected
+[MCPServer] unfocused-responsive mode ON: interface/editor/unfocused_low_processor_mode_sleep_usec 100000 -> 16666 (~60 fps while unfocused)
+[MCP] MCP client connected (1 peer)
+[MCPServer] unfocused-responsive mode OFF: interface/editor/unfocused_low_processor_mode_sleep_usec restored to 100000
+[MCP] MCP client disconnected
+[MCPServer] unfocused-responsive mode ON: interface/editor/unfocused_low_processor_mode_sleep_usec 100000 -> 16666 (~60 fps while unfocused)
+[MCP] MCP client connected (1 peer)
+[MCPServer] unfocused-responsive mode OFF: interface/editor/unfocused_low_processor_mode_sleep_usec restored to 100000
+[MCP] MCP client disconnected
+[MCPServer] unfocused-responsive mode ON: interface/editor/unfocused_low_processor_mode_sleep_usec 100000 -> 16666 (~60 fps while unfocused)
+[MCP] MCP client connected (1 peer)
+[MCPServer] unfocused-responsive mode OFF: interface/editor/unfocused_low_processor_mode_sleep_usec restored to 100000
+[MCP] MCP client disconnected
+[MCPServer] unfocused-responsive mode ON: interface/editor/unfocused_low_processor_mode_sleep_usec 100000 -> 16666 (~60 fps while unfocused)
+[MCP] MCP client connected (1 peer)
+[MCPServer] unfocused-responsive mode OFF: interface/editor/unfocused_low_processor_mode_sleep_usec restored to 100000
+[MCP] MCP client disconnected
+[MCPServer] unfocused-responsive mode ON: interface/editor/unfocused_low_processor_mode_sleep_usec 100000 -> 16666 (~60 fps while unfocused)
+[MCP] MCP client connected (1 peer)
+[MCPServer] unfocused-responsive mode OFF: interface/editor/unfocused_low_processor_mode_sleep_usec restored to 100000
+[MCP] MCP client disconnected
+2026-09-13 13:11:26.356 Godot[31631:508119] [libMTLHud] Metric com.apple.hud-stat.frame-interval already exist
+2026-09-13 13:11:26.356 Godot[31631:508119] [libMTLHud] Metric com.apple.hud-stat.present-delay already exist
+2026-09-13 13:11:26.356 Godot[31631:508119] [libMTLHud] Metric com.apple.hud-stat.fps already exist
+2026-09-13 13:11:26.356 Godot[31631:508119] [libMTLHud] Metric com.apple.hud-stat.logical-fps already exist
+2026-09-13 13:11:26.356 Godot[31631:508119] [libMTLHud] Metric com.apple.hud-stat.logical-frame-interval already exist
+2026-09-13 13:11:26.357 Godot[31631:505338] [libMTLHud] Metric com.apple.hud-stat.frame-interval already exist
+2026-09-13 13:11:26.357 Godot[31631:505338] [libMTLHud] Metric com.apple.hud-stat.present-delay already exist
+2026-09-13 13:11:26.357 Godot[31631:505338] [libMTLHud] Metric com.apple.hud-stat.fps already exist
+2026-09-13 13:11:26.357 Godot[31631:505338] [libMTLHud] Metric com.apple.hud-stat.logical-fps already exist
+2026-09-13 13:11:26.357 Godot[31631:505338] [libMTLHud] Metric com.apple.hud-stat.logical-frame-interval already exist
+2026-09-13 13:11:26.419 Godot[31631:505338] [libMTLHud] Metric com.apple.hud-stat.frame-interval already exist
+2026-09-13 13:11:26.419 Godot[31631:505338] [libMTLHud] Metric com.apple.hud-stat.present-delay already exist
+2026-09-13 13:11:26.419 Godot[31631:505338] [libMTLHud] Metric com.apple.hud-stat.fps already exist
+2026-09-13 13:11:26.419 Godot[31631:505338] [libMTLHud] Metric com.apple.hud-stat.logical-fps already exist
+2026-09-13 13:11:26.419 Godot[31631:505338] [libMTLHud] Metric com.apple.hud-stat.logical-frame-interval already exist
+2026-09-13 13:11:26.419 Godot[31631:508119] [libMTLHud] Metric com.apple.hud-stat.frame-interval already exist
+2026-09-13 13:11:26.419 Godot[31631:508119] [libMTLHud] Metric com.apple.hud-stat.present-delay already exist
+2026-09-13 13:11:26.419 Godot[31631:508119] [libMTLHud] Metric com.apple.hud-stat.fps already exist
+2026-09-13 13:11:26.419 Godot[31631:508119] [libMTLHud] Metric com.apple.hud-stat.logical-fps already exist
+2026-09-13 13:11:26.419 Godot[31631:508119] [libMTLHud] Metric com.apple.hud-stat.logical-frame-interval already exist
+2026-09-13 13:11:26.420 Godot[31631:508119] [libMTLHud] Metric com.apple.hud-stat.frame-interval already exist
+2026-09-13 13:11:26.420 Godot[31631:508119] [libMTLHud] Metric com.apple.hud-stat.present-delay already exist
+2026-09-13 13:11:26.420 Godot[31631:508119] [libMTLHud] Metric com.apple.hud-stat.fps already exist
+2026-09-13 13:11:26.420 Godot[31631:508119] [libMTLHud] Metric com.apple.hud-stat.logical-fps already exist
+2026-09-13 13:11:26.420 Godot[31631:508119] [libMTLHud] Metric com.apple.hud-stat.logical-frame-interval already exist
+2026-09-13 13:11:26.430 Godot[31631:511914] [libMTLHud] Metric com.apple.hud-stat.frame-interval already exist
+2026-09-13 13:11:26.430 Godot[31631:511914] [libMTLHud] Metric com.apple.hud-stat.present-delay already exist
+2026-09-13 13:11:26.430 Godot[31631:511914] [libMTLHud] Metric com.apple.hud-stat.fps already exist
+2026-09-13 13:11:26.430 Godot[31631:511914] [libMTLHud] Metric com.apple.hud-stat.logical-fps already exist
+2026-09-13 13:11:26.430 Godot[31631:511914] [libMTLHud] Metric com.apple.hud-stat.logical-frame-interval already exist
+2026-09-13 13:11:26.430 Godot[31631:511914] [libMTLHud] Metric com.apple.hud-stat.frame-interval already exist
+2026-09-13 13:11:26.430 Godot[31631:511914] [libMTLHud] Metric com.apple.hud-stat.present-delay already exist
+2026-09-13 13:11:26.430 Godot[31631:511914] [libMTLHud] Metric com.apple.hud-stat.fps already exist
+2026-09-13 13:11:26.430 Godot[31631:511914] [libMTLHud] Metric com.apple.hud-stat.logical-fps already exist
+2026-09-13 13:11:26.430 Godot[31631:511914] [libMTLHud] Metric com.apple.hud-stat.logical-frame-interval already exist
+2026-09-13 13:11:26.430 Godot[31631:511914] [libMTLHud] Metric com.apple.hud-stat.frame-interval already exist
+2026-09-13 13:11:26.430 Godot[31631:511914] [libMTLHud] Metric com.apple.hud-stat.present-delay already exist
+2026-09-13 13:11:26.430 Godot[31631:511914] [libMTLHud] Metric com.apple.hud-stat.fps already exist
+2026-09-13 13:11:26.430 Godot[31631:511914] [libMTLHud] Metric com.apple.hud-stat.logical-fps already exist
+2026-09-13 13:11:26.430 Godot[31631:511914] [libMTLHud] Metric com.apple.hud-stat.logical-frame-interval already exist
+2026-09-13 13:11:26.432 Godot[31631:508119] [libMTLHud] Metric com.apple.hud-stat.frame-interval already exist
+2026-09-13 13:11:26.432 Godot[31631:508119] [libMTLHud] Metric com.apple.hud-stat.present-delay already exist
+2026-09-13 13:11:26.432 Godot[31631:508119] [libMTLHud] Metric com.apple.hud-stat.fps already exist
+2026-09-13 13:11:26.432 Godot[31631:508119] [libMTLHud] Metric com.apple.hud-stat.logical-fps already exist
+2026-09-13 13:11:26.432 Godot[31631:508119] [libMTLHud] Metric com.apple.hud-stat.logical-frame-interval already exist
+2026-09-13 13:11:26.448 Godot[31631:505338] [libMTLHud] Metric com.apple.hud-stat.frame-interval already exist
+2026-09-13 13:11:26.448 Godot[31631:505338] [libMTLHud] Metric com.apple.hud-stat.present-delay already exist
+2026-09-13 13:11:26.448 Godot[31631:505338] [libMTLHud] Metric com.apple.hud-stat.fps already exist
+2026-09-13 13:11:26.448 Godot[31631:505338] [libMTLHud] Metric com.apple.hud-stat.logical-fps already exist
+2026-09-13 13:11:26.448 Godot[31631:505338] [libMTLHud] Metric com.apple.hud-stat.logical-frame-interval already exist
+2026-09-13 13:11:26.449 Godot[31631:505338] [libMTLHud] Metric com.apple.hud-stat.frame-interval already exist
+2026-09-13 13:11:26.449 Godot[31631:505338] [libMTLHud] Metric com.apple.hud-stat.present-delay already exist
+2026-09-13 13:11:26.449 Godot[31631:505338] [libMTLHud] Metric com.apple.hud-stat.fps already exist
+2026-09-13 13:11:26.449 Godot[31631:505338] [libMTLHud] Metric com.apple.hud-stat.logical-fps already exist
+2026-09-13 13:11:26.450 Godot[31631:505338] [libMTLHud] Metric com.apple.hud-stat.logical-frame-interval already exist
+2026-09-13 13:11:26.453 Godot[31631:508119] [libMTLHud] Metric com.apple.hud-stat.frame-interval already exist
+2026-09-13 13:11:26.453 Godot[31631:508119] [libMTLHud] Metric com.apple.hud-stat.present-delay already exist
+2026-09-13 13:11:26.453 Godot[31631:508119] [libMTLHud] Metric com.apple.hud-stat.fps already exist
+2026-09-13 13:11:26.453 Godot[31631:508119] [libMTLHud] Metric com.apple.hud-stat.logical-fps already exist
+2026-09-13 13:11:26.453 Godot[31631:508119] [libMTLHud] Metric com.apple.hud-stat.logical-frame-interval already exist
+2026-09-13 13:11:26.458 Godot[31631:511914] [libMTLHud] Metric com.apple.hud-stat.frame-interval already exist
+2026-09-13 13:11:26.458 Godot[31631:511914] [libMTLHud] Metric com.apple.hud-stat.present-delay already exist
+2026-09-13 13:11:26.458 Godot[31631:511914] [libMTLHud] Metric com.apple.hud-stat.fps already exist
+2026-09-13 13:11:26.458 Godot[31631:511914] [libMTLHud] Metric com.apple.hud-stat.logical-fps already exist
+2026-09-13 13:11:26.458 Godot[31631:511914] [libMTLHud] Metric com.apple.hud-stat.logical-frame-interval already exist
+2026-09-13 13:11:26.458 Godot[31631:511914] [libMTLHud] Metric com.apple.hud-stat.frame-interval already exist
+2026-09-13 13:11:26.458 Godot[31631:511914] [libMTLHud] Metric com.apple.hud-stat.present-delay already exist
+2026-09-13 13:11:26.458 Godot[31631:511914] [libMTLHud] Metric com.apple.hud-stat.fps already exist
+2026-09-13 13:11:26.458 Godot[31631:511914] [libMTLHud] Metric com.apple.hud-stat.logical-fps already exist
+2026-09-13 13:11:26.458 Godot[31631:511914] [libMTLHud] Metric com.apple.hud-stat.logical-frame-interval already exist
+2026-09-13 13:11:26.473 Godot[31631:510003] [libMTLHud] Metric com.apple.hud-stat.frame-interval already exist
+2026-09-13 13:11:26.473 Godot[31631:510003] [libMTLHud] Metric com.apple.hud-stat.present-delay already exist
+2026-09-13 13:11:26.473 Godot[31631:510003] [libMTLHud] Metric com.apple.hud-stat.fps already exist
+2026-09-13 13:11:26.473 Godot[31631:510003] [libMTLHud] Metric com.apple.hud-stat.logical-fps already exist
+2026-09-13 13:11:26.473 Godot[31631:510003] [libMTLHud] Metric com.apple.hud-stat.logical-frame-interval already exist
+2026-09-13 13:11:26.491 Godot[31631:481857] [libMTLHud] Metric com.apple.hud-stat.frame-interval already exist
+2026-09-13 13:11:26.491 Godot[31631:481857] [libMTLHud] Metric com.apple.hud-stat.present-delay already exist
+2026-09-13 13:11:26.491 Godot[31631:481857] [libMTLHud] Metric com.apple.hud-stat.fps already exist
+2026-09-13 13:11:26.491 Godot[31631:481857] [libMTLHud] Metric com.apple.hud-stat.logical-fps already exist
+2026-09-13 13:11:26.491 Godot[31631:481857] [libMTLHud] Metric com.apple.hud-stat.logical-frame-interval already exist
+2026-09-13 13:11:30.448 Godot[31631:510003] [libMTLHud] Metric com.apple.hud-stat.frame-interval already exist
+2026-09-13 13:11:30.448 Godot[31631:510003] [libMTLHud] Metric com.apple.hud-stat.present-delay already exist
+2026-09-13 13:11:30.449 Godot[31631:510003] [libMTLHud] Metric com.apple.hud-stat.fps already exist
+2026-09-13 13:11:30.449 Godot[31631:510003] [libMTLHud] Metric com.apple.hud-stat.logical-fps already exist
+2026-09-13 13:11:30.449 Godot[31631:510003] [libMTLHud] Metric com.apple.hud-stat.logical-frame-interval already exist
+2026-09-13 13:11:30.449 Godot[31631:510003] [libMTLHud] Metric com.apple.hud-stat.frame-interval already exist
+2026-09-13 13:11:30.449 Godot[31631:510003] [libMTLHud] Metric com.apple.hud-stat.present-delay already exist
+2026-09-13 13:11:30.449 Godot[31631:510003] [libMTLHud] Metric com.apple.hud-stat.fps already exist
+2026-09-13 13:11:30.449 Godot[31631:510003] [libMTLHud] Metric com.apple.hud-stat.logical-fps already exist
+2026-09-13 13:11:30.449 Godot[31631:510003] [libMTLHud] Metric com.apple.hud-stat.logical-frame-interval already exist
+2026-09-13 13:11:30.449 Godot[31631:510003] [libMTLHud] Metric com.apple.hud-stat.frame-interval already exist
+2026-09-13 13:11:30.449 Godot[31631:510003] [libMTLHud] Metric com.apple.hud-stat.present-delay already exist
+2026-09-13 13:11:30.450 Godot[31631:510003] [libMTLHud] Metric com.apple.hud-stat.fps already exist
+2026-09-13 13:11:30.450 Godot[31631:510003] [libMTLHud] Metric com.apple.hud-stat.logical-fps already exist
+2026-09-13 13:11:30.450 Godot[31631:510003] [libMTLHud] Metric com.apple.hud-stat.logical-frame-interval already exist

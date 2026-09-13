@@ -1,0 +1,40 @@
+Godot Engine v4.7.2.stable.official.ed1daf0bf - https://godotengine.org
+
+[   0% ] [90m[1mfirst_scan_filesystem[22m | Started Project initialization (5 steps)[39m[0m
+[   0% ] [90m[1mfirst_scan_filesystem[22m | Fájlstruktúra vizsgálata...[39m[0m
+[  16% ] [90m[1mfirst_scan_filesystem[22m | Loading global class names...[39m[0m
+[  33% ] [90m[1mfirst_scan_filesystem[22m | GDExtension-ök ellenőrzése...[39m[0m
+[  50% ] [90m[1mfirst_scan_filesystem[22m | Creating autoload scripts...[39m[0m
+[  66% ] [90m[1mfirst_scan_filesystem[22m | Bővítmény beállítása...[39m[0m
+Godot MCP Toolkit v1.0.0 — by NPGameDev · npgamedev.com
+[MCPExtensions] Hot-reload watcher active
+[MCPServer] port: scanning 6550-6560 (default)
+[MCPServer] session token written to user://addons/godot_mcp_toolkit/project_instance_f5b72c286c69/mcp_token
+[MCPServer] listening on 127.0.0.1:6550
+ERROR: The process 30310 does not exist or is not a child of the calling process.
+   at: _check_pid_is_running (drivers/unix/os_unix.cpp:863)
+   GDScript backtrace (most recent call first):
+       [0] register (res://addons/godot_mcp_toolkit/registry/registry_client.gd:139)
+       [1] _register_in_registry (res://addons/godot_mcp_toolkit/core/plugin_composer.gd:129)
+       [2] <anonymous lambda> (res://addons/godot_mcp_toolkit/core/plugin_composer.gd:90)
+       [3] _on_transport_bound (res://addons/godot_mcp_toolkit/transport/mcp_server.gd:381)
+       [4] _scan_and_listen (res://addons/godot_mcp_toolkit/transport/ws_transport.gd:283)
+       [5] ensure_listening (res://addons/godot_mcp_toolkit/transport/ws_transport.gd:254)
+       [6] start (res://addons/godot_mcp_toolkit/transport/mcp_server.gd:322)
+       [7] compose (res://addons/godot_mcp_toolkit/core/plugin_composer.gd:91)
+       [8] _enter_tree (res://addons/godot_mcp_toolkit/plugin.gd:47)
+[MCPRegistry] registered /users/bokkonboldiszar/desktop/codex workspace/05_shared_projects/games/helionvanguard on port 6550
+[  83% ] [90m[1mfirst_scan_filesystem[22m | Starting file scan...[39m[0m
+[92m[ DONE ][39m [1mfirst_scan_filesystem[22m
+[0m
+[   0% ] [90m[1mloading_editor_layout[22m | Started Szerkesztő betöltése (5 steps)[39m[0m
+[   0% ] [90m[1mloading_editor_layout[22m | Loading editor layout...[39m[0m
+[  16% ] [90m[1mloading_editor_layout[22m | Loading docks...[39m[0m
+[  33% ] [90m[1mloading_editor_layout[22m | Reopening scenes...[39m[0m
+[  50% ] [90m[1mloading_editor_layout[22m | Loading central editor layout...[39m[0m
+[  66% ] [90m[1mloading_editor_layout[22m | Loading plugin window layout...[39m[0m
+[  83% ] [90m[1mloading_editor_layout[22m | Editor layout ready.[39m[0m
+[92m[ DONE ][39m [1mloading_editor_layout[22m
+[0m
+[MCPServer] stopped
+[MCPRegistry] deregistered /users/bokkonboldiszar/desktop/codex workspace/05_shared_projects/games/helionvanguard

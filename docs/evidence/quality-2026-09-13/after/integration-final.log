@@ -1,0 +1,94 @@
+Godot Engine v4.7.2.stable.official.ed1daf0bf - https://godotengine.org
+Metal 4.0 - Forward+ - Using Device #0: Apple - Apple M1 (Apple7)
+
+[MCPRuntimeServer] port: scanning 6570-6585 (default)
+[MCPRuntimeServer] listening on 127.0.0.1:6570
+[MCPRegistry] runtime port 6570 registered for /users/bokkonboldiszar/desktop/codex workspace/05_shared_projects/games/helionvanguard
+2026-09-13 13:19:37.857 Godot[33324:515573] [libMTLHud] Metric com.apple.hud-stat.frame-interval already exist
+2026-09-13 13:19:37.857 Godot[33324:515573] [libMTLHud] Metric com.apple.hud-stat.present-delay already exist
+2026-09-13 13:19:37.857 Godot[33324:515573] [libMTLHud] Metric com.apple.hud-stat.fps already exist
+2026-09-13 13:19:37.858 Godot[33324:515573] [libMTLHud] Metric com.apple.hud-stat.logical-fps already exist
+2026-09-13 13:19:37.858 Godot[33324:515573] [libMTLHud] Metric com.apple.hud-stat.logical-frame-interval already exist
+2026-09-13 13:19:37.938 Godot[33324:515573] NSEventModifierFlagFunction specified to -setKeyEquivalentModifierMask: for item <NSMenuItem: 0x896024960 Enable HUD, ke='Command-F9', action: toggleEnabled:>, but is only supported for system-provided menu items; will not be used
+2026-09-13 13:19:37.938 Godot[33324:515573] NSEventModifierFlagFunction specified to -setKeyEquivalentModifierMask: for item <NSMenuItem: 0x896024be0 Enable Logging, ke='Command-F8', action: toggleLoggingEnabled:>, but is only supported for system-provided menu items; will not be used
+2026-09-13 13:19:37.938 Godot[33324:515573] NSEventModifierFlagFunction specified to -setKeyEquivalentModifierMask: for item <NSMenuItem: 0x896026940 Reset Metrics, ke='Command-F11', action: resetMetrics:>, but is only supported for system-provided menu items; will not be used
+2026-09-13 13:19:37.938 Godot[33324:515573] NSEventModifierFlagFunction specified to -setKeyEquivalentModifierMask: for item <NSMenuItem: 0x896026d00 Show Configuration Panel, ke='Command-F12', action: showConfigurationPanel:>, but is only supported for system-provided menu items; will not be used
+2026-09-13 13:19:37.938 Godot[33324:515573] NSEventModifierFlagFunction specified to -setKeyEquivalentModifierMask: for item <NSMenuItem: 0x896026da0 Copy HUD Configuration, action: copyConfig:>, but is only supported for system-provided menu items; will not be used
+[RUN] window=(1280, 720) viewport=(1920.0, 1080.0) render_scale=0.85 preset=High
+[PLAYTEST] PASS launch training in 1.40s
+[PLAYTEST] PASS window override reaches real 1280 x 720 drawable
+[PLAYTEST] PASS held thrust produces real flight
+[PLAYTEST] PASS pause action opens paused menu
+[PLAYTEST] PASS pause gives controller and keyboard focus to Resume
+[PLAYTEST] PASS screenshot pause
+[PLAYTEST] PASS pause action resumes flight
+[PLAYTEST] PASS camera input enters cockpit
+[PLAYTEST] PASS screenshot cockpit
+[PLAYTEST] PASS photo input from cockpit reveals ship
+[PLAYTEST] PASS photo input restores cockpit
+[PLAYTEST] PASS relay aperture has no invisible collision wall
+[PLAYTEST] PASS relay armor blocks physical ray
+[PLAYTEST] PASS real flight through relay awards one navigation bonus
+[PLAYTEST] PASS training formation fully drains its spawn queue
+[PLAYTEST] PASS queued practice drone remains passive
+[PLAYTEST] PASS queued practice drone remains passive
+[PLAYTEST] PASS queued practice drone remains passive
+[PLAYTEST] PASS screenshot relay-in-game
+[PLAYTEST] PASS screenshot comfort-settings
+[RUN] window=(1280, 720) viewport=(1920.0, 1080.0) render_scale=0.85 preset=High
+[PLAYTEST] PASS launch instant_action in 0.99s
+[PLAYTEST] PASS playable state instant_action
+[RUN] window=(1280, 720) viewport=(1920.0, 1080.0) render_scale=0.85 preset=High
+[PLAYTEST] PASS launch patrol in 1.00s
+[PLAYTEST] PASS playable state patrol
+[RUN] window=(1280, 720) viewport=(1920.0, 1080.0) render_scale=0.85 preset=High
+[PLAYTEST] PASS launch convoy in 1.01s
+[PLAYTEST] PASS playable state convoy
+[RUN] window=(1280, 720) viewport=(1920.0, 1080.0) render_scale=0.85 preset=High
+[PLAYTEST] PASS launch station_defence in 1.00s
+[PLAYTEST] PASS playable state station_defence
+[RUN] window=(1280, 720) viewport=(1920.0, 1080.0) render_scale=0.85 preset=High
+[PLAYTEST] PASS launch capital_strike in 1.01s
+[PLAYTEST] PASS playable state capital_strike
+[RUN] window=(1280, 720) viewport=(1920.0, 1080.0) render_scale=0.85 preset=High
+[PLAYTEST] PASS launch fleet_action in 1.03s
+[PLAYTEST] PASS playable state fleet_action
+[RUN] window=(1280, 720) viewport=(1920.0, 1080.0) render_scale=0.85 preset=High
+[PLAYTEST] PASS launch main in 1.00s
+[PLAYTEST] PASS playable state main
+[RUN] window=(1280, 720) viewport=(1920.0, 1080.0) render_scale=0.85 preset=High
+[PLAYTEST] PASS launch survival in 1.01s
+[PLAYTEST] PASS playable state survival
+[PLAYTEST] PASS cleared survival wave advances and supplies missiles
+[PLAYTEST] PASS survival repair applies in live director
+[RUN] window=(1280, 720) viewport=(1920.0, 1080.0) render_scale=0.85 preset=High
+[PLAYTEST] PASS launch arena in 1.00s
+[PLAYTEST] PASS playable state arena
+[PLAYTEST] PASS arena reloads live missile stores
+[PLAYTEST] PASS held primary input fires real projectiles
+[PLAYTEST] PASS screenshot combat-hud
+[PLAYTEST] PASS screenshot hud-960x540
+[RUN] window=(1280, 720) viewport=(1920.0, 1080.0) render_scale=0.85 preset=High
+[PLAYTEST] PASS launch instant_action in 0.99s
+[PLAYTEST] PASS new hull flies and fires: vanguard
+[PLAYTEST] PASS new hull imports eight material batches: vanguard
+[PLAYTEST] PASS screenshot vanguard-combat
+[PLAYTEST] PASS screenshot vanguard-in-game
+[RUN] window=(1280, 720) viewport=(1920.0, 1080.0) render_scale=0.85 preset=High
+[PLAYTEST] PASS launch instant_action in 1.00s
+[PLAYTEST] PASS new hull flies and fires: peregrine
+[PLAYTEST] PASS new hull imports eight material batches: peregrine
+[PLAYTEST] PASS screenshot peregrine-combat
+[PLAYTEST] PASS screenshot peregrine-in-game
+[RUN] window=(1280, 720) viewport=(1920.0, 1080.0) render_scale=0.85 preset=High
+[PLAYTEST] PASS launch instant_action in 0.98s
+[PLAYTEST] PASS new hull flies and fires: aegis
+[PLAYTEST] PASS new hull imports eight material batches: aegis
+[PLAYTEST] PASS screenshot aegis-combat
+[PLAYTEST] PASS screenshot aegis-in-game
+[PLAYTEST] PASS return to main menu completes
+[PLAYTEST] PASS screenshot main-menu
+[PLAYTEST] PASS screenshot eight-ship-hangar
+[AUDIO] live master peak -1.92 dBFS
+[PLAYTEST] PASS live mix produces non-clipping output
+[PLAYTEST] pass=63 fail=0

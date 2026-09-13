@@ -1,0 +1,26 @@
+Godot Engine v4.7.2.stable.official.ed1daf0bf - https://godotengine.org
+Metal 4.0 - Forward+ - Using Device #0: Apple - Apple M1 (Apple7)
+
+2026-09-13 13:30:38.421 HelionVanguard[33771:523622] [libMTLHud] Metric com.apple.hud-stat.frame-interval already exist
+2026-09-13 13:30:38.421 HelionVanguard[33771:523622] [libMTLHud] Metric com.apple.hud-stat.present-delay already exist
+2026-09-13 13:30:38.421 HelionVanguard[33771:523622] [libMTLHud] Metric com.apple.hud-stat.fps already exist
+2026-09-13 13:30:38.421 HelionVanguard[33771:523622] [libMTLHud] Metric com.apple.hud-stat.logical-fps already exist
+2026-09-13 13:30:38.421 HelionVanguard[33771:523622] [libMTLHud] Metric com.apple.hud-stat.logical-frame-interval already exist
+2026-09-13 13:30:39.529 HelionVanguard[33771:523622] NSEventModifierFlagFunction specified to -setKeyEquivalentModifierMask: for item <NSMenuItem: 0xa03da64e0 Enable HUD, ke='Command-F9', action: toggleEnabled:>, but is only supported for system-provided menu items; will not be used
+2026-09-13 13:30:39.529 HelionVanguard[33771:523622] NSEventModifierFlagFunction specified to -setKeyEquivalentModifierMask: for item <NSMenuItem: 0xa03da5d60 Enable Logging, ke='Command-F8', action: toggleLoggingEnabled:>, but is only supported for system-provided menu items; will not be used
+2026-09-13 13:30:39.529 HelionVanguard[33771:523622] NSEventModifierFlagFunction specified to -setKeyEquivalentModifierMask: for item <NSMenuItem: 0xa09da7520 Reset Metrics, ke='Command-F11', action: resetMetrics:>, but is only supported for system-provided menu items; will not be used
+2026-09-13 13:30:39.529 HelionVanguard[33771:523622] NSEventModifierFlagFunction specified to -setKeyEquivalentModifierMask: for item <NSMenuItem: 0xa09da61c0 Show Configuration Panel, ke='Command-F12', action: showConfigurationPanel:>, but is only supported for system-provided menu items; will not be used
+2026-09-13 13:30:39.529 HelionVanguard[33771:523622] NSEventModifierFlagFunction specified to -setKeyEquivalentModifierMask: for item <NSMenuItem: 0xa09da6e40 Copy HUD Configuration, action: copyConfig:>, but is only supported for system-provided menu items; will not be used
+[RUN] window=(1280, 720) viewport=(1920.0, 1080.0) render_scale=0.85 preset=High
+[BENCH] t=1.0 fps=60.5 p95=19.13ms worst=19.75ms cpu=17.92ms phys=0.47ms acc=0.000 fcs=0.850 shots=0 assist=0.68 hostiles=3 stage=0 objects=992 prims=85895 drawcalls=225 vram=269.6MB nodes=368
+[BENCH] t=1.4 fps=3.2 p95=3765.81ms worst=3765.81ms cpu=17.92ms phys=0.47ms acc=0.000 fcs=0.850 shots=0 assist=0.68 hostiles=3 stage=0 objects=1019 prims=88949 drawcalls=247 vram=269.6MB nodes=391
+[BENCH] t=2.2 fps=44.9 p95=17.23ms worst=283.19ms cpu=16.54ms phys=0.70ms acc=0.000 fcs=0.000 shots=12 assist=1.00 hostiles=3 stage=0 objects=1039 prims=84657 drawcalls=249 vram=269.6MB nodes=387
+[BENCH] t=3.0 fps=23.0 p95=23.48ms worst=1056.63ms cpu=16.54ms phys=0.70ms acc=0.143 fcs=0.079 shots=14 assist=1.00 hostiles=3 stage=0 objects=1090 prims=90405 drawcalls=246 vram=269.6MB nodes=393
+[BENCH] t=4.0 fps=60.8 p95=16.94ms worst=17.06ms cpu=16.41ms phys=0.39ms acc=0.464 fcs=0.485 shots=28 assist=1.00 hostiles=3 stage=0 objects=1068 prims=89663 drawcalls=256 vram=269.6MB nodes=392
+[BENCH] t=4.2 fps=3.9 p95=1185.11ms worst=1185.11ms cpu=16.35ms phys=0.76ms acc=0.500 fcs=0.533 shots=28 assist=1.00 hostiles=2 stage=0 objects=1119 prims=93373 drawcalls=264 vram=269.9MB nodes=412
+[BENCH] t=5.1 fps=46.7 p95=17.17ms worst=257.90ms cpu=16.34ms phys=1.38ms acc=0.778 fcs=0.887 shots=36 assist=1.00 hostiles=2 stage=0 objects=1124 prims=75411 drawcalls=268 vram=269.9MB nodes=425
+[BENCH] t=6.1 fps=60.0 p95=17.13ms worst=22.43ms cpu=16.47ms phys=6.64ms acc=0.972 fcs=1.000 shots=36 assist=1.00 hostiles=1 stage=0 objects=1085 prims=77501 drawcalls=282 vram=270.0MB nodes=440
+[BENCH] t=7.1 fps=60.0 p95=17.00ms worst=17.75ms cpu=16.98ms phys=0.69ms acc=0.972 fcs=1.000 shots=36 assist=1.00 hostiles=1 stage=0 objects=950 prims=76811 drawcalls=228 vram=270.0MB nodes=438
+[BENCH] t=8.2 fps=49.1 p95=17.07ms worst=233.76ms cpu=16.49ms phys=2.03ms acc=0.972 fcs=1.000 shots=36 assist=1.00 hostiles=1 stage=0 objects=924 prims=70747 drawcalls=203 vram=270.1MB nodes=455
+[BENCH] t=9.3 fps=61.0 p95=17.02ms worst=17.47ms cpu=229.59ms phys=3.37ms acc=0.868 fcs=0.850 shots=53 assist=1.00 hostiles=1 stage=0 objects=948 prims=79535 drawcalls=178 vram=270.1MB nodes=445
+[BENCH] harness watchdog fired (tree paused or mission over)

@@ -1,0 +1,107 @@
+{
+  "method": "Median of one-second wall-clock buckets after the first 3 mission seconds. Bucket p95 is not a whole-run percentile. No screenshots during measurement.",
+  "runs": [
+    {
+      "log": "docs/evidence/quality-2026-09-13/before/measured-combat.log",
+      "samples_after_first_3s": 22,
+      "median_bucket_fps": 74.45,
+      "bucket_fps_range": [
+        66.3,
+        82.9
+      ],
+      "median_bucket_p95_ms": 15.86,
+      "worst_frame_ms": 34.59,
+      "max_reported_video_memory_mb": 625.9,
+      "median_draw_calls": 166.0,
+      "median_primitives": 72179.0,
+      "completed": true,
+      "engine_errors": 0,
+      "warnings": 0
+    },
+    {
+      "log": "docs/evidence/quality-2026-09-13/after/perf-fleet-high-720.log",
+      "samples_after_first_3s": 15,
+      "median_bucket_fps": 201.3,
+      "bucket_fps_range": [
+        186.1,
+        212.8
+      ],
+      "median_bucket_p95_ms": 10.19,
+      "worst_frame_ms": 27.2,
+      "max_reported_video_memory_mb": 288.8,
+      "median_draw_calls": 256.0,
+      "median_primitives": 74155.0,
+      "completed": true,
+      "engine_errors": 0,
+      "warnings": 0
+    },
+    {
+      "log": "docs/evidence/quality-2026-09-13/after/perf-high-720.log",
+      "samples_after_first_3s": 15,
+      "median_bucket_fps": 217.4,
+      "bucket_fps_range": [
+        184.6,
+        238.9
+      ],
+      "median_bucket_p95_ms": 10.44,
+      "worst_frame_ms": 21.46,
+      "max_reported_video_memory_mb": 271.5,
+      "median_draw_calls": 226.0,
+      "median_primitives": 73307.0,
+      "completed": true,
+      "engine_errors": 0,
+      "warnings": 0
+    },
+    {
+      "log": "docs/evidence/quality-2026-09-13/after/perf-high-native.log",
+      "samples_after_first_3s": 22,
+      "median_bucket_fps": 71.35,
+      "bucket_fps_range": [
+        66.3,
+        80.5
+      ],
+      "median_bucket_p95_ms": 16.02,
+      "worst_frame_ms": 35.61,
+      "max_reported_video_memory_mb": 591.6,
+      "median_draw_calls": 253.0,
+      "median_primitives": 87894.0,
+      "completed": true,
+      "engine_errors": 0,
+      "warnings": 0
+    },
+    {
+      "log": "docs/evidence/quality-2026-09-13/after/perf-low-720.log",
+      "samples_after_first_3s": 15,
+      "median_bucket_fps": 245.5,
+      "bucket_fps_range": [
+        231.4,
+        261.9
+      ],
+      "median_bucket_p95_ms": 10.5,
+      "worst_frame_ms": 36.26,
+      "max_reported_video_memory_mb": 158.4,
+      "median_draw_calls": 228.0,
+      "median_primitives": 50202.0,
+      "completed": true,
+      "engine_errors": 0,
+      "warnings": 0
+    },
+    {
+      "log": "docs/evidence/quality-2026-09-13/after/perf-ultra-720.log",
+      "samples_after_first_3s": 16,
+      "median_bucket_fps": 157.85,
+      "bucket_fps_range": [
+        41.0,
+        181.3
+      ],
+      "median_bucket_p95_ms": 7.8,
+      "worst_frame_ms": 1788.73,
+      "max_reported_video_memory_mb": 365.6,
+      "median_draw_calls": 244.5,
+      "median_primitives": 86648.0,
+      "completed": true,
+      "engine_errors": 0,
+      "warnings": 0
+    }
+  ]
+}

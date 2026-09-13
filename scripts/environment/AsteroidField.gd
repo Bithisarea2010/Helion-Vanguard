@@ -110,6 +110,12 @@ func _rand_scale(rng: RandomNumberGenerator) -> float:
 		return rng.randf_range(12.0, 26.0)
 	return rng.randf_range(2.0, 10.0)
 
+## Reserve authored approach lanes before commit, including each rock's radius.
+func reserve_sphere(center: Vector3, radius: float) -> void:
+	assert(_mm_nodes.is_empty(), "Reserve lanes before committing the asteroid field")
+	_rocks = _rocks.filter(func(rock):
+		return (rock.pos as Vector3).distance_to(center) > radius + float(rock.scale) * 1.1)
+
 ## Call after populate_* to build the MultiMeshes (chunked for culling).
 func commit() -> void:
 	for n in _mm_nodes:

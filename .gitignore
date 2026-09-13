@@ -4,3 +4,7 @@ build/
 .DS_Store
 shots/
 *.zip
+
+# Machine-local bridge configuration and regenerable Python bytecode
+.mcp.json
+__pycache__/

@@ -365,7 +365,8 @@ func _audio_tab() -> Control:
 	for cfg in [["Master volume", "vol_master", "Final output level"],
 			["Music", "vol_music", "Combat and menu score"],
 			["Effects", "vol_sfx", "Weapons, engines, impacts and explosions"],
-			["Interface", "vol_ui", "Warnings, radio and menu feedback"]]:
+			["Interface", "vol_ui", "Warnings, radio and menu feedback"],
+			["Ambience", "vol_ambience", "Reactor and flight-deck atmosphere"]]:
 		var key: String = cfg[1]
 		var box := _labeled_slider(0.0, 1.0, Game.settings[key], 0.01, "%", 100.0)
 		var slider := box.get_meta("slider") as HSlider
@@ -422,6 +423,33 @@ func _game_tab() -> Control:
 		Game.settings.difficulty = i
 		_mark())
 	_row(vb, "Difficulty", "Adjusts enemy accuracy, reaction, aggression, group size and countermeasures.", diff)
+	_section(vb, "COMFORT & READABILITY")
+	for spec in [["fov_motion", "Speed field of view", "Zero keeps the chase camera lens steady during boost and FTL."],
+			["flash_intensity", "Screen flash intensity", "Softens damage edges, FTL transitions and explosion flashes."]]:
+		var key: String = spec[0]
+		var box := _labeled_slider(0.0, 1.0, Game.settings[key], 0.05, "%", 100.0)
+		var slider := box.get_meta("slider") as HSlider
+		slider.value_changed.connect(func(v):
+			Game.settings[key] = v
+			_update_labeled_slider(box, v, "%", 100.0)
+			_mark())
+		_row(vb, spec[1], spec[2], box)
+	var hud_size := _labeled_slider(0.85, 1.3, Game.settings.hud_scale, 0.05, "%", 100.0)
+	(hud_size.get_meta("slider") as HSlider).value_changed.connect(func(v):
+		Game.settings.hud_scale = v
+		_update_labeled_slider(hud_size, v, "%", 100.0)
+		_mark())
+	_row(vb, "Flight interface size", "Enlarges instruments and radio subtitles; aim markers stay aligned to the world.", hud_size)
+	for spec in [["quick_transitions", "Quick transitions", "Enter play as soon as the scene is ready. Disable for the full cinematic corridor."],
+			["flight_hints", "Contextual flight hints", "Shows live key or controller bindings during the first moments of a mission."]]:
+		var key: String = spec[0]
+		var toggle := CheckButton.new()
+		toggle.text = "Enabled"
+		toggle.button_pressed = Game.settings[key]
+		toggle.toggled.connect(func(on):
+			Game.settings[key] = on
+			_mark())
+		_row(vb, spec[1], spec[2], toggle)
 	return pair[0]
 
 # ------------------------------------------------------------- capabilities
