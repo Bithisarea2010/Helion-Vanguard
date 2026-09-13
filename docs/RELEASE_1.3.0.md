@@ -36,7 +36,7 @@ first-launch procedure.
 SHA-256:
 
 ```text
-e504372ca582d687213d5fd24fb01d175d24da2cfd2f2a269ada19e39cef849a
+3860fb69ed608fb22c552c7906d0ead9f6d98c410d4629dc85d37cf3ab1b10bf
 ```
 
 ## Validation
@@ -45,9 +45,11 @@ e504372ca582d687213d5fd24fb01d175d24da2cfd2f2a269ada19e39cef849a
   failed** after the final source merge.
 - Rendered Metal integration suite recorded in the production evidence:
   **63 passed, 0 failed**.
-- The packaged Apple Silicon app was rebuilt for this release. Package-content
-  inspection confirms the 1.3.0 version, all eight ships, new hulls, relay and
-  audio assets, while excluding the editor MCP add-on and local MCP settings.
+- The packaged Apple Silicon app was rebuilt for this release. Its ZIP was
+  round-trip extracted and passed `codesign --verify --deep --strict`.
+  Package-content inspection confirms the 1.3.0 version, all eight ships, new
+  hulls, relay and audio assets, while excluding the editor MCP add-on and
+  local MCP settings.
 
 ## Production history and provenance
 
