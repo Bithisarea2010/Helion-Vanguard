@@ -13,18 +13,25 @@
         ── FLY HARD · STRIKE FIRST · SURVIVE ──
 ```
 
-### Fast, colourful third-person space combat for macOS
+### Godot Lite · fast, colourful third-person space combat for macOS
 
 Pilot eight distinct starfighters, master the combat sandbox and choose from ten missions and training modes.
 
 [![Release](https://img.shields.io/github/v/release/Bithisarea2010/Helion-Vanguard?style=for-the-badge&color=ff9d2e&label=DOWNLOAD)](https://github.com/Bithisarea2010/Helion-Vanguard/releases/latest)
 [![Godot](https://img.shields.io/badge/Godot-4.7.2-478CBF?style=for-the-badge&logo=godot-engine&logoColor=white)](https://godotengine.org/)
+[![Edition](https://img.shields.io/badge/edition-Lite-35c2ff?style=for-the-badge)](https://github.com/Bithisarea2010/Helion-Vanguard)
 [![Platform](https://img.shields.io/badge/macOS-Apple%20Silicon-111827?style=for-the-badge&logo=apple&logoColor=white)](https://github.com/Bithisarea2010/Helion-Vanguard/releases/latest)
 [![License](https://img.shields.io/github/license/Bithisarea2010/Helion-Vanguard?style=for-the-badge&color=35c2ff)](LICENSE)
 
 [Download for macOS](https://github.com/Bithisarea2010/Helion-Vanguard/releases/latest) · [Controls](#flight-controls) · [Build from source](#build-from-source) · [Documentation](#engineering-notes)
 
 </div>
+
+> **Two editions, one universe.** This repository is the lightweight, open Godot
+> edition: quick to download, easy to inspect and built around the original
+> readable space-combat loop. The separate [Unity Pro edition](https://github.com/Bithisarea2010/Helion-Vanguard-Pro)
+> expands the same design language into a larger production pipeline with a
+> 3D cockpit, rebuilt fleet and deeper presentation work.
 
 **Local quality build 1.3.0:** eight playable ships, redesigned Vanguard plus
 Peregrine and Aegis, navigable Relay 07, revised combat HUD, comfort controls,
