@@ -1,7 +1,7 @@
 {
   "project": "Helion Vanguard",
-  "version": "1.3.0",
-  "generated": "2026-09-13",
+  "version": "2.0.0-beta-dev",
+  "generated": "2026-09-20",
   "assets": [
     {
       "name": "Aerial Rocks 02",
@@ -150,6 +150,40 @@
         "assets/audio/sfx/hv_flight_bed.wav"
       ],
       "usage": "Four primary weapons, player impacts, relay and wave rewards, looping flight ambience"
+    },
+    {
+      "name": "Forest Ground 04",
+      "type": "pbr_texture_set",
+      "author": "Rob Tuytel; adjustments by Rico Cilliers",
+      "source": "https://polyhaven.com/a/forest_ground_04",
+      "license": "CC0 1.0",
+      "license_url": "https://polyhaven.com/license",
+      "modifications": "Unmodified 1K diffuse and OpenGL normal JPEG maps. Mipmapped, blended in terrain shader.",
+      "files": [
+        "assets/textures/explore/forest_ground_04_diff_1k.jpg",
+        "assets/textures/explore/forest_ground_04_nor_gl_1k.jpg"
+      ],
+      "sha256": {
+        "assets/textures/explore/forest_ground_04_diff_1k.jpg": "50a4dda30875020c64385261aa7e00e2155b592302fa6794165f58fae73cbd2c",
+        "assets/textures/explore/forest_ground_04_nor_gl_1k.jpg": "9c3a0200e02ce40edffbbf9f5f623ef08ea9b1b7812b556182ec978f88887151"
+      }
+    },
+    {
+      "name": "V2 original exploration assets",
+      "type": "model_shader_audio",
+      "author": "Helion Vanguard project / Codex",
+      "source": "blender_src/exploration_suit.py; blender_src/exploration_audio.py; scripts/explore; shaders/explore",
+      "license": "Original project assets",
+      "modifications": "Original suit mesh, procedural vegetation/cabin, atmospheric shaders and deterministic synthesized audio. No sampled music.",
+      "files": [
+        "assets/models/explore/survey_suit.glb",
+        "assets/audio/explore/engine.wav",
+        "assets/audio/explore/forest.wav",
+        "assets/audio/explore/orbit_pad.wav",
+        "assets/audio/explore/rain.wav",
+        "assets/audio/explore/surf.wav",
+        "assets/audio/explore/wind.wav"
+      ]
     }
   ]
 }

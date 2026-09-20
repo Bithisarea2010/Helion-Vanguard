@@ -1,0 +1,14 @@
+[gd_resource type="Resource" script_class="PlanetDefinition" load_steps=2 format=3]
+[ext_resource type="Script" path="res://scripts/explore/PlanetDefinition.gd" id="1"]
+[resource]
+script = ExtResource("1")
+id = "selene"
+display_name = "SELENE"
+radius = 12000.0
+mass = 3.5e18
+surface_gravity = 1.62
+atmosphere_height = 0.0
+atmosphere_density = 0.0
+terrain_seed = 9021
+terrain_amplitude = 1100.0
+is_moon = true

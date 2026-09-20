@@ -4,7 +4,7 @@ extends Node
 signal settings_changed
 signal mission_ended(victory: bool, stats: Dictionary)
 
-const VERSION := "1.3.0"
+const VERSION := "2.0.0-beta-dev"
 const SETTINGS_PATH := "user://settings.cfg"
 const SAVE_PATH := "user://save.cfg"
 const MIN_RENDER_SCALE := 0.50
@@ -138,6 +138,8 @@ var save := {
 }
 
 var current_mission := "instant_action"
+var current_mode := "fight"
+var explore_options := {"ship": "vanguard", "hostility": 0, "cinematics": 1, "weather": 0, "time_of_day": 0.28}
 var _hermetic := false          # --defaults: ignore and never write settings.cfg
 ## `--uncapped` must survive every later `apply_video_settings()`.
 ##
@@ -674,6 +676,9 @@ func goto_menu(tab := "") -> void:
 	})
 
 func start_mission(id: String) -> void:
+	if SceneFlow._busy:
+		return
+	current_mode = "fight"
 	if not MissionDefs.MISSIONS.has(id):
 		push_warning("Unknown mission '%s'; using instant_action" % id)
 		id = "instant_action"
@@ -691,6 +696,25 @@ func start_mission(id: String) -> void:
 		"subtitle": "%s  •  %s" % [str(sd.get("label", "SF-7 VANGUARD")),
 			str(md.get("desc", "Helion combat operation"))],
 		"detail": "Spooling the FTL insertion corridor",
+	})
+
+func start_explore(options: Dictionary = {}) -> void:
+	if SceneFlow._busy:
+		return
+	current_mode = "explore"
+	explore_options = {"ship": save.selected_ship, "hostility": 0, "cinematics": 1, "weather": 0, "time_of_day": 0.28}
+	for key in explore_options:
+		if options.has(key): explore_options[key] = options[key]
+	if not ShipDB.SHIPS.has(str(explore_options.ship)): explore_options.ship = "vanguard"
+	explore_options.hostility = clampi(int(explore_options.hostility), 0, 4)
+	explore_options.cinematics = clampi(int(explore_options.cinematics), 0, 2)
+	get_tree().paused = false
+	SceneFlow.transition_to("res://scenes/Explore.tscn", {
+		"kind": "explore", "min_present_seconds": 0.0,
+		"eyebrow": "VANGUARD SURVEY CORPS  //  EXPEDITION 01",
+		"title": "THE ELYSIAN EXPEDITION",
+		"subtitle": "One world. An uncharted frontier.",
+		"detail": "Preparing orbital navigation and surface telemetry",
 	})
 
 # =================================================================== CAPABILITIES

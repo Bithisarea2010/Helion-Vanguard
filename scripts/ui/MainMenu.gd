@@ -156,23 +156,24 @@ func _build_ui() -> void:
 	left.add_child(title2)
 	var rule := HSeparator.new()
 	left.add_child(rule)
-	left.add_child(Styles.label("DEEP-BELT SPACE COMBAT", 12, Styles.DIM, true))
+	left.add_child(Styles.label("V2 BETA  /  TWO FRONTIERS", 12, Styles.DIM, true))
 	left.add_child(Styles.label("Build %s  •  %s" % [Game.VERSION,
 		Game.PRESET_NAMES[int(Game.settings.preset)]], 12, Color(0.72, 0.80, 0.88)))
 	var spacer := Control.new()
 	spacer.custom_minimum_size.y = 10
 	left.add_child(spacer)
 	var entries := [
-		["INSTANT ACTION", func(): Game.start_mission("instant_action")],
-		["MISSIONS", func(): _show_missions()],
+		["FIGHT MODE", func(): _show_missions()],
+		["EXPLORE MODE", func(): _show_explore()],
 		["HANGAR", func(): _show_hangar()],
+		["SHIP CONFIGURATION", func(): _show_hangar()],
 		["SETTINGS", func(): _show_settings()],
 		["CREDITS & LICENCES", func(): _show_credits()],
 		["QUIT", func(): _quit()],
 	]
 	var first_button: Button = null
 	for e in entries:
-		var b := Styles.button(e[0], 21)
+		var b := Styles.button(e[0], 17)
 		b.alignment = HORIZONTAL_ALIGNMENT_LEFT
 		b.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 		b.pressed.connect(e[1])
@@ -189,7 +190,7 @@ func _build_ui() -> void:
 		music_toggle.text = "MUSIC  •  ON" if enabled else "MUSIC  •  OFF")
 	left.add_child(music_toggle)
 	if not Game.save.training_done:
-		var hint := Styles.label("NEW PILOT?\nFlight Academy is under MISSIONS.", 12, Styles.CYAN, true)
+		var hint := Styles.label("NEW PILOT?\nFlight Academy is in FIGHT MODE.", 12, Styles.CYAN, true)
 		hint.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 		left.add_child(hint)
 	var flex := Control.new()
@@ -237,7 +238,7 @@ func _clear_content() -> Control:
 # ------------------------------------------------------------------ missions
 func _show_missions() -> void:
 	var vb := _clear_content()
-	vb.add_child(Styles.label("MISSIONS", 26, Styles.CYAN, true))
+	vb.add_child(Styles.label("FIGHT MODE", 26, Styles.CYAN, true))
 	var sc := ScrollContainer.new()
 	sc.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	vb.add_child(sc)
@@ -259,6 +260,40 @@ func _show_missions() -> void:
 			Styles.GREEN if done else Styles.DIM)
 		hb.add_child(tag)
 		list.add_child(hb)
+
+func _show_explore() -> void:
+	var vb := _clear_content()
+	vb.add_child(Styles.label("THE ELYSIAN EXPEDITION", 26, Styles.CYAN, true))
+	var intro := Styles.label("Leave the battle behind. Descend through an alien sky, survey Elysian's wilderness and return to the stars.", 18)
+	intro.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	vb.add_child(intro)
+	vb.add_child(Styles.label("ELYSIAN + SELENE  /  SURVEY EXPEDITION", 13, Styles.ORANGE, true))
+	var options := {"ship": Game.save.selected_ship, "hostility": 0, "cinematics": 1, "weather": 0, "time_of_day": 0.28}
+	var grid := GridContainer.new(); grid.columns=2
+	grid.add_theme_constant_override("h_separation",24)
+	grid.add_theme_constant_override("v_separation",12)
+	vb.add_child(grid)
+	var ship_picker := OptionButton.new()
+	var ids := ShipDB.SHIPS.keys()
+	for id in ids: ship_picker.add_item(ShipDB.SHIPS[id].label)
+	ship_picker.selected=ids.find(Game.save.selected_ship)
+	ship_picker.item_selected.connect(func(index): options.ship=ids[index])
+	grid.add_child(Styles.label("Spacecraft",17)); grid.add_child(ship_picker)
+	for entry in [["Enemy presence","hostility",["OFF · peaceful expedition","Wildlife only","Low","Normal","High / Warzone"]],
+		["Cinematics","cinematics",["Full","Reduced","Gameplay only"]],
+		["Weather","weather",["Clear","Partly cloudy","Overcast","Fog","Rain","Heavy rain","Thunderstorm","Snow","Blizzard","Sandstorm"]]]:
+		grid.add_child(Styles.label(entry[0],17))
+		var picker := OptionButton.new()
+		for label in entry[2]: picker.add_item(label)
+		picker.selected=int(options[entry[1]])
+		var key: String=entry[1]
+		picker.item_selected.connect(func(index): options[key]=index)
+		grid.add_child(picker)
+	vb.add_child(Styles.label("N  Guided descent / return to orbit\nW/S  Thrust / brake   ·   Space/Ctrl  Climb / descend\nC  Camera   ·   G  Landing gear   ·   F  Interact",16,Styles.DIM))
+	var flex := Control.new(); flex.size_flags_vertical=Control.SIZE_EXPAND_FILL; vb.add_child(flex)
+	var launch := Styles.button("BEGIN EXPEDITION  ▸",22,Styles.GREEN)
+	launch.pressed.connect(func(): Game.start_explore(options))
+	vb.add_child(launch)
 
 func _show_briefing(id: String) -> void:
 	_sel_mission = id

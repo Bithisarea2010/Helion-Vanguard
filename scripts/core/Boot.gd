@@ -4,6 +4,9 @@ extends Node
 func _ready() -> void:
 	# when launched with `-- --mission=x` (automated testing) Game already queued the battle
 	for arg in OS.get_cmdline_user_args():
+		if arg == "--explore":
+			Game.start_explore.call_deferred()
+			return
 		if arg.begins_with("--mission="):
 			return
 	SceneFlow.transition_to.call_deferred("res://scenes/MainMenu.tscn", {
